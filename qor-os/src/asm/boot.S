@@ -59,7 +59,7 @@ _start_init:
     csrw mie, t3
 
     # Set up the return address to just loop when kmain returns
-    la ra, _start_kmain_return:
+    la ra, _start_kmain_return
 
     # Call kmain
     mret
@@ -70,7 +70,7 @@ _start_kmain_return:
 _start_wfi_loop:
     # Loop forever
     wfi
-    j 3b
+    j _start_wfi_loop
 
 
 

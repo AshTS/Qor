@@ -3,43 +3,56 @@
 #![no_main]
 #![feature(panic_info_message, asm, global_asm)]
 
+use core::fmt::Write;
+
+use uart::UartDriver;
+
 mod asm;
 mod mmio;
 mod uart;
 
+lazy_static::lazy_static!
+{
+    // Safety: The QEMU emulator has a UART mmio interface at 0x1000_0000
+    static ref UART_DRIVER: spin::Mutex<UartDriver> = spin::Mutex::new(unsafe{UartDriver::new(0x1000_0000)});
+}
+
 // Macros
 #[macro_export]
-macro_rules! print
+macro_rules! kprint
 {
-    ($($args:tt)+) => ({});
+    ($($args:tt)+) => ({
+        use core::fmt::Write;
+		let _ = write!(UART_DRIVER.lock(), $($args)+);    
+    });
 }
 
 #[macro_export]
-macro_rules! println
+macro_rules! kprintln
 {
-    () => ({print!("\r\n")});
+    () => ({kprint!("\r\n")});
 
     ($fmt:expr) => ({
-        print!(concat!($fmt, "\r\n"))
+        kprint!(concat!($fmt, "\r\n"))
     });
 
     ($fmt:expr, $($args:tt)+) => ({
-        print!(concat!($fmt, "\r\n"), $($args)+)
+        kprint!(concat!($fmt, "\r\n"), $($args)+)
     });
 }
 
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> !
 {
-    print!("Aborting: ");
+    kprint!("Aborting: ");
 
     if let Some(p) = info.location()
     {
-        println!("line {}, file {}: {}", p.line(), p.file(), p.message().unwrap());
+        kprintln!("line {}, file {}: {}", p.line(), p.file(), info.message().unwrap());
     }
     else
     {
-        println!("no info available");
+        kprintln!("no info available");
     }
 
     abort();
@@ -59,6 +72,6 @@ fn abort() -> !
 extern "C"
 fn kmain()
 {
-    
+    kprintln!("Kernel Start!");
 }
 
