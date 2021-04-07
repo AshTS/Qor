@@ -1,4 +1,4 @@
-use super::super::mmio;
+use crate::mmio;
 
 /// Safety: if the base address is a vaild base address for a UART driver,
 /// this will perform as expected.
