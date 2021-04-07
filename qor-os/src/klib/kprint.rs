@@ -17,10 +17,10 @@ macro_rules! kprintln
     () => ({kprint!("\r\n")});
 
     ($fmt:expr) => ({
-        kprint!(concat!($fmt, "\r\n"))
+        crate::kprint!(concat!($fmt, "\r\n"))
     });
 
     ($fmt:expr, $($args:tt)+) => ({
-        kprint!(concat!($fmt, "\r\n"), $($args)+)
+        crate::kprint!(concat!($fmt, "\r\n"), $($args)+)
     });
 }

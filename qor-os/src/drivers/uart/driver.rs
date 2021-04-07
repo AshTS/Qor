@@ -15,11 +15,20 @@ impl UartDriver
     /// expected.
     pub unsafe fn new(base_address: usize) -> UartDriver
     {
-        ops::uart_init(base_address);
-
         Self
         {
             base_address
+        }
+    }
+
+    /// Initialize the UART driver
+    pub fn initialize(&self)
+    {
+        // Safety: Assuming the struct was initialized properly, this will be
+        // making use of a valid MMIO interface
+        unsafe 
+        {
+            ops::uart_init(self.base_address);
         }
     }
 

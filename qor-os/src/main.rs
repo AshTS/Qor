@@ -1,4 +1,3 @@
-// Disable the standard library
 #![no_std]
 #![no_main]
 #![feature(panic_info_message, asm, global_asm)]
@@ -7,6 +6,7 @@
 mod asm;
 mod drivers;
 mod klib;
+mod mem;
 mod mmio;
 mod panic;
 
@@ -15,5 +15,8 @@ mod panic;
 extern "C"
 fn kmain()
 {
+    // Initialize the UART driver so kprint will work and we can start logging
+    drivers::init_uart_driver();
+
     kprintln!("Kernel Start!");
 }
