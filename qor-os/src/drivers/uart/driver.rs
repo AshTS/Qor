@@ -26,6 +26,8 @@ impl UartDriver
     /// Read a byte from the UART (or return None if no byte is available)
     pub fn read_byte(&self) -> Option<u8>
     {
+        // Safety: Assuming the struct was initialized properly, this will be
+        // making use of a valid MMIO interface
         unsafe
         {
             ops::uart_read(self.base_address)
@@ -35,6 +37,8 @@ impl UartDriver
     /// Write a byte to the UART
     pub fn write_byte(&self, data: u8)
     {
+        // Safety: Assuming the struct was initialized properly, this will be
+        // making use of a valid MMIO interface
         unsafe
         {
             ops::uart_write(self.base_address, data);

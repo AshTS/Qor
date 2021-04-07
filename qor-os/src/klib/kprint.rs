@@ -1,4 +1,6 @@
-// Macros
+//! Kernel print and kernal print like functionss
+
+/// Kernel print function
 #[macro_export]
 macro_rules! kprint
 {
@@ -8,6 +10,7 @@ macro_rules! kprint
     });
 }
 
+/// Kernel print line function
 #[macro_export]
 macro_rules! kprintln
 {
