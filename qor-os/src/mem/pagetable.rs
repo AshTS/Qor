@@ -1,3 +1,7 @@
+use core::u64;
+
+use super::pages::PAGE_SIZE;
+
 #[repr(u64)]
 /// bit masks for the various bits within the entry structure
 pub enum EntryBits
@@ -36,7 +40,7 @@ impl Entry
     /// Get the PPN value
     pub fn get_ppn(&self) -> usize
     {
-        ((self.data >> 12) & ((1 << 44) - 1)) as usize
+        ((self.data >> 10) & ((1 << 44) - 1)) as usize
     }
 
     /// Set the PPN value
@@ -58,11 +62,21 @@ impl Entry
     /// write or execute bits being set
     pub fn is_leaf(&self) -> bool
     {
-        !(
-            self.get_bit(EntryBits::Execute) |
-            self.get_bit(EntryBits::Read) |
-            self.get_bit(EntryBits::Write)
-        )
+        self.get_bit(EntryBits::Execute) |
+        self.get_bit(EntryBits::Read) |
+        self.get_bit(EntryBits::Write)
+    }
+
+    /// Get the wrapped data
+    pub fn get_data(&self) -> u64
+    {
+        self.data
+    }
+
+    /// Set the wrapped data
+    pub fn set_data(&mut self, data: u64)
+    {
+        self.data = data
     }
 }
 
@@ -78,11 +92,20 @@ impl Table
 {
     /// Create a new Table from the page number where the table is to be
     /// allocated
-    pub unsafe fn new(page_number: usize) -> Self
+    /// Safety: The given page number must be valid
+    pub unsafe fn new(page_number: usize) -> &'static mut Self
     {
-        let address = (page_number * 4096) as *mut Table;
+        let address = (page_number * PAGE_SIZE) as *mut Table;
 
-        *address
+        let mut table = *address;
+
+        // Invalidate all of the entries
+        for i in table.entries.as_mut()
+        {
+            i.set_bit(EntryBits::Valid, false);
+        }
+
+        address.as_mut().unwrap()
     }
 }
 

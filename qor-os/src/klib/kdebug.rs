@@ -4,8 +4,12 @@
 #[macro_export]
 macro_rules! kdebug
 {
-    ($fmt:expr, $($args:tt)*) => ({
-        kprint!(concat!("\x1B[34m", $fmt, "\x1B[m"), $($args)*) 
+    ($fmt:expr, $($args:tt)+) => ({
+        kprint!(concat!("\x1B[34m", $fmt, "\x1B[m"), $($args)+) 
+    });
+    
+    ($fmt:expr) => ({
+        kprint!(concat!("\x1B[34m", $fmt, "\x1B[m")) 
     });
 }
 

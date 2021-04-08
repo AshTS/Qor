@@ -21,34 +21,13 @@ fn kmain()
     // Initialize the heap
     mem::heap::initialize_heap();
 
-    mem::heap::display_heap_debug_info();
+    let ptr = mem::heap::kalloc(1);
 
-    kprintln!("Allocate 5, 64, 32");
-    let m0 = mem::heap::kalloc(5);
-    let m1 = mem::heap::kzalloc(64);
-    let m2 = mem::heap::kalloc(32);
+    let root = mem::mmu::alloc_table();
 
-    kprintln!("m0: 0x{:x}", m0 as usize);
-    kprintln!("m1: 0x{:x}", m1 as usize);
-    kprintln!("m2: 0x{:x}", m2 as usize);
+    mem::mmu::map(root, 0xdeadbeef000, ptr as usize, mem::pagetable::EntryBits::Read as usize | mem::pagetable::EntryBits::Write as usize, mem::mmu::MMUPageLevel::Level4KiB);
 
-    mem::heap::display_heap_debug_info();
-
-    kprintln!("Free 5");
-    unsafe { mem::heap::kfree(m0, 5) };
-
-    mem::heap::display_heap_debug_info();
-
-    kprintln!("Free 32");
-    unsafe { mem::heap::kfree(m2, 32) };
-
-    mem::heap::display_heap_debug_info();
-
-    kprintln!("Free 64");
-    unsafe { mem::heap::kfree(m1, 64) };
-
-    mem::heap::display_heap_debug_info();
-
+    kprintln!("Mapping 0xdeadbeef000 to 0x{:0x}", mem::mmu::virt_to_phys(root, 0xdeadbeef000).unwrap());
 
     kprintln!("Kernel Start!");
 }
