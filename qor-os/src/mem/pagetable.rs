@@ -46,6 +46,24 @@ impl Entry
         self.data &= mask;
         self.data |= ((ppn & ((1 << 44) - 1)) << 12) as u64;
     }
+
+    /// Return true iff the entry has its valid bit set
+    pub fn is_valid(&self) -> bool
+    {
+        self.get_bit(EntryBits::Valid)
+    }
+
+    /// Returns true iff the given entry is a leaf node (i.e) it points to a
+    /// page where memory will be stored, this is signified by none of the read,
+    /// write or execute bits being set
+    pub fn is_leaf(&self) -> bool
+    {
+        !(
+            self.get_bit(EntryBits::Execute) |
+            self.get_bit(EntryBits::Read) |
+            self.get_bit(EntryBits::Write)
+        )
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
