@@ -6,7 +6,7 @@ macro_rules! kprint
 {
     ($($args:tt)+) => ({
         use core::fmt::Write;
-		let _ = write!(crate::drivers::UART_DRIVER.lock(), $($args)+);    
+		let _ = write!(crate::drivers::get_uart_driver(), $($args)+);    
     });
 }
 
