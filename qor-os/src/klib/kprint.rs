@@ -1,4 +1,4 @@
-//! Kernel print and kernal print like functionss
+//! Kernel print and kernal print line functionss
 
 /// Kernel print function
 #[macro_export]

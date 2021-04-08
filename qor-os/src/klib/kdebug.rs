@@ -4,10 +4,8 @@
 #[macro_export]
 macro_rules! kdebug
 {
-    ($($args:tt)+) => ({
-        use core::fmt::Write;
-		let _ = write!(crate::drivers::UART_DRIVER.lock(), $($args)+);   
-        kprint!("\x1B[34m{}\x1B[m") 
+    ($fmt:expr, $($args:tt)*) => ({
+        kprint!(concat!("\x1B[34m", $fmt, "\x1B[m"), $($args)*) 
     });
 }
 

@@ -90,6 +90,8 @@ pub fn initialize_heap()
 /// Allocate a number of pages on the kernel heap
 pub fn kalloc(count: usize) -> *mut u8
 {
+    kdebug!("Allocating {} pages -> ", count);
+
     let mut prev = get_heap_head();
 
     if count > prev.get_number_pages()
@@ -122,6 +124,8 @@ pub fn kalloc(count: usize) -> *mut u8
                            ptr.get_next_pointer());
     }
 
+    kdebugln!("0x{:x}", ptr.get_current_pointer() as usize);
+
     ptr.get_current_pointer() as *mut u8
 }
 
@@ -130,6 +134,8 @@ pub fn kalloc(count: usize) -> *mut u8
 /// accurate
 pub unsafe fn kfree(ptr: *mut u8, count: usize)
 {
+    kdebugln!("Freeing {} pages at 0x{:x}", count, ptr as usize);
+    
     let mut walking = get_heap_head();
 
     while !((walking.get_current_pointer() as usize) < (ptr as usize) && (ptr as usize)  < walking.get_next_pointer() as usize)
