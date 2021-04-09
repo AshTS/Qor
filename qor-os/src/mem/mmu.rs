@@ -1,3 +1,5 @@
+use core::num;
+
 use crate::*;
 
 use super::heap::{kzalloc, kfree};
@@ -185,4 +187,45 @@ pub fn virt_to_phys(root: &Table, virt_addr: usize) -> Option<usize>
     }
 
     None
+}
+
+/// Allocate some number of pages in virtual memory
+pub fn kvalloc(root: &mut Table, virt_addr: usize, num_pages: usize, settings: usize)
+{
+    // Allocate the space
+    let ptr = kzalloc(num_pages);
+
+    // Convert pointers to usizes
+    let mut virt_addr_usize = virt_addr & !(4096 - 1);
+    let mut phys_addr_usize = ptr as usize & !(4096 - 1);
+
+    // Map all of the pages
+    for _ in 0..num_pages
+    {
+        map(root, virt_addr_usize, phys_addr_usize, settings, MMUPageLevel::Level4KiB);
+    
+        virt_addr_usize += PAGE_SIZE;
+        phys_addr_usize += PAGE_SIZE;
+    }
+}
+
+/// Free some number of virtual memory pages
+pub fn kvfree(root: &mut Table, virt_addr: usize, num_pages: usize)
+{
+    let mut virt_addr_usize = virt_addr & !(4096 - 1);
+
+    for _ in 0..num_pages
+    {
+        let phys = virt_to_phys(root, virt_addr_usize);
+
+        if phys.is_none()
+        {
+            panic!("Attempting to free unmapped virtual memory 0x{:x}", virt_addr_usize & !(4096 - 1));
+        }
+
+        unmap(root, virt_addr_usize, MMUPageLevel::Level4KiB);
+        unsafe { kfree(phys.unwrap() as *mut u8, 1) };
+
+        virt_addr_usize += PAGE_SIZE;
+    }
 }
