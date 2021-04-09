@@ -4,12 +4,20 @@
 #[macro_export]
 macro_rules! kdebug
 {
+    ($mode:ident, $fmt:expr, $($args:tt)+) => ({
+        if crate::debug::check_debug(crate::debug::DebugMode::$mode) { crate::kprint!(concat!("\x1B[34m", $fmt, "\x1B[m"), $($args)+) } 
+    });
+    
+    ($mode:ident, $fmt:expr) => ({
+        if crate::debug::check_debug(crate::debug::DebugMode::$mode) { crate::kprint!(concat!("\x1B[34m", $fmt, "\x1B[m")) }
+    });
+
     ($fmt:expr, $($args:tt)+) => ({
-        kprint!(concat!("\x1B[34m", $fmt, "\x1B[m"), $($args)+) 
+        crate::kdebug!(Other, $fmt, $($args)+) 
     });
     
     ($fmt:expr) => ({
-        kprint!(concat!("\x1B[34m", $fmt, "\x1B[m")) 
+        crate::kprint!(Other, $fmt) 
     });
 }
 
@@ -17,13 +25,23 @@ macro_rules! kdebug
 #[macro_export]
 macro_rules! kdebugln
 {
-    () => ({kdebug!("\r\n")});
+    ($mode:ident) => ({kdebug!($mode, "\r\n")});
+
+    ($mode:ident, $fmt:expr) => ({
+        crate::kdebug!($mode, concat!($fmt, "\r\n"))
+    });
+
+    ($mode:ident, $fmt:expr, $($args:tt)+) => ({
+        crate::kdebug!($mode, concat!($fmt, "\r\n"), $($args)+)
+    });
+
+    () => ({kdebug!(Other, "\r\n")});
 
     ($fmt:expr) => ({
-        crate::kdebug!(concat!($fmt, "\r\n"))
+        crate::kdebug!(Other, concat!($fmt, "\r\n"))
     });
 
     ($fmt:expr, $($args:tt)+) => ({
-        crate::kdebug!(concat!($fmt, "\r\n"), $($args)+)
+        crate::kdebug!(Other, concat!($fmt, "\r\n"), $($args)+)
     });
 }

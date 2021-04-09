@@ -4,6 +4,7 @@
 #![allow(dead_code)]
 
 mod asm;
+mod debug;
 mod drivers;
 mod klib;
 mod mem;
@@ -21,15 +22,11 @@ fn kmain()
     // Initialize the heap
     mem::heap::initialize_heap();
 
-    let ptr = mem::heap::kalloc(1);
-
     let root = mem::mmu::alloc_table();
 
-    mem::mmu::kvalloc(root, 0x1000_0000, 16, mem::pagetable::EntryBits::Read as usize | mem::pagetable::EntryBits::Write as usize);
-
-    kprintln!("Kernel Start!");
+    mem::kvalloc(root, 0x42000, 16, 
+        mem::EntryBits::Read as usize |
+                mem::EntryBits::Write as usize);
 
     mem::heap::display_heap_debug_info();
-
-    mem::mmu::kvfree(root, 0x1000_0000, 8);
 }

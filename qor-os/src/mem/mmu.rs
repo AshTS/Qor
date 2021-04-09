@@ -1,5 +1,3 @@
-use core::num;
-
 use crate::*;
 
 use super::heap::{kzalloc, kfree};
@@ -28,7 +26,7 @@ pub enum MMUPageLevel
 
 pub fn map(root: &mut Table, virt_addr: usize, phys_addr: usize, settings: usize, level: MMUPageLevel)
 {
-    kdebugln!("Mapping 0x{:x} -> 0x{:x} settings: 0b{:0b}, level: {:?}", virt_addr, phys_addr, settings, level);
+    kdebugln!(MemoryMapping, "Mapping 0x{:x} -> 0x{:x} settings: 0b{:0b}, level: {:?}", virt_addr, phys_addr, settings, level);
 
     let level = level as usize;
 
@@ -79,7 +77,7 @@ pub fn map(root: &mut Table, virt_addr: usize, phys_addr: usize, settings: usize
 /// Unmap a virtual address
 pub fn unmap(root: &mut Table, virt_addr: usize, level: MMUPageLevel)
 {
-    kdebugln!("Unmapping virtual address 0x{:x} with level {:?}", virt_addr, level);
+    kdebugln!(MemoryMapping, "Unmapping virtual address 0x{:x} with level {:?}", virt_addr, level);
 
     let vpn = [
         (virt_addr >> 12) & ((1 << 9) - 1),
@@ -192,6 +190,8 @@ pub fn virt_to_phys(root: &Table, virt_addr: usize) -> Option<usize>
 /// Allocate some number of pages in virtual memory
 pub fn kvalloc(root: &mut Table, virt_addr: usize, num_pages: usize, settings: usize)
 {
+    kdebugln!(PageMapping, "Allocating {} pages of virtual memory at 0x{:x} with settings 0b{:b}", num_pages, virt_addr, settings);
+
     // Allocate the space
     let ptr = kzalloc(num_pages);
 
@@ -212,6 +212,8 @@ pub fn kvalloc(root: &mut Table, virt_addr: usize, num_pages: usize, settings: u
 /// Free some number of virtual memory pages
 pub fn kvfree(root: &mut Table, virt_addr: usize, num_pages: usize)
 {
+    kdebugln!(PageMapping, "Freeing {} pages of virtual memory at 0x{:x}", num_pages, virt_addr);
+
     let mut virt_addr_usize = virt_addr & !(4096 - 1);
 
     for _ in 0..num_pages
@@ -224,6 +226,11 @@ pub fn kvfree(root: &mut Table, virt_addr: usize, num_pages: usize)
         }
 
         unmap(root, virt_addr_usize, MMUPageLevel::Level4KiB);
+
+        // Safety: Because this was found from the memory map and the only way
+        // to get an entry in the memory map is to allocate space for it, and
+        // the only way to remove an entry would cause the check above to fail,
+        // this is safe
         unsafe { kfree(phys.unwrap() as *mut u8, 1) };
 
         virt_addr_usize += PAGE_SIZE;
