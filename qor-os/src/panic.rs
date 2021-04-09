@@ -4,7 +4,7 @@ use crate::*;
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> !
 {
-    kprint!("\x1B[30mAborting: ");
+    kprint!("Aborting: ");
 
     if let Some(p) = info.location()
     {
@@ -15,7 +15,7 @@ fn panic(info: &core::panic::PanicInfo) -> !
         kprintln!("no info available");
     }
 
-    kprint!("\x1B[m");
+    kprint!("");
 
     abort();
 }

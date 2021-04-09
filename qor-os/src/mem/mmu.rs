@@ -1,6 +1,6 @@
 use crate::*;
 
-use super::heap::kzalloc;
+use super::heap::{kzalloc, kfree};
 use super::pagetable::{Table, Entry, EntryBits};
 use super::pages::PAGE_SIZE;
 
@@ -74,9 +74,74 @@ pub fn map(root: &mut Table, virt_addr: usize, phys_addr: usize, settings: usize
     walking.set_data(entry as u64);
 }
 
-pub fn unmap()
+/// Unmap a virtual address
+pub fn unmap(root: &mut Table, virt_addr: usize, level: MMUPageLevel)
 {
+    kdebugln!("Unmapping virtual address 0x{:x} with level {:?}", virt_addr, level);
 
+    let vpn = [
+        (virt_addr >> 12) & ((1 << 9) - 1),
+        (virt_addr >> 21) & ((1 << 9) - 1),
+        (virt_addr >> 30) & ((1 << 9) - 1)
+    ];
+
+    let mut last_addr = None;
+    let mut ptr = &mut root[vpn[2]];
+    for i in (level as usize..=2).rev()
+    {
+        if !ptr.is_valid()
+        {
+            // If we hit an invalid before we get to the bottom, we must have
+            // tried to unmap an already unmapped address, we will panic here
+            // because it means the memory manager for the kernel messed up some
+            // how.
+            panic!("Cannot unmap virtual address 0x{:x} level {:?}, hit an invalid entry at level {}", virt_addr, level, i);
+        }
+        else if ptr.is_leaf()
+        {
+            // Invalidate the leaf and return
+            ptr.set_bit(EntryBits::Valid, false);
+            return;
+        }
+        else
+        {
+            let entry = ((ptr.get_data() & !0x3ff) << 2) as *mut Entry;
+            // Safety: Assuming the Page Tables are properly initialized, this
+            // will be safe
+            ptr = unsafe { entry.add(vpn[i - 1]).as_mut().unwrap() };
+            last_addr = Some( (entry as usize >> 12) << 12 );
+        }
+    }
+
+    // Unmap the table
+    // Safety: Because this address was retrieved from the page table, it should point to valid memory (hopefully)
+    unsafe { unmap_table(last_addr.unwrap() as *mut Table ) }
+
+    // Invalidate the last node
+    ptr.set_bit(EntryBits::Valid, false);
+}
+
+/// Unmap a table and all valid paths below it
+/// Safety: As long as the pointer is a valid pointer to a page table, this
+/// will be safe
+unsafe fn unmap_table(root: *mut Table)
+{
+    // Safety: The function would be unsafe if this call were with a null
+    // pointer, making this possible panic redundant
+    let root_ref = root.as_mut().unwrap();
+
+    for i in 0..512
+    {
+        let entry = &mut root_ref[i];
+
+        if entry.is_valid() && !entry.is_leaf()
+        {
+            unmap_table((entry.get_ppn() << 12) as *mut Table);
+        }
+    }
+
+    // Safety: Same as the function
+    kfree(root as *mut u8, 1);
 }
 
 /// Map a virtual address to a physical address (So user space programs can

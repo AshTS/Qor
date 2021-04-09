@@ -29,5 +29,9 @@ fn kmain()
 
     kprintln!("Mapping 0xdeadbeef000 to 0x{:0x}", mem::mmu::virt_to_phys(root, 0xdeadbeef000).unwrap());
 
+    mem::mmu::unmap(root, 0xdeadbeef000, mem::mmu::MMUPageLevel::Level1GiB);
+
     kprintln!("Kernel Start!");
+
+    mem::heap::display_heap_debug_info();
 }

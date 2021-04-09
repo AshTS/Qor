@@ -38,22 +38,22 @@ pub fn display_heap_debug_info()
 
     let page_count = size / PAGE_SIZE;
 
-    kprintln!("=============================================");
-    kprintln!("Heap Information: ");
+    kdebugln!("=============================================");
+    kdebugln!("Heap Information: ");
 
-    kprintln!("PAGE SIZE:    {} bytes", PAGE_SIZE);
-    kprintln!("HEAP START:   0x{:016x}", start);
-    kprintln!("HEAP SIZE:    0x{:016x}", size);
-    kprintln!("PAGE COUNT:   {} pages", page_count);
-    kprintln!("=============================================");
+    kdebugln!("PAGE SIZE:    {} bytes", PAGE_SIZE);
+    kdebugln!("HEAP START:   0x{:016x}", start);
+    kdebugln!("HEAP SIZE:    0x{:016x}", size);
+    kdebugln!("PAGE COUNT:   {} pages", page_count);
+    kdebugln!("=============================================");
     let free_pages = get_heap_head().get_number_pages();
-    kprintln!(" ({}/{}) pages ({}%) Free", free_pages, page_count, free_pages * 100 / page_count);
+    kdebugln!(" ({}/{}) pages ({}%) Free", free_pages, page_count, free_pages * 100 / page_count);
 
     let mut heap_ref = get_heap_head();
 
     loop
     {
-        kprintln!("  {}", heap_ref);
+        kdebugln!("  {}", heap_ref);
 
         if let Some(next) = heap_ref.next()
         {
@@ -65,7 +65,7 @@ pub fn display_heap_debug_info()
         }
     }
 
-    kprintln!("=============================================");
+    kdebugln!("=============================================");
 }
 
 /// Initialize the heap
