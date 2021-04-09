@@ -22,11 +22,14 @@ fn kmain()
     // Initialize the heap
     mem::heap::initialize_heap();
 
-    let root = mem::mmu::alloc_table();
+    // Initialize the Global Page Table
+    mem::mmu::init_global_page_table();
 
-    mem::kvalloc(root, 0x42000, 16, 
+    mem::kvalloc(0x42000, 16, 
         mem::EntryBits::Read as usize |
                 mem::EntryBits::Write as usize);
 
     mem::heap::display_heap_debug_info();
+
+    kprintln!("Kernel Start");
 }

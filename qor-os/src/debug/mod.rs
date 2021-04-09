@@ -17,7 +17,7 @@ static ALLOCATION: AtomicBool = AtomicBool::new(false);
 static MEMORY_MAPPING: AtomicBool = AtomicBool::new(false);
 static PAGE_MAPPING: AtomicBool = AtomicBool::new(false);
 
-/// Check if a debug is enabled
+/// Check if a debug mode is enabled
 pub fn check_debug(mode: DebugMode) -> bool
 {
     if !ALL.load(core::sync::atomic::Ordering::Relaxed)

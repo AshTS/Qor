@@ -4,14 +4,49 @@ use super::heap::{kzalloc, kfree};
 use super::pagetable::{Table, Entry, EntryBits};
 use super::pages::PAGE_SIZE;
 
+use core::{ptr::null_mut, sync::atomic::{AtomicPtr, AtomicBool}};
+
+// Global page table pointer
+static GLOBAL_PAGE_TABLE_POINTER: AtomicPtr<Table> = AtomicPtr::new(null_mut());
+
+// Flag set to true iff the page table has been initialized
+static PAGE_TABLE_INITIALIZED: AtomicBool = AtomicBool::new(false);
+
+// TODO: This is not the safest way to go about this, after all, this does allow
+// multi thread access, I will fix this when I find a better lock
+/// Get a mutable reference to the global page table
+fn global_page_table() -> &'static mut Table
+{
+    if !PAGE_TABLE_INITIALIZED.load(core::sync::atomic::Ordering::Relaxed)
+    {
+        panic!("Global page table has not yet been initialized");
+    }
+
+    // Safety: This is safe because we check the PAGE_TABLE_INITIALIZED flag
+    unsafe { GLOBAL_PAGE_TABLE_POINTER.load(core::sync::atomic::Ordering::SeqCst).as_mut().unwrap() }
+}
+
 /// Allocate a 512 entry page table
-pub fn alloc_table() -> &'static mut Table
+fn alloc_table() -> &'static mut Table
 {
     let table_addr = kzalloc(1) as usize;
     let page = table_addr / PAGE_SIZE;
 
     // Safety: Because the page is allocated via the kalloc
     unsafe { Table::new(page) }
+}
+
+/// Initialize the global page table
+pub fn init_global_page_table()
+{
+    let table = alloc_table();
+
+    let ptr = table as *mut Table;
+
+    GLOBAL_PAGE_TABLE_POINTER.store(ptr, core::sync::atomic::Ordering::SeqCst);
+    PAGE_TABLE_INITIALIZED.store(true, core::sync::atomic::Ordering::SeqCst);
+
+    kprintln!("Global Page Table Initialized");
 }
 
 #[repr(usize)]
@@ -24,7 +59,8 @@ pub enum MMUPageLevel
     Level1GiB = 2
 }
 
-pub fn map(root: &mut Table, virt_addr: usize, phys_addr: usize, settings: usize, level: MMUPageLevel)
+/// Map a virtual address to a physical address
+fn inner_map(root: &mut Table, virt_addr: usize, phys_addr: usize, settings: usize, level: MMUPageLevel)
 {
     kdebugln!(MemoryMapping, "Mapping 0x{:x} -> 0x{:x} settings: 0b{:0b}, level: {:?}", virt_addr, phys_addr, settings, level);
 
@@ -75,7 +111,7 @@ pub fn map(root: &mut Table, virt_addr: usize, phys_addr: usize, settings: usize
 }
 
 /// Unmap a virtual address
-pub fn unmap(root: &mut Table, virt_addr: usize, level: MMUPageLevel)
+fn inner_unmap(root: &mut Table, virt_addr: usize, level: MMUPageLevel)
 {
     kdebugln!(MemoryMapping, "Unmapping virtual address 0x{:x} with level {:?}", virt_addr, level);
 
@@ -146,7 +182,7 @@ unsafe fn unmap_table(root: *mut Table)
 
 /// Map a virtual address to a physical address (So user space programs can
 /// share a pointer to a kernel space program)
-pub fn virt_to_phys(root: &Table, virt_addr: usize) -> Option<usize>
+fn inner_virt_to_phys(root: &Table, virt_addr: usize) -> Option<usize>
 {
     let vpn = [
         (virt_addr >> 12) & ((1 << 9) - 1),
@@ -188,7 +224,7 @@ pub fn virt_to_phys(root: &Table, virt_addr: usize) -> Option<usize>
 }
 
 /// Allocate some number of pages in virtual memory
-pub fn kvalloc(root: &mut Table, virt_addr: usize, num_pages: usize, settings: usize)
+fn inner_kvalloc(root: &mut Table, virt_addr: usize, num_pages: usize, settings: usize)
 {
     kdebugln!(PageMapping, "Allocating {} pages of virtual memory at 0x{:x} with settings 0b{:b}", num_pages, virt_addr, settings);
 
@@ -202,7 +238,7 @@ pub fn kvalloc(root: &mut Table, virt_addr: usize, num_pages: usize, settings: u
     // Map all of the pages
     for _ in 0..num_pages
     {
-        map(root, virt_addr_usize, phys_addr_usize, settings, MMUPageLevel::Level4KiB);
+        inner_map(root, virt_addr_usize, phys_addr_usize, settings, MMUPageLevel::Level4KiB);
     
         virt_addr_usize += PAGE_SIZE;
         phys_addr_usize += PAGE_SIZE;
@@ -210,7 +246,7 @@ pub fn kvalloc(root: &mut Table, virt_addr: usize, num_pages: usize, settings: u
 }
 
 /// Free some number of virtual memory pages
-pub fn kvfree(root: &mut Table, virt_addr: usize, num_pages: usize)
+fn inner_kvfree(root: &mut Table, virt_addr: usize, num_pages: usize)
 {
     kdebugln!(PageMapping, "Freeing {} pages of virtual memory at 0x{:x}", num_pages, virt_addr);
 
@@ -218,14 +254,14 @@ pub fn kvfree(root: &mut Table, virt_addr: usize, num_pages: usize)
 
     for _ in 0..num_pages
     {
-        let phys = virt_to_phys(root, virt_addr_usize);
+        let phys = inner_virt_to_phys(root, virt_addr_usize);
 
         if phys.is_none()
         {
             panic!("Attempting to free unmapped virtual memory 0x{:x}", virt_addr_usize & !(4096 - 1));
         }
 
-        unmap(root, virt_addr_usize, MMUPageLevel::Level4KiB);
+        inner_unmap(root, virt_addr_usize, MMUPageLevel::Level4KiB);
 
         // Safety: Because this was found from the memory map and the only way
         // to get an entry in the memory map is to allocate space for it, and
@@ -235,4 +271,35 @@ pub fn kvfree(root: &mut Table, virt_addr: usize, num_pages: usize)
 
         virt_addr_usize += PAGE_SIZE;
     }
+}
+
+/// Map a virtual address to a physical address
+pub fn map(virt_addr: usize, phys_addr: usize, settings: usize, level: MMUPageLevel)
+{
+    inner_map(global_page_table(), virt_addr, phys_addr, settings, level)
+}
+
+/// Unmap a virtual address
+pub fn unmap(virt_addr: usize, level: MMUPageLevel)
+{
+    inner_unmap(global_page_table(), virt_addr, level)
+}
+
+/// Map a virtual address to a physical address (So user space programs can
+/// share a pointer to a kernel space program)
+pub fn virt_to_phys(virt_addr: usize) -> Option<usize>
+{
+    inner_virt_to_phys(global_page_table(), virt_addr)
+}
+
+/// Allocate some number of pages in virtual memory
+pub fn kvalloc(virt_addr: usize, num_pages: usize, settings: usize)
+{
+    inner_kvalloc(global_page_table(), virt_addr, num_pages, settings)
+}
+
+/// Free some number of virtual memory pages
+pub fn kvfree(virt_addr: usize, num_pages: usize)
+{
+    inner_kvfree(global_page_table(), virt_addr, num_pages)
 }
