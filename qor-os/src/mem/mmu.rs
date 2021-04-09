@@ -59,6 +59,9 @@ pub enum MMUPageLevel
     Level1GiB = 2
 }
 
+// TODO: Make sure all of the uses of the settings in these functions are the
+// right number of bits
+
 /// Map a virtual address to a physical address
 fn inner_map(root: &mut Table, virt_addr: usize, phys_addr: usize, settings: usize, level: MMUPageLevel)
 {
@@ -273,6 +276,26 @@ fn inner_kvfree(root: &mut Table, virt_addr: usize, num_pages: usize)
     }
 }
 
+/// Identity map some range of addresses
+fn inner_idmap(root: &mut Table, addr_start: usize, addr_end: usize, settings: usize)
+{
+    // Align to page boundaries
+    let mut index = addr_start & !PAGE_SIZE;
+    let aligned_end = addr_end & !PAGE_SIZE;
+
+    // Map all of the pages
+    while index <= aligned_end
+    {
+        inner_map(root, index, index, settings, MMUPageLevel::Level4KiB);
+
+        index += PAGE_SIZE;
+    }
+}
+
+// =============================================================================
+// Public Interfaces for MMU functions
+// =============================================================================
+
 /// Map a virtual address to a physical address
 pub fn map(virt_addr: usize, phys_addr: usize, settings: usize, level: MMUPageLevel)
 {
@@ -302,4 +325,10 @@ pub fn kvalloc(virt_addr: usize, num_pages: usize, settings: usize)
 pub fn kvfree(virt_addr: usize, num_pages: usize)
 {
     inner_kvfree(global_page_table(), virt_addr, num_pages)
+}
+
+/// Identity map some range of addresses
+pub fn idmap(addr_start: usize, addr_end: usize, settings: usize)
+{
+    inner_idmap(global_page_table(), addr_start, addr_end, settings)
 }
