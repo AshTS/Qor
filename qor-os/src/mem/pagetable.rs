@@ -13,6 +13,11 @@ pub enum EntryBits
     Global = 0b1 << 5,
     Accessed = 0b1 << 6,
     Dirty = 0b1 << 7,
+
+    ReadWrite = 0b110,
+    ReadExecute = 0b1010,
+    WriteExecute = 0b1100,
+    ReadWriteExecute = 0b1110
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
