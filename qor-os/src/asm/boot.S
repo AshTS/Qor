@@ -79,6 +79,8 @@ _start_kinit_return:
 
     csrw satp, a0
 
+    la ra, _start_wfi_loop
+
     sfence.vma
 	sret
 
