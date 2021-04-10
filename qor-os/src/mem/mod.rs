@@ -1,5 +1,6 @@
 pub mod addrs;
 pub mod heap;
+pub mod kernel;
 pub mod mmu;
 pub mod pages;
 pub mod pagetable;

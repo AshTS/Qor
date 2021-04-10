@@ -27,5 +27,7 @@ fn kmain()
 
     mem::heap::display_heap_debug_info();
 
+    mem::kernel::identity_map_kernel();
+
     kprintln!("Kernel Start");
 }

@@ -34,7 +34,7 @@ fn get_heap_head() -> &'static mut PageData
 pub fn display_heap_debug_info()
 {
     let start = super::addrs::heap_start();
-    let size = super::addrs::heap_end() - super::addrs::heap_end();
+    let size = super::addrs::heap_end() - super::addrs::heap_start();
 
     let page_count = size / PAGE_SIZE;
 
@@ -72,7 +72,7 @@ pub fn display_heap_debug_info()
 pub fn initialize_heap()
 {
     let start = super::addrs::heap_start();
-    let size = super::addrs::heap_end() - super::addrs::heap_end();
+    let size = super::addrs::heap_end() - super::addrs::heap_start();
     
     // Ensure the heap is aligned
     if start % 4096 != 0

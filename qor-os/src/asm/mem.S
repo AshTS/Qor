@@ -8,6 +8,9 @@ HEAP_START: .dword _heap_start
 .global HEAP_SIZE
 HEAP_SIZE: .dword _heap_size
 
+.global HEAP_END
+HEAP_END: .dword _heap_end
+
 .global TEXT_START
 TEXT_START: .dword _text_start
 

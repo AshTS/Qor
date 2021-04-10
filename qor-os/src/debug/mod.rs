@@ -9,6 +9,7 @@ pub enum DebugMode
     Allocation,
     MemoryMapping,
     PageMapping,
+    KernelVirtMapping,
     Other
 }
 
@@ -16,6 +17,7 @@ static ALL: AtomicBool = AtomicBool::new(true);
 static ALLOCATION: AtomicBool = AtomicBool::new(false);
 static MEMORY_MAPPING: AtomicBool = AtomicBool::new(false);
 static PAGE_MAPPING: AtomicBool = AtomicBool::new(false);
+static KERNEL_MAPPING: AtomicBool = AtomicBool::new(true);
 
 /// Check if a debug mode is enabled
 pub fn check_debug(mode: DebugMode) -> bool
@@ -30,6 +32,7 @@ pub fn check_debug(mode: DebugMode) -> bool
         DebugMode::Allocation => ALLOCATION.load(core::sync::atomic::Ordering::Relaxed),
         DebugMode::MemoryMapping =>  MEMORY_MAPPING.load(core::sync::atomic::Ordering::Relaxed),
         DebugMode::PageMapping =>  PAGE_MAPPING.load(core::sync::atomic::Ordering::Relaxed),
+        DebugMode::KernelVirtMapping =>  KERNEL_MAPPING.load(core::sync::atomic::Ordering::Relaxed),
         DebugMode::Other =>  true,
     }
 }

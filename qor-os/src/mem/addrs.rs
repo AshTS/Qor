@@ -8,8 +8,8 @@ extern "C" {
     static DATA_END: usize;
     static BSS_START: usize;
     static BSS_END: usize;
-    static STACK_START: usize;
-    static STACK_END: usize;
+    static KERNEL_STACK_START: usize;
+    static KERNEL_STACK_END: usize;
     static HEAP_START: usize;
     static HEAP_END: usize;
 }
@@ -83,7 +83,7 @@ pub fn bss_end() -> usize
 /// script, this is safe
 pub fn stack_start() -> usize
 {
-	unsafe { STACK_START }
+	unsafe { KERNEL_STACK_START }
 }
 
 /// Get the stack end address as a usize
@@ -91,7 +91,7 @@ pub fn stack_start() -> usize
 /// script, this is safe
 pub fn stack_end() -> usize
 {
-	unsafe { STACK_END }
+	unsafe { KERNEL_STACK_END }
 }
 
 /// Get the heap start address as a usize
