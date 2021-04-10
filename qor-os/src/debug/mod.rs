@@ -16,7 +16,7 @@ pub enum DebugMode
 static ALL: AtomicBool = AtomicBool::new(true);
 static ALLOCATION: AtomicBool = AtomicBool::new(false);
 static MEMORY_MAPPING: AtomicBool = AtomicBool::new(false);
-static PAGE_MAPPING: AtomicBool = AtomicBool::new(false);
+static PAGE_MAPPING: AtomicBool = AtomicBool::new(true);
 static KERNEL_MAPPING: AtomicBool = AtomicBool::new(true);
 
 /// Check if a debug mode is enabled

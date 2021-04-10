@@ -15,7 +15,7 @@ static PAGE_TABLE_INITIALIZED: AtomicBool = AtomicBool::new(false);
 // TODO: This is not the safest way to go about this, after all, this does allow
 // multi thread access, I will fix this when I find a better lock
 /// Get a mutable reference to the global page table
-fn global_page_table() -> &'static mut Table
+pub fn global_page_table() -> &'static mut Table
 {
     if !PAGE_TABLE_INITIALIZED.load(core::sync::atomic::Ordering::Relaxed)
     {
@@ -42,6 +42,8 @@ pub fn init_global_page_table()
     let table = alloc_table();
 
     let ptr = table as *mut Table;
+
+    kprintln!("GPT: 0x{:x}", ptr as usize);
 
     GLOBAL_PAGE_TABLE_POINTER.store(ptr, core::sync::atomic::Ordering::SeqCst);
     PAGE_TABLE_INITIALIZED.store(true, core::sync::atomic::Ordering::SeqCst);
@@ -101,7 +103,7 @@ fn inner_map(root: &mut Table, virt_addr: usize, phys_addr: usize, settings: usi
         }
 
         let entry = ((walking.get_data() & !0x3ff) << 2) as *mut Entry;
-	    walking = unsafe { entry.add(vpn[current_level]).as_mut().unwrap() };
+        walking = unsafe { entry.add(vpn[current_level]).as_mut().unwrap() };
     }
 
     let entry = (ppn[2] << 28) as usize |
@@ -197,6 +199,7 @@ fn inner_virt_to_phys(root: &Table, virt_addr: usize) -> Option<usize>
 
     for i in (0..=2).rev()
     {
+        kdebugln!("Entry lvl {} at 0x{:x} :    0x:{:x}", i, ptr as *const Entry as usize, ptr.get_ppn());
         if !ptr.is_valid()
         {
             // The MMU would page fault here
@@ -204,6 +207,7 @@ fn inner_virt_to_phys(root: &Table, virt_addr: usize) -> Option<usize>
         }
         else if ptr.is_leaf()
         {
+            kprintln!("Leaf at lvl {}", i);
             let ppn = ptr.get_ppn();
 
             let offset_mask =  (1 << (12 + 9 * i)) - 1;
@@ -280,8 +284,8 @@ fn inner_kvfree(root: &mut Table, virt_addr: usize, num_pages: usize)
 fn inner_idmap(root: &mut Table, addr_start: usize, addr_end: usize, settings: usize)
 {
     // Align to page boundaries
-    let mut index = addr_start & !PAGE_SIZE;
-    let aligned_end = addr_end & !PAGE_SIZE;
+    let mut index = addr_start & !(PAGE_SIZE - 1);
+    let aligned_end = addr_end & !(PAGE_SIZE - 1);
 
     // Map all of the pages
     while index <= aligned_end

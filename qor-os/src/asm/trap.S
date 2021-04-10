@@ -3,4 +3,6 @@
 
 asm_trap_vector:
     # The CPU was interrupted
-    mret
+    csrr	a0, mtval
+	wfi
+	j asm_trap_vector

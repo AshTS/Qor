@@ -1,6 +1,6 @@
 use crate::*;
 
-use super::addrs;
+use super::{addrs, pagetable::Table};
 
 /// Identity map the kernel in virtual address space
 pub fn identity_map_kernel()
@@ -21,5 +21,19 @@ pub fn identity_map_kernel()
     super::mmu::idmap(addrs::stack_start(), addrs::stack_end(), super::EntryBits::ReadWrite as usize);
     super::mmu::idmap(addrs::heap_start(), addrs::heap_end(), super::EntryBits::ReadWrite as usize);
 
+    // Map the UART MMIO
+    super::mmu::idmap(0x1000_0000, 0x1000_0000, super::EntryBits::ReadWrite as usize);
+
     kprintln!("Kernel Mapped");
+}
+
+/// Set the MMU to point to the GPT
+pub fn init_mmu() -> usize
+{
+    kprintln!("0x{:x}", super::mmu::global_page_table() as *mut Table as usize);
+
+    let root_ppn = super::mmu::global_page_table() as *mut Table as usize >> 12;
+    let satp_val = 8 << 60 | root_ppn;
+    
+    satp_val
 }

@@ -1,5 +1,5 @@
 
-# Do not produce compressed instructions, this is for RISCV64GC
+# Do not produce compressed instructions, this is for RISCV64G
 .option norvc
 
 # Section which will be placed as 0x8000_0000 (The start location for qemu)
@@ -47,7 +47,7 @@ _start_init:
     csrw mstatus, t0
 
     # Set the mret address to kmain
-    la t1, kmain
+    la t1, kinit
     csrw mepc, t1
 
     # Set the trap vector to the proper address
@@ -58,15 +58,32 @@ _start_init:
     li t3, (1 << 3) | (1 << 7) | (1 << 11)
     csrw mie, t3
 
-    # Set up the return address to just loop when kmain returns
-    la ra, _start_kmain_return
+    # Set up the return address for when kinit returns
+    la ra, _start_kinit_return
 
-    # Call kmain
+    # Call kinit
     mret
-_start_kmain_return:
+_start_kinit_return:
+    li		t0, (0b1 << 8) | (1 << 5)
+	csrw	sstatus, t0
+	la		t1, kmain
+	csrw	sepc, t1
 
+    li t2, (1 << 1) | (1 << 5) | (1 << 9)
+    csrw mideleg, t2
 
+    csrw sie, t2
 
+    la t3, asm_trap_vector
+    csrw stvec, t3
+
+    csrw satp, a0
+
+    sfence.vma
+	sret
+
+_inbetween:
+    li x27, 42
 _start_wfi_loop:
     # Loop forever
     wfi

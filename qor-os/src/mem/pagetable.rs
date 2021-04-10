@@ -14,10 +14,9 @@ pub enum EntryBits
     Accessed = 0b1 << 6,
     Dirty = 0b1 << 7,
 
-    ReadWrite = 0b110,
-    ReadExecute = 0b1010,
-    WriteExecute = 0b1100,
-    ReadWriteExecute = 0b1110
+    ReadWrite = 0b110 | (1 << 6) | (1 << 7),
+    ReadExecute = 0b1010  | (1 << 6),
+    ReadWriteExecute = 0b1110  | (1 << 6) | (1 << 7)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
