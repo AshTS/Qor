@@ -26,15 +26,15 @@ fn get_heap_head() -> &'static mut PageData
     // HEAP_INITIALIZED is treated properly
     unsafe
     {
-        (get_heap_start() as *mut PageData).as_mut().unwrap()
+        (super::addrs::heap_start() as *mut PageData).as_mut().unwrap()
     }
 }
 
 /// Display information about the heap via kprint
 pub fn display_heap_debug_info()
 {
-    let start = get_heap_start();
-    let size = get_heap_size();
+    let start = super::addrs::heap_start();
+    let size = super::addrs::heap_end() - super::addrs::heap_end();
 
     let page_count = size / PAGE_SIZE;
 
@@ -71,7 +71,8 @@ pub fn display_heap_debug_info()
 /// Initialize the heap
 pub fn initialize_heap()
 {
-    let start = get_heap_start();
+    let start = super::addrs::heap_start();
+    let size = super::addrs::heap_end() - super::addrs::heap_end();
     
     // Ensure the heap is aligned
     if start % 4096 != 0
@@ -79,7 +80,7 @@ pub fn initialize_heap()
         panic!("Heap Start Address `0x{:016x}` not aligned to a page boundary ({} bytes)", start, PAGE_SIZE);
     }
 
-    let page_count = get_heap_size() / PAGE_SIZE;
+    let page_count = size / PAGE_SIZE;
     PageData::init(start, page_count);
 
     kprintln!("Heap Initialized");

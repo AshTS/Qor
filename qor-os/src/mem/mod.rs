@@ -1,3 +1,4 @@
+pub mod addrs;
 pub mod heap;
 pub mod mmu;
 pub mod pages;

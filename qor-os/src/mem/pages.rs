@@ -1,28 +1,6 @@
 // Page size
 pub static PAGE_SIZE: usize = 4096;
 
-// Constants recieved from the linker script
-extern "C" {
-	static HEAP_START: usize;
-	static HEAP_SIZE: usize;
-}
-
-/// Retrieve the heap start
-/// Safety: This value is recieved from the linker script, assuming the linker
-/// script is functioning properly, this value should be safe
-pub fn get_heap_start() -> usize
-{
-    unsafe {HEAP_START}
-}
-
-/// Retrieve the heap size
-/// Safety: This value is recieved from the linker script, assuming the linker
-/// script is functioning properly, this value should be safe
-pub fn get_heap_size() -> usize
-{
-    unsafe {HEAP_SIZE}
-}
-
 #[repr(C)]
 /// Structure to store page data
 pub struct PageData
