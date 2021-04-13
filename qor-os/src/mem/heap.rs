@@ -89,7 +89,7 @@ pub fn initialize_heap()
 }
 
 /// Allocate a number of pages on the kernel heap
-pub fn kalloc(count: usize) -> *mut u8
+pub fn kpalloc(count: usize) -> *mut u8
 {
     kdebug!(Allocation, "Allocating {} pages -> ", count);
 
@@ -133,7 +133,7 @@ pub fn kalloc(count: usize) -> *mut u8
 /// Free a number of pages back to the kernel heap
 /// Safety: The pointer must be to the allocated space, and the count must be
 /// accurate
-pub unsafe fn kfree(ptr: *mut u8, count: usize)
+pub unsafe fn kpfree(ptr: *mut u8, count: usize)
 {
     kdebugln!(Allocation, "Freeing {} pages at 0x{:x}", count, ptr as usize);
     
@@ -161,9 +161,9 @@ pub unsafe fn kfree(ptr: *mut u8, count: usize)
 }
 
 /// Allocate a number of pages on the kernel heap with zeros
-pub fn kzalloc(count: usize) -> *mut u8
+pub fn kpzalloc(count: usize) -> *mut u8
 {
-    let ptr = kalloc(count) as *mut u64;
+    let ptr = kpalloc(count) as *mut u64;
 
     for offset in 0..(count * PAGE_SIZE / 8)
     {

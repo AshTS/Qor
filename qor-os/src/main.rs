@@ -27,7 +27,7 @@ fn kinit()
     mem::mmu::init_global_page_table();
 
     // Map space for the trap frame
-    let trap_frame_location = mem::kalloc(1);
+    let trap_frame_location = mem::kpalloc(1);
     riscv::register::mscratch::write(trap_frame_location as usize);
 
     // Identity Map the Kernel

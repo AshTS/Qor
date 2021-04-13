@@ -1,6 +1,6 @@
 use crate::*;
 
-use super::heap::{kzalloc, kfree};
+use super::heap::{kpzalloc, kpfree};
 use super::pagetable::{Table, Entry, EntryBits};
 use super::pages::PAGE_SIZE;
 
@@ -29,7 +29,7 @@ pub fn global_page_table() -> &'static mut Table
 /// Allocate a 512 entry page table
 fn alloc_table() -> &'static mut Table
 {
-    let table_addr = kzalloc(1) as usize;
+    let table_addr = kpzalloc(1) as usize;
     let page = table_addr / PAGE_SIZE;
 
     // Safety: Because the page is allocated via the kalloc
@@ -90,7 +90,7 @@ pub fn inner_map(root: &mut Table, virt_addr: usize, phys_addr: usize, settings:
     {
         if !walking.is_valid()
         {
-            let page_addr = super::heap::kzalloc(1);
+            let page_addr = super::heap::kpzalloc(1);
 
             walking.set_data(
                 (page_addr as usize >> 2) as u64 | EntryBits::Valid as u64,
@@ -177,7 +177,7 @@ pub unsafe fn unmap_table(root: *mut Table)
     }
 
     // Safety: Same as the function
-    kfree(root as *mut u8, 1);
+    kpfree(root as *mut u8, 1);
 }
 
 /// Map a virtual address to a physical address (So user space programs can
@@ -231,7 +231,7 @@ pub fn inner_kvalloc(root: &mut Table, virt_addr: usize, num_pages: usize, setti
     kdebugln!(PageMapping, "Allocating {} pages of virtual memory at 0x{:x} with settings {:?}", num_pages, virt_addr, settings);
 
     // Allocate the space
-    let ptr = kzalloc(num_pages);
+    let ptr = kpzalloc(num_pages);
 
     // Convert pointers to usizes
     let mut virt_addr_usize = virt_addr & !(4096 - 1);
@@ -269,7 +269,7 @@ pub fn inner_kvfree(root: &mut Table, virt_addr: usize, num_pages: usize)
         // to get an entry in the memory map is to allocate space for it, and
         // the only way to remove an entry would cause the check above to fail,
         // this is safe
-        unsafe { kfree(phys.unwrap() as *mut u8, 1) };
+        unsafe { kpfree(phys.unwrap() as *mut u8, 1) };
 
         virt_addr_usize += PAGE_SIZE;
     }
