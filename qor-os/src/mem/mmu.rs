@@ -160,7 +160,7 @@ pub fn inner_unmap(root: &mut Table, virt_addr: usize, level: MMUPageLevel)
 /// Unmap a table and all valid paths below it
 /// Safety: As long as the pointer is a valid pointer to a page table, this
 /// will be safe
-unsafe fn unmap_table(root: *mut Table)
+pub unsafe fn unmap_table(root: *mut Table)
 {
     // Safety: The function would be unsafe if this call were with a null
     // pointer, making this possible panic redundant
