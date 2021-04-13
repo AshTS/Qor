@@ -1,3 +1,5 @@
+use crate::*;
+
 use super::ops;
 
 /// UART NS16550a Memory Mapped IO Driver
@@ -51,6 +53,28 @@ impl UartDriver
         unsafe
         {
             ops::uart_write(self.base_address, data);
+        }
+    }
+
+    /// Callback for when the UART interrupt is triggered
+    pub fn callback(&self)
+    {
+        let data = self.read_byte().unwrap();
+
+        match data
+        {
+            8 | 127 =>
+            {
+                kprint!("{} {}", 8 as char, 8 as char);
+            },
+            10 | 13 =>
+            {
+                kprintln!();
+            },
+            default =>
+            {
+                kprint!("{}", default as char);
+            }
         }
     }
 }
