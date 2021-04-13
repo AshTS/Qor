@@ -54,9 +54,8 @@ _start_init:
     la t2, asm_trap_vector
     csrw mtvec, t2
 
-    # Enable Interrupts
-    li t3, (1 << 3) | (1 << 7) | (1 << 11)
-    csrw mie, t3
+    # Make sure no interrupts occur during initialization
+    csrw mie, zero
 
     # Set up the return address for when kinit returns
     la ra, _start_kinit_return
@@ -71,10 +70,6 @@ _start_kinit_return:
     # Set the mret address to kmain
     la t1, kmain
     csrw mepc, t1
-
-    # Set the trap vector to the proper address
-    la t2, asm_trap_vector_s
-    csrw stvec, t2
 
     # Enable Interrupts
     li t3, (1 << 3) | (1 << 8) | (1 << 7) | (1 << 11)

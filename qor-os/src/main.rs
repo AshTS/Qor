@@ -10,6 +10,7 @@ mod klib;
 mod mem;
 mod mmio;
 mod panic;
+mod trap;
 
 /// Kernel Entry Point
 #[no_mangle]
@@ -24,6 +25,10 @@ fn kinit()
 
     // Initialize the Global Page Table
     mem::mmu::init_global_page_table();
+
+    // Map space for the trap frame
+    let trap_frame_location = mem::kalloc(1);
+    riscv::register::mscratch::write(trap_frame_location as usize);
 
     // Identity Map the Kernel
     mem::kernel::identity_map_kernel();
