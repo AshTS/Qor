@@ -47,8 +47,9 @@ fn kmain()
     kprintln!("Kernel Start");
     kprintln!("Initializing PLIC");
 
-    drivers::PLIC_DRIVER.set_threshold(0);
+    drivers::PLIC_DRIVER.set_threshold(drivers::plic::PLICPriority::Priority0);
+    drivers::PLIC_DRIVER.enable_interrupt(drivers::plic::PLICInterrupt::Interrupt10);
+    drivers::PLIC_DRIVER.set_priority(drivers::plic::PLICInterrupt::Interrupt10, drivers::plic::PLICPriority::Priority1);
 
-    drivers::PLIC_DRIVER.enable_interrupt(10);
-    drivers::PLIC_DRIVER.set_priority(10, 1);
+    kprintln!("C");
 }

@@ -1,4 +1,4 @@
-mod plic;
+pub mod plic;
 mod timer;
 mod uart;
 

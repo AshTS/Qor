@@ -1,3 +1,6 @@
+use super::PLICInterrupt;
+use super::PLICPriority;
+
 /// Driver for the PLIC device
 pub struct PLICDriver
 {
@@ -17,31 +20,31 @@ impl PLICDriver
     }
 
     /// Enable the given interrupt id
-    pub fn enable_interrupt(&self, id: u8)
+    pub fn enable_interrupt(&self, id: PLICInterrupt)
     {
         unsafe { super::ops::enable_interrupt(self.base, id) }
     }
 
     /// Set the priority for a given interrupt
-    pub fn set_priority(&self, id: u8, priority: u8)
+    pub fn set_priority(&self, id: PLICInterrupt, priority: PLICPriority)
     {
         unsafe { super::ops::set_priority(self.base, id, priority) }
     }
 
     /// Set the threshold
-    pub fn set_threshold(&self, threshold: u8)
+    pub fn set_threshold(&self, threshold: PLICPriority)
     {
         unsafe { super::ops::set_threshold(self.base, threshold) }
     }
 
     /// Get the next interrupt
-    pub fn next(&self) -> Option<u32>
+    pub fn next(&self) -> Option<PLICInterrupt>
     {
         unsafe { super::ops::next(self.base) }
     }
 
     /// Complete the given interrupt
-    pub fn complete(&self, id: u32)
+    pub fn complete(&self, id: PLICInterrupt)
     {
         unsafe { super::ops::complete(self.base, id) }
     }

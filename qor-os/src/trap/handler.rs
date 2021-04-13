@@ -50,7 +50,7 @@ fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, _f
         {
             // Interrupt from the PIC
             let interrupt = drivers::PLIC_DRIVER.next().unwrap();
-            kdebugln!(Interrupts, "Machine External Interrupt {}", interrupt);
+            kdebugln!(Interrupts, "Machine External Interrupt {:?}", interrupt);
 
             super::external::external_interrupt_handler(interrupt);
 
