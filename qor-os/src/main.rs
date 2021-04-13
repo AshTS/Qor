@@ -45,4 +45,7 @@ extern "C"
 fn kmain()
 {
     kprintln!("Kernel Start");
+    kprintln!("Current Time: {}µs", drivers::TIMER_DRIVER.get_current_time());
+    kprintln!("Setting Timer for 1_000_000µs");
+    drivers::TIMER_DRIVER.set_remaining_time(1_000_000);
 }

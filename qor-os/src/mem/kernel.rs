@@ -21,6 +21,9 @@ pub fn identity_map_kernel()
     super::mmu::idmap(addrs::stack_start(), addrs::stack_end(), super::EntryBits::ReadWrite);
     super::mmu::idmap(addrs::heap_start(), addrs::heap_end(), super::EntryBits::ReadWrite);
 
+    // Map the CLINT MMIO
+    super::mmu::idmap(0x200_0000, 0x200_b000, super::EntryBits::ReadWrite);
+
     // Map the UART MMIO
     super::mmu::idmap(0x1000_0000, 0x1000_0000, super::EntryBits::ReadWrite);
 

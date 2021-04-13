@@ -32,6 +32,7 @@ fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, status: usize, fra
         {
             // Hardware Timer Interrupt
             kprintln!("Timer Interrupt");
+            drivers::TIMER_DRIVER.set_remaining_time(1_000_000);
         },
         (8, false) =>
         {
