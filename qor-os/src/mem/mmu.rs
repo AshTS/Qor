@@ -60,7 +60,7 @@ pub enum MMUPageLevel
 }
 
 /// Map a virtual address to a physical address
-fn inner_map(root: &mut Table, virt_addr: usize, phys_addr: usize, settings: EntryBits, level: MMUPageLevel)
+pub fn inner_map(root: &mut Table, virt_addr: usize, phys_addr: usize, settings: EntryBits, level: MMUPageLevel)
 {
     kdebugln!(MemoryMapping, "Mapping 0x{:x} -> 0x{:x} settings: {:?}, level: {:?}", virt_addr, phys_addr, settings, level);
 
@@ -111,7 +111,7 @@ fn inner_map(root: &mut Table, virt_addr: usize, phys_addr: usize, settings: Ent
 }
 
 /// Unmap a virtual address
-fn inner_unmap(root: &mut Table, virt_addr: usize, level: MMUPageLevel)
+pub fn inner_unmap(root: &mut Table, virt_addr: usize, level: MMUPageLevel)
 {
     kdebugln!(MemoryMapping, "Unmapping virtual address 0x{:x} with level {:?}", virt_addr, level);
 
@@ -182,7 +182,7 @@ unsafe fn unmap_table(root: *mut Table)
 
 /// Map a virtual address to a physical address (So user space programs can
 /// share a pointer to a kernel space program)
-fn inner_virt_to_phys(root: &Table, virt_addr: usize) -> Option<usize>
+pub fn inner_virt_to_phys(root: &Table, virt_addr: usize) -> Option<usize>
 {
     let vpn = [
         (virt_addr >> 12) & ((1 << 9) - 1),
@@ -226,7 +226,7 @@ fn inner_virt_to_phys(root: &Table, virt_addr: usize) -> Option<usize>
 }
 
 /// Allocate some number of pages in virtual memory
-fn inner_kvalloc(root: &mut Table, virt_addr: usize, num_pages: usize, settings: EntryBits)
+pub fn inner_kvalloc(root: &mut Table, virt_addr: usize, num_pages: usize, settings: EntryBits)
 {
     kdebugln!(PageMapping, "Allocating {} pages of virtual memory at 0x{:x} with settings {:?}", num_pages, virt_addr, settings);
 
@@ -248,7 +248,7 @@ fn inner_kvalloc(root: &mut Table, virt_addr: usize, num_pages: usize, settings:
 }
 
 /// Free some number of virtual memory pages
-fn inner_kvfree(root: &mut Table, virt_addr: usize, num_pages: usize)
+pub fn inner_kvfree(root: &mut Table, virt_addr: usize, num_pages: usize)
 {
     kdebugln!(PageMapping, "Freeing {} pages of virtual memory at 0x{:x}", num_pages, virt_addr);
 
@@ -276,7 +276,7 @@ fn inner_kvfree(root: &mut Table, virt_addr: usize, num_pages: usize)
 }
 
 /// Identity map some range of addresses
-fn inner_idmap(root: &mut Table, addr_start: usize, addr_end: usize, settings: EntryBits)
+pub fn inner_idmap(root: &mut Table, addr_start: usize, addr_end: usize, settings: EntryBits)
 {
     // Align to page boundaries
     let mut index = addr_start & !(PAGE_SIZE - 1);
