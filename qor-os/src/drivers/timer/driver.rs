@@ -1,5 +1,3 @@
-use core::f64;
-
 /// Driver for the hardware timer
 pub struct TimerDriver
 {
