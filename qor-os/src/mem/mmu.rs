@@ -59,17 +59,14 @@ pub enum MMUPageLevel
     Level1GiB = 2
 }
 
-// TODO: Make sure all of the uses of the settings in these functions are the
-// right number of bits
-
 /// Map a virtual address to a physical address
-fn inner_map(root: &mut Table, virt_addr: usize, phys_addr: usize, settings: usize, level: MMUPageLevel)
+fn inner_map(root: &mut Table, virt_addr: usize, phys_addr: usize, settings: EntryBits, level: MMUPageLevel)
 {
-    kdebugln!(MemoryMapping, "Mapping 0x{:x} -> 0x{:x} settings: 0b{:0b}, level: {:?}", virt_addr, phys_addr, settings, level);
+    kdebugln!(MemoryMapping, "Mapping 0x{:x} -> 0x{:x} settings: {:?}, level: {:?}", virt_addr, phys_addr, settings, level);
 
     let level = level as usize;
 
-    if settings & 0xe == 0
+    if settings as usize & 0xe == 0
     {
         panic!("Cannot map with none of RWX set (0x{:x} -> 0x{:x})", virt_addr, phys_addr);
     }
@@ -107,7 +104,7 @@ fn inner_map(root: &mut Table, virt_addr: usize, phys_addr: usize, settings: usi
     let entry = (ppn[2] << 28) as usize |
 		        	(ppn[1] << 19) as usize | 
 		        	(ppn[0] << 10) as usize | 
-		        	settings |                    
+		        	settings as usize |                    
 		        	EntryBits::Valid as usize;
 
     walking.set_data(entry as u64);
@@ -229,9 +226,9 @@ fn inner_virt_to_phys(root: &Table, virt_addr: usize) -> Option<usize>
 }
 
 /// Allocate some number of pages in virtual memory
-fn inner_kvalloc(root: &mut Table, virt_addr: usize, num_pages: usize, settings: usize)
+fn inner_kvalloc(root: &mut Table, virt_addr: usize, num_pages: usize, settings: EntryBits)
 {
-    kdebugln!(PageMapping, "Allocating {} pages of virtual memory at 0x{:x} with settings 0b{:b}", num_pages, virt_addr, settings);
+    kdebugln!(PageMapping, "Allocating {} pages of virtual memory at 0x{:x} with settings {:?}", num_pages, virt_addr, settings);
 
     // Allocate the space
     let ptr = kzalloc(num_pages);
@@ -279,7 +276,7 @@ fn inner_kvfree(root: &mut Table, virt_addr: usize, num_pages: usize)
 }
 
 /// Identity map some range of addresses
-fn inner_idmap(root: &mut Table, addr_start: usize, addr_end: usize, settings: usize)
+fn inner_idmap(root: &mut Table, addr_start: usize, addr_end: usize, settings: EntryBits)
 {
     // Align to page boundaries
     let mut index = addr_start & !(PAGE_SIZE - 1);
@@ -299,7 +296,7 @@ fn inner_idmap(root: &mut Table, addr_start: usize, addr_end: usize, settings: u
 // =============================================================================
 
 /// Map a virtual address to a physical address
-pub fn map(virt_addr: usize, phys_addr: usize, settings: usize, level: MMUPageLevel)
+pub fn map(virt_addr: usize, phys_addr: usize, settings: EntryBits, level: MMUPageLevel)
 {
     inner_map(global_page_table(), virt_addr, phys_addr, settings, level)
 }
@@ -318,7 +315,7 @@ pub fn virt_to_phys(virt_addr: usize) -> Option<usize>
 }
 
 /// Allocate some number of pages in virtual memory
-pub fn kvalloc(virt_addr: usize, num_pages: usize, settings: usize)
+pub fn kvalloc(virt_addr: usize, num_pages: usize, settings: EntryBits)
 {
     inner_kvalloc(global_page_table(), virt_addr, num_pages, settings)
 }
@@ -330,7 +327,7 @@ pub fn kvfree(virt_addr: usize, num_pages: usize)
 }
 
 /// Identity map some range of addresses
-pub fn idmap(addr_start: usize, addr_end: usize, settings: usize)
+pub fn idmap(addr_start: usize, addr_end: usize, settings: EntryBits)
 {
     inner_idmap(global_page_table(), addr_start, addr_end, settings)
 }

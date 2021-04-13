@@ -14,15 +14,15 @@ pub fn identity_map_kernel()
     kdebugln!(KernelVirtMapping, "STACK:   0x{:x} - 0x{:x}", addrs::stack_start(), addrs::stack_end());
     kdebugln!(KernelVirtMapping, "HEAP:    0x{:x} - 0x{:x}", addrs::heap_start(), addrs::heap_end());
 
-    super::mmu::idmap(addrs::text_start(), addrs::text_end(), super::EntryBits::ReadExecute as usize);
-    super::mmu::idmap(addrs::rodata_start(), addrs::rodata_end(), super::EntryBits::ReadExecute as usize);
-    super::mmu::idmap(addrs::data_start(), addrs::data_end(), super::EntryBits::ReadWrite as usize);
-    super::mmu::idmap(addrs::bss_start(), addrs::bss_end(), super::EntryBits::ReadWrite as usize);
-    super::mmu::idmap(addrs::stack_start(), addrs::stack_end(), super::EntryBits::ReadWrite as usize);
-    super::mmu::idmap(addrs::heap_start(), addrs::heap_end(), super::EntryBits::ReadWrite as usize);
+    super::mmu::idmap(addrs::text_start(), addrs::text_end(), super::EntryBits::ReadExecute);
+    super::mmu::idmap(addrs::rodata_start(), addrs::rodata_end(), super::EntryBits::ReadExecute);
+    super::mmu::idmap(addrs::data_start(), addrs::data_end(), super::EntryBits::ReadWrite);
+    super::mmu::idmap(addrs::bss_start(), addrs::bss_end(), super::EntryBits::ReadWrite);
+    super::mmu::idmap(addrs::stack_start(), addrs::stack_end(), super::EntryBits::ReadWrite);
+    super::mmu::idmap(addrs::heap_start(), addrs::heap_end(), super::EntryBits::ReadWrite);
 
     // Map the UART MMIO
-    super::mmu::idmap(0x1000_0000, 0x1000_0000, super::EntryBits::ReadWrite as usize);
+    super::mmu::idmap(0x1000_0000, 0x1000_0000, super::EntryBits::ReadWrite);
 
     kprintln!("Kernel Mapped");
 }

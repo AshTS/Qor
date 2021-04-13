@@ -3,6 +3,7 @@ use core::u64;
 use super::pages::PAGE_SIZE;
 
 #[repr(u64)]
+#[derive(Debug, Clone, Copy)]
 /// bit masks for the various bits within the entry structure
 pub enum EntryBits
 {
@@ -13,7 +14,6 @@ pub enum EntryBits
     Global = 0b1 << 5,
     Accessed = 0b1 << 6,
     Dirty = 0b1 << 7,
-
     ReadWrite = 0b110 | (1 << 6) | (1 << 7),
     ReadExecute = 0b1010  | (1 << 6),
     ReadWriteExecute = 0b1110  | (1 << 6) | (1 << 7)
