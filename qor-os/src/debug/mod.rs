@@ -19,7 +19,7 @@ static ALLOCATION: AtomicBool = AtomicBool::new(false);
 static MEMORY_MAPPING: AtomicBool = AtomicBool::new(false);
 static PAGE_MAPPING: AtomicBool = AtomicBool::new(false);
 static KERNEL_MAPPING: AtomicBool = AtomicBool::new(false);
-static INTERRUPTS: AtomicBool = AtomicBool::new(true);
+static INTERRUPTS: AtomicBool = AtomicBool::new(false);
 
 /// Check if a debug mode is enabled
 pub fn check_debug(mode: DebugMode) -> bool
