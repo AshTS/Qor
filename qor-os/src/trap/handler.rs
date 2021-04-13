@@ -14,7 +14,7 @@ fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, _f
 
     let mut return_pc = epc;
 
-    kprint!("CPU {}, Inst: 0x{:08x}:     ", hart, epc);
+    kdebug!(Interrupts, "CPU {}, Inst: 0x{:08x}:     ", hart, epc);
 
     match (cause_num, is_async)
     {
@@ -31,25 +31,30 @@ fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, _f
         (7, true) =>
         {
             // Hardware Timer Interrupt
-            kprintln!("Timer Interrupt");
+            kdebugln!(Interrupts, "Timer Interrupt");
             drivers::TIMER_DRIVER.set_remaining_time(1_000_000);
         },
         (8, false) =>
         {
             // ECALL from Supervisor Mode
-            kprintln!("Supervisor Mode ECALL");
+            kdebugln!(Interrupts, "Supervisor Mode ECALL");
             return_pc += 4;
         },
         (11, false) =>
         {
             // ECALL from Machine Mode
-            kprintln!("Machine Mode ECALL");
+            kdebugln!(Interrupts, "Machine Mode ECALL");
             return_pc += 4;
         },
         (11, true) =>
         {
             // Interrupt from the PIC
-            kprintln!("Machine External Interrupt");
+            let interrupt = drivers::PLIC_DRIVER.next().unwrap();
+            kdebugln!(Interrupts, "Machine External Interrupt {}", interrupt);
+
+            super::external::external_interrupt_handler(interrupt);
+
+            drivers::PLIC_DRIVER.complete(interrupt);
         },
         (12, false) =>
         {

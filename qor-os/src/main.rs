@@ -45,7 +45,10 @@ extern "C"
 fn kmain()
 {
     kprintln!("Kernel Start");
-    kprintln!("Current Time: {}µs", drivers::TIMER_DRIVER.get_current_time());
-    kprintln!("Setting Timer for 1_000_000µs");
-    drivers::TIMER_DRIVER.set_remaining_time(1_000_000);
+    kprintln!("Initializing PLIC");
+
+    drivers::PLIC_DRIVER.set_threshold(0);
+
+    drivers::PLIC_DRIVER.enable_interrupt(10);
+    drivers::PLIC_DRIVER.set_priority(10, 1);
 }
