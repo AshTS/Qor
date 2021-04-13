@@ -1,6 +1,6 @@
 #![no_std]
 #![no_main]
-#![feature(panic_info_message, asm, global_asm, llvm_asm)]
+#![feature(panic_info_message, global_asm, llvm_asm, asm)]
 #![allow(dead_code)]
 
 mod asm;
@@ -14,7 +14,7 @@ mod panic;
 /// Kernel Entry Point
 #[no_mangle]
 extern "C"
-fn kinit() -> usize
+fn kinit()
 {
     // Initialize the UART driver so kprint will work and we can start logging
     drivers::init_uart_driver();
@@ -28,9 +28,10 @@ fn kinit() -> usize
     // Identity Map the Kernel
     mem::kernel::identity_map_kernel();
 
-    kprintln!("0x{:x} -> 0x{:x}", 0x800035e6 as usize, mem::mmu::virt_to_phys(0x800035e6).unwrap());
+    // Initialize the MMU
+    mem::kernel::init_mmu();
 
-    mem::kernel::init_mmu()
+    // After Returning, we will switch into supervisor mode and go to `kmain`
 }
 
 /// Kernel Supervisory Entry Point

@@ -43,8 +43,6 @@ pub fn init_global_page_table()
 
     let ptr = table as *mut Table;
 
-    kprintln!("GPT: 0x{:x}", ptr as usize);
-
     GLOBAL_PAGE_TABLE_POINTER.store(ptr, core::sync::atomic::Ordering::SeqCst);
     PAGE_TABLE_INITIALIZED.store(true, core::sync::atomic::Ordering::SeqCst);
 

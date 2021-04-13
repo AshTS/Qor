@@ -28,12 +28,10 @@ pub fn identity_map_kernel()
 }
 
 /// Set the MMU to point to the GPT
-pub fn init_mmu() -> usize
+pub fn init_mmu()
 {
-    kprintln!("0x{:x}", super::mmu::global_page_table() as *mut Table as usize);
-
     let root_ppn = super::mmu::global_page_table() as *mut Table as usize >> 12;
     let satp_val = 8 << 60 | root_ppn;
     
-    satp_val
+    riscv::register::satp::write(satp_val);
 }

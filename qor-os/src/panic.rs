@@ -27,6 +27,6 @@ fn abort() -> !
 {
     loop
     {
-        unsafe{asm!("wfi")}
+        unsafe { riscv::asm::wfi() };
     }
 }
