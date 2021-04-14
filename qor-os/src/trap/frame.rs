@@ -4,6 +4,7 @@ static STACK_SIZE: usize = 1;
 
 #[repr(C)]
 /// Structure to store the information required for the trap frames
+#[derive(Debug)]
 pub struct TrapFrame
 {
     pub regs: [usize; 32],

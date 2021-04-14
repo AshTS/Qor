@@ -1,3 +1,5 @@
+use core::{u16, usize};
+
 use crate::*;
 
 // Static PID counter
@@ -5,8 +7,8 @@ static PID: core::sync::atomic::AtomicU16 = core::sync::atomic::AtomicU16::new(0
 
 // Defaults for a process
 static DEFAULT_PROCESS_STACK: usize = 4;
-static DEFAULT_STACK_ADDR: usize = 0x1_8000_0000;
-static DEFAULT_ENTRY_POINT: usize = 0x1_0000_0000;
+static DEFAULT_STACK_ADDR: usize = 0x2000_0000;
+static DEFAULT_ENTRY_POINT: usize = 0x4000_0000;
 
 /// States a process can be in
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -20,6 +22,7 @@ pub enum ProcessState
 
 #[repr(C)]
 /// Holds all data required by a process
+#[derive(Debug)]
 pub struct ProcessData
 {
     frame: trap::TrapFrame,
@@ -51,7 +54,7 @@ impl ProcessData
             frame: trap::TrapFrame::zeroed(),
             stack: mem::kpalloc(stack_pages),
             pid: PID.fetch_add(1, core::sync::atomic::Ordering::SeqCst),
-            pc: entry_point,
+            pc: entry_point + func_addr % mem::pages::PAGE_SIZE,
             root: mem::kpzalloc(1) as *mut mem::pagetable::Table,
             state: ProcessState::Waiting,
 
@@ -74,7 +77,7 @@ impl ProcessData
         }
 
         // Map the program space
-        for i in 0..2
+        for i in 0..16
         {
             let addr = i * mem::pages::PAGE_SIZE;
 
@@ -82,8 +85,50 @@ impl ProcessData
                             mem::EntryBits::UserReadExecute, mem::mmu::MMUPageLevel::Level4KiB);
         }
 
-        unimplemented!()
+        result
     }
+
+    /// Get the pid of the given process
+    pub fn get_pid(&self) -> u16
+    {
+        self.pid
+    }
+
+    /// Is the process running
+    pub fn is_running(&self) -> bool
+    {
+        self.state == ProcessState::Running
+    }
+
+    /// Get the frame pointer
+    pub fn get_frame_pointer(&self) -> usize
+    {
+        &self.frame as *const trap::TrapFrame as usize
+    }
+
+    /// Get the program counter
+    pub fn get_program_counter(&self) -> usize
+    {
+        self.pc
+    }
+
+    /// Get the satp value
+    pub fn get_satp(&self) -> usize
+    {
+        (self.root as usize >> 12) | (8usize << 60) | ((self.pid as usize) << 44)
+    }
+
+    /// Start the process
+    pub fn start(&mut self)
+    {
+        self.state = ProcessState::Running;
+    }
+
+    /// Update the program counter
+    pub fn update_program_counter(&mut self, pc: usize)
+    {
+        self.pc = pc;
+    } 
 }
 
 impl core::ops::Drop for ProcessData

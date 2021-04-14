@@ -92,5 +92,3 @@ _start_wfi_loop:
     wfi
     j _start_wfi_loop
 
-
-

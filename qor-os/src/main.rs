@@ -1,6 +1,6 @@
 #![no_std]
 #![no_main]
-#![feature(panic_info_message, global_asm, llvm_asm, asm, alloc_prelude, alloc_error_handler)]
+#![feature(panic_info_message, global_asm, llvm_asm, asm, alloc_prelude, alloc_error_handler, map_first_last)]
 #![allow(dead_code)]
 
 mod asm;
@@ -46,6 +46,42 @@ fn kinit()
     // After Returning, we will switch into supervisor mode and go to `kmain`
 }
 
+extern "C"
+{
+    fn make_syscall(a: usize) -> usize;
+}
+
+fn init_process()
+{
+    let mut i = 0;
+    loop 
+    {
+        i += 1;
+
+        if i > 7_000_000
+        {
+            unsafe { make_syscall(0) };
+            i = 0;
+        }
+    }
+}
+
+fn init_process2()
+{
+    
+    let mut i = 0;
+    loop 
+    {
+        i += 1;
+
+        if i > 7_000_000
+        {
+            unsafe { make_syscall(1) };
+            i = 0;
+        }
+    }
+}
+
 /// Kernel Supervisory Entry Point
 #[no_mangle]
 extern "C"
@@ -57,4 +93,11 @@ fn kmain()
     drivers::PLIC_DRIVER.set_threshold(drivers::plic::PLICPriority::Priority0);
     drivers::PLIC_DRIVER.enable_interrupt(drivers::plic::PLICInterrupt::Interrupt10);
     drivers::PLIC_DRIVER.set_priority(drivers::plic::PLICInterrupt::Interrupt10, drivers::plic::PLICPriority::Priority1);
+
+    process::init_process_manager();
+
+    kprintln!("PID: {}", process::get_process_manager().add_process(init_process));
+    kprintln!("PID: {}", process::get_process_manager().add_process(init_process2));
+
+    drivers::TIMER_DRIVER.set_remaining_time(1_000_000);
 }

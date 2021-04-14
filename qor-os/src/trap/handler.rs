@@ -1,6 +1,13 @@
+use process::schedule_next;
+
 use crate::*;
 
 use super::frame::TrapFrame;
+
+extern "C"
+{
+	fn switch_to_user(frame: usize, mepc: usize, satp: usize) -> !;
+}
 
 #[no_mangle]
 extern "C"
@@ -16,6 +23,16 @@ fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, fr
 
     kdebug!(Interrupts, "CPU {}, Inst: 0x{:08x}:     ", hart, epc);
 
+    // Update the current process program counter if we are interrupting a user space process
+    if let Some(current) = process::get_process_manager().get_mut_current()
+    {
+        if current.get_frame_pointer() == frame as *mut TrapFrame as usize
+        {
+            current.update_program_counter(epc);
+        }
+    }
+
+
     match (cause_num, is_async)
     {
         (2, false) =>
@@ -30,9 +47,13 @@ fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, fr
         },
         (7, true) =>
         {
+            // FIXME: Clean this up and move it to a seperate function
             // Hardware Timer Interrupt
             kdebugln!(Interrupts, "Timer Interrupt");
-            drivers::TIMER_DRIVER.set_remaining_time(1_000_000);
+            drivers::TIMER_DRIVER.set_remaining_time(1_000);
+            let result = schedule_next(process::get_process_manager()).unwrap();
+
+            unsafe { switch_to_user(result.frame_addr, result.mepc, result.satp) };
         },
         (8, false) =>
         {
