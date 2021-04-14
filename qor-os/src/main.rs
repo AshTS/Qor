@@ -1,6 +1,6 @@
 #![no_std]
 #![no_main]
-#![feature(panic_info_message, global_asm, llvm_asm, asm)]
+#![feature(panic_info_message, global_asm, llvm_asm, asm, alloc_prelude, alloc_error_handler)]
 #![allow(dead_code)]
 
 mod asm;
@@ -12,6 +12,9 @@ mod mmio;
 mod panic;
 mod trap;
 
+extern crate alloc;
+use alloc::prelude::v1::*;
+
 /// Kernel Entry Point
 #[no_mangle]
 extern "C"
@@ -20,7 +23,7 @@ fn kinit()
     // Initialize the UART driver so kprint will work and we can start logging
     drivers::init_uart_driver();
 
-    // Initialize the heap
+    // Initialize the page heap
     mem::heap::initialize_heap();
 
     // Initialize the Global Page Table
@@ -36,6 +39,9 @@ fn kinit()
     // Initialize the MMU
     mem::kernel::init_mmu();
 
+    // Initialize the kernel byte heap with 64 4KB pages (256 KB)
+    mem::alloc::init_kernel_heap(64);
+
     // After Returning, we will switch into supervisor mode and go to `kmain`
 }
 
@@ -50,6 +56,4 @@ fn kmain()
     drivers::PLIC_DRIVER.set_threshold(drivers::plic::PLICPriority::Priority0);
     drivers::PLIC_DRIVER.enable_interrupt(drivers::plic::PLICInterrupt::Interrupt10);
     drivers::PLIC_DRIVER.set_priority(drivers::plic::PLICInterrupt::Interrupt10, drivers::plic::PLICPriority::Priority1);
-
-    kprintln!("C");
 }

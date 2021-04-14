@@ -7,6 +7,7 @@ use core::sync::atomic::AtomicBool;
 pub enum DebugMode
 {
     Allocation,
+    MemoryAllocation,
     MemoryMapping,
     PageMapping,
     KernelVirtMapping,
@@ -20,6 +21,7 @@ static MEMORY_MAPPING: AtomicBool = AtomicBool::new(false);
 static PAGE_MAPPING: AtomicBool = AtomicBool::new(false);
 static KERNEL_MAPPING: AtomicBool = AtomicBool::new(false);
 static INTERRUPTS: AtomicBool = AtomicBool::new(false);
+static MEMORY_ALLOCATION: AtomicBool = AtomicBool::new(true);
 
 /// Check if a debug mode is enabled
 pub fn check_debug(mode: DebugMode) -> bool
@@ -36,6 +38,7 @@ pub fn check_debug(mode: DebugMode) -> bool
         DebugMode::PageMapping =>  PAGE_MAPPING.load(core::sync::atomic::Ordering::Relaxed),
         DebugMode::KernelVirtMapping =>  KERNEL_MAPPING.load(core::sync::atomic::Ordering::Relaxed),
         DebugMode::Interrupts =>  INTERRUPTS.load(core::sync::atomic::Ordering::Relaxed),
+        DebugMode::MemoryAllocation =>  MEMORY_ALLOCATION.load(core::sync::atomic::Ordering::Relaxed),
         DebugMode::Other =>  true,
     }
 }

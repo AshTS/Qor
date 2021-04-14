@@ -1,4 +1,5 @@
 pub mod addrs;
+pub mod alloc;
 pub mod heap;
 pub mod kernel;
 pub mod mmu;
