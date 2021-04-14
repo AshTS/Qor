@@ -33,6 +33,8 @@ fn kinit()
     let trap_frame_location = mem::kpalloc(1);
     riscv::register::mscratch::write(trap_frame_location as usize);
 
+    unsafe { *(trap_frame_location as *mut trap::TrapFrame) = trap::TrapFrame::zeroed() };
+
     // Identity Map the Kernel
     mem::kernel::identity_map_kernel();
 

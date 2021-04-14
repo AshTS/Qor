@@ -49,7 +49,7 @@ asm_trap_vector:
     csrr a3, mhartid
     csrr a4, mstatus
     mv a5, t5
-    addi sp, a5, 2047
+    ld sp, 520(a5)
 
     call m_trap
 
