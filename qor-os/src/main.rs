@@ -10,6 +10,7 @@ mod klib;
 mod mem;
 mod mmio;
 mod panic;
+mod process;
 mod trap;
 
 extern crate alloc;

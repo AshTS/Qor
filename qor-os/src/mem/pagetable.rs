@@ -11,12 +11,16 @@ pub enum EntryBits
     Read = 0b1 << 1,
     Write = 0b1 << 2,
     Execute = 0b1 << 3,
+    User = 0b1 << 4,
     Global = 0b1 << 5,
     Accessed = 0b1 << 6,
     Dirty = 0b1 << 7,
     ReadWrite = 0b110 | (1 << 6) | (1 << 7),
     ReadExecute = 0b1010  | (1 << 6),
-    ReadWriteExecute = 0b1110  | (1 << 6) | (1 << 7)
+    ReadWriteExecute = 0b1110  | (1 << 6) | (1 << 7),
+    UserReadWrite = 0b110 | (1 << 6) | (1 << 7) | (1 << 4),
+    UserReadExecute = 0b1010  | (1 << 6) | (1 << 4),
+    UserReadWriteExecute = 0b1110  | (1 << 6) | (1 << 7) | (1 << 4),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
