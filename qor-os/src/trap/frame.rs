@@ -1,3 +1,5 @@
+use crate::*;
+
 static STACK_SIZE: usize = 1;
 
 #[repr(C)]
@@ -25,4 +27,14 @@ impl TrapFrame
             hartid: 0
         }
     }
+}
+
+/// Initialize the kernel trap frame
+pub fn init_trap_frame()
+{
+    let trap_frame_location = mem::kpalloc(1);
+    riscv::register::mscratch::write(trap_frame_location as usize);
+
+    // Safety: This was space allocated by the kernel for this purpose
+    unsafe { *(trap_frame_location as *mut trap::TrapFrame) = trap::TrapFrame::zeroed() };
 }
