@@ -11,6 +11,7 @@ mod mem;
 mod mmio;
 mod panic;
 mod process;
+mod syscall;
 mod trap;
 
 extern crate alloc;

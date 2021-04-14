@@ -4,7 +4,7 @@ use super::frame::TrapFrame;
 
 #[no_mangle]
 extern "C"
-fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, _frame: &mut TrapFrame) -> usize
+fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, frame: &mut TrapFrame) -> usize
 {
     // The trap is async if bit 63 of the cause registers is set
     let is_async = cause >> 63 & 1 == 1;
@@ -36,9 +36,9 @@ fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, _f
         },
         (8, false) =>
         {
-            // ECALL from Supervisor Mode
-            kdebugln!(Interrupts, "Supervisor Mode ECALL");
-            return_pc += 4;
+            // ECALL from User Mode
+            kdebugln!(Interrupts, "User Mode ECALL");
+            return_pc = syscall::syscall_handle(return_pc, frame);
         },
         (11, false) =>
         {
