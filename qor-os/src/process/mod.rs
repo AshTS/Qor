@@ -8,7 +8,7 @@ use self::manager::ProcessManager;
 
 static PROCESS_MANAGER: core::sync::atomic::AtomicPtr<ProcessManager> = core::sync::atomic::AtomicPtr::new(0 as *mut ProcessManager);
 
-pub use scheduler::schedule_next;
+pub use scheduler::process_switch;
 
 /// Initialize the process manager
 pub fn init_process_manager()

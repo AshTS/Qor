@@ -1,5 +1,12 @@
 use crate::process::manager::ProcessManager;
 
+// Bring in assembly function
+extern "C"
+{
+    /// Switch over into user mode
+	fn switch_to_user(frame: usize, mepc: usize, satp: usize) -> !;
+}
+
 /// Schedule result structure
 #[derive(Debug, Clone, Copy)]
 pub struct ScheduleResult
@@ -34,4 +41,12 @@ pub fn schedule_next(process_list: &mut ProcessManager) -> Result<ScheduleResult
             panic!("No running processes!");
         }
     }
+}
+
+/// Trigger a process switch
+pub fn process_switch() -> !
+{
+    let result = schedule_next(super::get_process_manager()).unwrap();
+
+    unsafe { switch_to_user(result.frame_addr, result.mepc, result.satp) };
 }

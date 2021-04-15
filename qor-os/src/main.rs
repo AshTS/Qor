@@ -99,5 +99,5 @@ fn kmain()
     kprintln!("PID: {}", process::get_process_manager().add_process(init_process));
     kprintln!("PID: {}", process::get_process_manager().add_process(init_process2));
 
-    drivers::TIMER_DRIVER.set_remaining_time(1_000_000);
+    drivers::TIMER_DRIVER.set_remaining_time(1_000);
 }
