@@ -46,7 +46,7 @@ pub fn schedule_next(process_list: &mut ProcessManager) -> Result<ScheduleResult
 /// Trigger a process switch
 pub fn process_switch() -> !
 {
-    let result = schedule_next(super::get_process_manager()).unwrap();
+    let result = schedule_next(super::get_process_manager().unwrap()).unwrap();
 
     unsafe { switch_to_user(result.frame_addr, result.mepc, result.satp) };
 }

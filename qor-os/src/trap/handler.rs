@@ -17,11 +17,14 @@ fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, fr
     kdebug!(Interrupts, "CPU {}, Inst: 0x{:08x}:     ", hart, epc);
 
     // Update the current process program counter if we are interrupting a user space process
-    if let Some(current) = process::get_process_manager().get_mut_current()
+    if let Some(process_manager) = process::get_process_manager()
     {
-        if current.get_frame_pointer() == frame as *mut TrapFrame as usize
+        if let Some(current) = process_manager.get_mut_current()
         {
-            current.update_program_counter(epc);
+            if current.get_frame_pointer() == frame as *mut TrapFrame as usize
+            {
+                current.update_program_counter(epc);
+            }
         }
     }
 

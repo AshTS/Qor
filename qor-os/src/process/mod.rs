@@ -23,8 +23,13 @@ pub fn init_process_manager()
 }
 
 /// Get the process manager
-pub fn get_process_manager() -> &'static mut ProcessManager
+pub fn get_process_manager() -> Option<&'static mut ProcessManager>
 {
+    if PROCESS_MANAGER.load(core::sync::atomic::Ordering::SeqCst).is_null()
+    {
+        return None;
+    }
+
     // Safety: The only way to instantiate this is by calling `init_process_manager`, and this will fail if it hasn't been initialized 
-    unsafe { PROCESS_MANAGER.load(core::sync::atomic::Ordering::SeqCst).as_mut().unwrap() }
+    unsafe { PROCESS_MANAGER.load(core::sync::atomic::Ordering::SeqCst).as_mut() }
 }
