@@ -17,7 +17,7 @@ macro_rules! kdebug
     });
     
     ($fmt:expr) => ({
-        crate::kprint!(Other, $fmt) 
+        crate::kdebug!(Other, $fmt) 
     });
 }
 
