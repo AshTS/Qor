@@ -169,7 +169,7 @@ impl AllocatorHead
 
         head_pointer.size -= final_size as u32;
 
-        kdebugln!("Found memory at 0x{:x}", ptr);
+        kdebugln!(MemoryAllocation, "Found memory at 0x{:x}", ptr);
 
         let next = self.add_node(Node::new(ptr as *mut u8, head_pointer.next, final_size as u32, 3));
         head_pointer.next = core::ptr::NonNull::new(next as *mut Node);
