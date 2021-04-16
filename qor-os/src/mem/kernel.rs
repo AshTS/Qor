@@ -31,6 +31,9 @@ pub fn identity_map_kernel()
     // Map the UART MMIO
     super::mmu::idmap(0x1000_0000, 0x1000_0000, super::EntryBits::ReadWrite);
 
+    // Map the VirtIO MMIO
+    super::mmu::idmap(0x1000_1000, 0x1000_8000, super::EntryBits::ReadWrite);
+
     kprintln!("Kernel Mapped");
 }
 

@@ -57,4 +57,6 @@ fn kmain()
     drivers::PLIC_DRIVER.set_threshold(drivers::plic::PLICPriority::Priority0);
     drivers::PLIC_DRIVER.enable_interrupt(drivers::plic::PLICInterrupt::Interrupt10);
     drivers::PLIC_DRIVER.set_priority(drivers::plic::PLICInterrupt::Interrupt10, drivers::plic::PLICPriority::Priority1);
+
+    drivers::virtio::probe_virt_io();
 }

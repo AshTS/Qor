@@ -1,6 +1,7 @@
 pub mod plic;
 mod timer;
 mod uart;
+pub mod virtio;
 
 use crate::kprintln;
 
