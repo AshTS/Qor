@@ -233,7 +233,7 @@ pub fn block_op(dev: usize, buffer: *mut u8, size: u32, offset: u64, write: bool
         {
             // Check to see if we are trying to write to a read only device.
             if true == bdev.read_only && true == write {
-                kprintln!("Trying to write to read/only!");
+                kdebugln!(BlockDevice, "Trying to write to read/only!");
                 return;
             }
             let sector = offset / 512;
@@ -319,12 +319,12 @@ pub fn handle_interrupt(idx: usize)
     {
         if let Some(bdev) = BLOCK_DEVICES[idx].as_mut()
         {
-            kprintln!("Block Device Interrupt {}", idx);
+            kdebugln!(BlockDevice, "Block Device Interrupt {}", idx);
             pending(bdev);
         }
         else
         {
-            kprintln!("Invalid block device for interrupt {}", idx + 1);
+            kdebugln!(BlockDevice, "Invalid block device for interrupt {}", idx + 1);
         }
     }
 }

@@ -60,6 +60,9 @@ fn kmain()
 
     // Initialize the virtio drivers (including the block device driver)
     drivers::virtio::probe_virt_io();
+
+    // Initialize the virtio interrtupts
+    drivers::init_virtio_interrupts();
     
 
     kprintln!("Testing block driver.");

@@ -250,3 +250,29 @@ pub fn probe_virt_io()
         base -= VIRT_IO_STEP;
     }
 }
+
+pub fn handle_interrupt(interrupt: u32)
+{
+	let idx = interrupt as usize - 1;
+	unsafe
+    {
+		if let Some(vd) = &VIRTIO_DEVICES[idx]
+        {
+			match vd.devtype
+            {
+				DeviceTypes::Block =>
+                {
+					drivers::block::handle_interrupt(idx);
+				},
+				_ =>
+                {
+					kprintln!("Invalid device generated interrupt!");
+				},
+			}
+        }
+		else
+        {
+			kprintln!("Spurious interrupt {}", interrupt);
+		}
+	}
+}

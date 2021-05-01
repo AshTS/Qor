@@ -22,8 +22,8 @@ static ALLOCATION: AtomicBool = AtomicBool::new(false);
 static MEMORY_MAPPING: AtomicBool = AtomicBool::new(false);
 static PAGE_MAPPING: AtomicBool = AtomicBool::new(false);
 static KERNEL_MAPPING: AtomicBool = AtomicBool::new(false);
-static INTERRUPTS: AtomicBool = AtomicBool::new(true);
-static MEMORY_ALLOCATION: AtomicBool = AtomicBool::new(true);
+static INTERRUPTS: AtomicBool = AtomicBool::new(false);
+static MEMORY_ALLOCATION: AtomicBool = AtomicBool::new(false);
 static VIRTIO: AtomicBool = AtomicBool::new(true);
 static BLOCK_DEVICE: AtomicBool = AtomicBool::new(true);
 

@@ -37,8 +37,34 @@ pub fn init_plic_driver()
 {
     PLIC_DRIVER.set_threshold(plic::PLICPriority::Priority0);
     PLIC_DRIVER.enable_interrupt(plic::PLICInterrupt::Interrupt10);
+
+    PLIC_DRIVER.enable_interrupt(plic::PLICInterrupt::Interrupt10);
+
     PLIC_DRIVER.set_priority(plic::PLICInterrupt::Interrupt10, plic::PLICPriority::Priority1);
 
     kprintln!("Initializing PLIC");
+}
 
+/// Initialize the VirtIO Interrupts (Required the PLIC driver have been started)
+pub fn init_virtio_interrupts()
+{
+    PLIC_DRIVER.enable_interrupt(plic::PLICInterrupt::Interrupt1);
+    PLIC_DRIVER.enable_interrupt(plic::PLICInterrupt::Interrupt2);
+    PLIC_DRIVER.enable_interrupt(plic::PLICInterrupt::Interrupt3);
+    PLIC_DRIVER.enable_interrupt(plic::PLICInterrupt::Interrupt4);
+    PLIC_DRIVER.enable_interrupt(plic::PLICInterrupt::Interrupt5);
+    PLIC_DRIVER.enable_interrupt(plic::PLICInterrupt::Interrupt6);
+    PLIC_DRIVER.enable_interrupt(plic::PLICInterrupt::Interrupt7);
+    PLIC_DRIVER.enable_interrupt(plic::PLICInterrupt::Interrupt8);
+
+    PLIC_DRIVER.set_priority(plic::PLICInterrupt::Interrupt1, plic::PLICPriority::Priority1);
+    PLIC_DRIVER.set_priority(plic::PLICInterrupt::Interrupt2, plic::PLICPriority::Priority1);
+    PLIC_DRIVER.set_priority(plic::PLICInterrupt::Interrupt3, plic::PLICPriority::Priority1);
+    PLIC_DRIVER.set_priority(plic::PLICInterrupt::Interrupt4, plic::PLICPriority::Priority1);
+    PLIC_DRIVER.set_priority(plic::PLICInterrupt::Interrupt5, plic::PLICPriority::Priority1);
+    PLIC_DRIVER.set_priority(plic::PLICInterrupt::Interrupt6, plic::PLICPriority::Priority1);
+    PLIC_DRIVER.set_priority(plic::PLICInterrupt::Interrupt7, plic::PLICPriority::Priority1);
+    PLIC_DRIVER.set_priority(plic::PLICInterrupt::Interrupt8, plic::PLICPriority::Priority1);
+
+    kprintln!("Initializing VirtIO Interrupts");
 }
