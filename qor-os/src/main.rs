@@ -14,8 +14,7 @@ mod process;
 mod syscall;
 mod trap;
 
-mod virtio;
-mod block;
+
 
 extern crate alloc;
 use alloc::prelude::v1::*;
@@ -60,15 +59,25 @@ fn kmain()
     drivers::init_plic_driver();
 
     // Initialize the virtio drivers (including the block device driver)
-    
     drivers::virtio::probe_virt_io();
-    drivers::init_virtio();
-
-    /*
+    
 
     kprintln!("Testing block driver.");
-    let buffer = unsafe { Box::leak(Box::new([0u8; 512])).as_mut_ptr()};
-    block::read(8, buffer, 512, 0);
+    let buffer = Box::leak(Box::new([0u8; 512])).as_mut_ptr();
+
+    // Get the primary block device
+    let driver = drivers::block::get_driver_by_index(0);
+
+    driver.read(buffer, 512, 0);
+
+    let mut i = 0;
+
+    loop
+    {
+        if i > 1_000_000 { break; }
+        i+= 1;
+    }
+
     for i in 0..48 {
     kprint!(" {:02x}", unsafe { buffer.add(i).read() });
     if 0 == ((i+1) % 24) {
@@ -77,32 +86,13 @@ fn kmain()
     }
     unsafe { Box::from_raw(buffer) };
 
-    kprintln!("Block driver done");*/
-
-  
-    let mut buffer = Box::new([42u8; 32]);
-    drivers::BLOCK_DEVICE_DRIVER.lock().as_mut().unwrap().read(buffer.as_mut_ptr(), 32, 0);
-    let ptr = Box::leak(buffer);
-
-    kprintln!("Done");
-
-    // Just wait for a bit
-    let mut i = 0;
-    loop {
-        if i > 100_000_000
-        {
-            break;
-        }
-
-        i += 1;
-    }
-
-    kprintln!("Ready to Read");
-
-    let buffer = unsafe { Box::from_raw(ptr) };
-
-    for i in 0..16
+    for i in 0..48
     {
-        kprintln!("{:02x}", buffer[i]);
+        unsafe { buffer.add(i).write(i as u8)} ;
     }
+
+    driver.write(buffer, 512, 0);
+
+    kprintln!("Block driver done");
+
 }
