@@ -1,6 +1,6 @@
 #![no_std]
 #![no_main]
-#![feature(panic_info_message, global_asm, llvm_asm, asm, alloc_prelude, alloc_error_handler, map_first_last)]
+#![feature(panic_info_message, global_asm, llvm_asm, asm, alloc_prelude, alloc_error_handler, map_first_last, option_insert, array_methods)]
 #![allow(dead_code)]
 
 mod asm;
@@ -13,6 +13,9 @@ mod panic;
 mod process;
 mod syscall;
 mod trap;
+
+mod virtio;
+mod block;
 
 extern crate alloc;
 use alloc::prelude::v1::*;
@@ -52,11 +55,54 @@ extern "C"
 fn kmain()
 {
     kprintln!("Kernel Start");
-    kprintln!("Initializing PLIC");
 
-    drivers::PLIC_DRIVER.set_threshold(drivers::plic::PLICPriority::Priority0);
-    drivers::PLIC_DRIVER.enable_interrupt(drivers::plic::PLICInterrupt::Interrupt10);
-    drivers::PLIC_DRIVER.set_priority(drivers::plic::PLICInterrupt::Interrupt10, drivers::plic::PLICPriority::Priority1);
+    // Initialize the platform level interrupt controller
+    drivers::init_plic_driver();
 
+    // Initialize the virtio drivers (including the block device driver)
+    
     drivers::virtio::probe_virt_io();
+    drivers::init_virtio();
+
+    /*
+
+    kprintln!("Testing block driver.");
+    let buffer = unsafe { Box::leak(Box::new([0u8; 512])).as_mut_ptr()};
+    block::read(8, buffer, 512, 0);
+    for i in 0..48 {
+    kprint!(" {:02x}", unsafe { buffer.add(i).read() });
+    if 0 == ((i+1) % 24) {
+        kprintln!();
+    }
+    }
+    unsafe { Box::from_raw(buffer) };
+
+    kprintln!("Block driver done");*/
+
+  
+    let mut buffer = Box::new([42u8; 32]);
+    drivers::BLOCK_DEVICE_DRIVER.lock().as_mut().unwrap().read(buffer.as_mut_ptr(), 32, 0);
+    let ptr = Box::leak(buffer);
+
+    kprintln!("Done");
+
+    // Just wait for a bit
+    let mut i = 0;
+    loop {
+        if i > 100_000_000
+        {
+            break;
+        }
+
+        i += 1;
+    }
+
+    kprintln!("Ready to Read");
+
+    let buffer = unsafe { Box::from_raw(ptr) };
+
+    for i in 0..16
+    {
+        kprintln!("{:02x}", buffer[i]);
+    }
 }

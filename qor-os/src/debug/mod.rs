@@ -13,6 +13,7 @@ pub enum DebugMode
     KernelVirtMapping,
     Interrupts,
     VirtIO,
+    BlockDevice,
     Other
 }
 
@@ -21,9 +22,10 @@ static ALLOCATION: AtomicBool = AtomicBool::new(false);
 static MEMORY_MAPPING: AtomicBool = AtomicBool::new(false);
 static PAGE_MAPPING: AtomicBool = AtomicBool::new(false);
 static KERNEL_MAPPING: AtomicBool = AtomicBool::new(false);
-static INTERRUPTS: AtomicBool = AtomicBool::new(false);
-static MEMORY_ALLOCATION: AtomicBool = AtomicBool::new(false);
+static INTERRUPTS: AtomicBool = AtomicBool::new(true);
+static MEMORY_ALLOCATION: AtomicBool = AtomicBool::new(true);
 static VIRTIO: AtomicBool = AtomicBool::new(true);
+static BLOCK_DEVICE: AtomicBool = AtomicBool::new(true);
 
 /// Check if a debug mode is enabled
 pub fn check_debug(mode: DebugMode) -> bool
@@ -42,6 +44,7 @@ pub fn check_debug(mode: DebugMode) -> bool
         DebugMode::Interrupts =>  INTERRUPTS.load(core::sync::atomic::Ordering::Relaxed),
         DebugMode::MemoryAllocation =>  MEMORY_ALLOCATION.load(core::sync::atomic::Ordering::Relaxed),
         DebugMode::VirtIO =>  VIRTIO.load(core::sync::atomic::Ordering::Relaxed),
+        DebugMode::BlockDevice =>  BLOCK_DEVICE.load(core::sync::atomic::Ordering::Relaxed),
         DebugMode::Other =>  true,
     }
 }

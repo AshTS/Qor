@@ -1,5 +1,5 @@
 // Page size
-pub static PAGE_SIZE: usize = 4096;
+pub const PAGE_SIZE: usize = 4096;
 
 #[repr(C)]
 /// Structure to store page data

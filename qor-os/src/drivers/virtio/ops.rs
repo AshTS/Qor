@@ -2,6 +2,7 @@ use crate::mmio;
 
 /// VirtIO MMIO Offsets
 #[repr(usize)]
+#[derive(Debug, Clone, Copy)]
 pub enum VirtIOOffsets
 {
     MagicNumber = 0x000,

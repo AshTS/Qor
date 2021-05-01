@@ -1,6 +1,6 @@
 mod driver;
 mod ops;
 
-pub use driver::VirtIODriver;
-pub use driver::VirtIODeviceID;
-pub use driver::probe_virt_io;
+pub use driver::*;
+
+pub use ops::VirtIOOffsets;
