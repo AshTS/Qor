@@ -6,6 +6,7 @@
 mod asm;
 mod debug;
 mod drivers;
+mod fs;
 mod klib;
 mod mem;
 mod mmio;
@@ -14,10 +15,9 @@ mod process;
 mod syscall;
 mod trap;
 
-
-
 extern crate alloc;
 use alloc::prelude::v1::*;
+use alloc::vec;
 
 /// Kernel Entry Point
 #[no_mangle]
@@ -64,38 +64,22 @@ fn kmain()
     // Initialize the virtio interrtupts
     drivers::init_virtio_interrupts();
     
+    // Create the file system interface
+    let mut interface = fs::FileSystemInterface::new(0);
 
-    kprintln!("Testing block driver.");
-    let buffer = Box::leak(Box::new([0u8; 512])).as_mut_ptr();
-
-    // Get the primary block device
-    let driver = drivers::block::get_driver_by_index(0);
-
-    driver.read(buffer, 512, 0);
-
-    let mut i = 0;
-
-    loop
+    if let Err(e) = interface.initialize()
     {
-        if i > 1_000_000 { break; }
-        i+= 1;
+        panic!("Unable to initialize file system: `{}`", e.msg);
     }
 
-    for i in 0..48 {
-    kprint!(" {:02x}", unsafe { buffer.add(i).read() });
-    if 0 == ((i+1) % 24) {
-        kprintln!();
-    }
-    }
-    unsafe { Box::from_raw(buffer) };
+    let data = interface.get_inode(2);
 
-    for i in 0..48
+    let mut buffer = Box::new(vec![0u8; data.size as usize]);
+
+    interface.read_inode(data, &mut *buffer.as_mut_slice(), data.size as usize);
+
+    for c in &*buffer
     {
-        unsafe { buffer.add(i).write(i as u8)} ;
+        kprint!("{}", *c as char);
     }
-
-    driver.write(buffer, 512, 0);
-
-    kprintln!("Block driver done");
-
 }

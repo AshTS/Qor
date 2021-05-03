@@ -89,7 +89,7 @@ pub struct BlockDevice
     dev:          *mut u32,
     idx:          u16,
     ack_used_idx: u16,
-    read_only:    bool,
+    read_only:    bool
 }
 
 // Type values
@@ -225,7 +225,7 @@ pub fn fill_next_descriptor(bd: &mut BlockDevice, desc: Descriptor) -> u16
 }
 
 
-pub fn block_op(dev: usize, buffer: *mut u8, size: u32, offset: u64, write: bool)
+pub fn block_op(dev: usize, buffer: *mut u8, size: u32, offset: u64, write: bool) -> Option<*mut Request>
 {
     unsafe 
     {
@@ -234,7 +234,7 @@ pub fn block_op(dev: usize, buffer: *mut u8, size: u32, offset: u64, write: bool
             // Check to see if we are trying to write to a read only device.
             if true == bdev.read_only && true == write {
                 kdebugln!(BlockDevice, "Trying to write to read/only!");
-                return;
+                return None;
             }
             let sector = offset / 512;
             // TODO: Before we get here, we are NOT allowed to schedule a read or
@@ -282,19 +282,25 @@ pub fn block_op(dev: usize, buffer: *mut u8, size: u32, offset: u64, write: bool
             // The only queue a block device has is 0, which is the request
             // queue.
             bdev.dev.add(MmioOffsets::QueueNotify.scale32()).write_volatile(0);
-            crate::mmio::mmio_write_int(bdev.dev as usize, MmioOffsets::QueueNotify as usize, 0)
+            crate::mmio::mmio_write_int(bdev.dev as usize, MmioOffsets::QueueNotify as usize, 0);
+        
+            Some(blk_request as *mut Request)
+        }
+        else
+        {
+            None
         }
     }
 }
 
-pub fn read(dev: usize, buffer: *mut u8, size: u32, offset: u64)
+pub fn read(dev: usize, buffer: *mut u8, size: u32, offset: u64) -> Option<*mut Request>
 {
-    block_op(dev, buffer, size, offset, false);
+    block_op(dev, buffer, size, offset, false)
 }
 
-pub fn write(dev: usize, buffer: *mut u8, size: u32, offset: u64)
+pub fn write(dev: usize, buffer: *mut u8, size: u32, offset: u64) -> Option<*mut Request>
 {
-    block_op(dev, buffer, size, offset, true);
+    block_op(dev, buffer, size, offset, true)
 }
 
 
@@ -308,7 +314,7 @@ pub fn pending(bd: &mut BlockDevice)
             let ref elem = queue.used.ring[bd.ack_used_idx as usize];
             bd.ack_used_idx = (bd.ack_used_idx + 1) % VIRTIO_RING_SIZE as u16;
             let rq = queue.desc[elem.id as usize].addr as *const Request;
-            Box::from_raw(rq as *mut u8);
+            // Box::from_raw(rq as *mut u8);
         }
     }
 }
@@ -341,6 +347,26 @@ impl BlockDeviceDriver
     pub fn write(&self, buffer: *mut u8, size: u32, offset: u64)
     {
         write(self.0, buffer, size, offset);
+    }
+
+    unsafe fn sync(request: *mut Request)
+    {
+        let request = request.as_mut().unwrap();
+
+        while request.status.status == 111
+        {
+
+        }
+    }
+
+    pub fn sync_read(&self, buffer: *mut u8, size: u32, offset: u64)
+    {
+        unsafe { Self::sync(read(self.0, buffer, size, offset).unwrap()) };
+    }
+
+    pub fn sync_write(&self, buffer: *mut u8, size: u32, offset: u64)
+    {
+        unsafe { Self::sync(write(self.0, buffer, size, offset).unwrap()) };
     }
 }
 
