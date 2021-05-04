@@ -72,7 +72,7 @@ fn kmain()
         panic!("Unable to initialize file system: `{}`", e.msg);
     }
 
-    let data = interface.get_inode(2);
+    let data = interface.get_inode(10);
 
     let mut buffer = Box::new(vec![0u8; data.size as usize]);
 
