@@ -14,6 +14,7 @@ pub enum DebugMode
     Interrupts,
     VirtIO,
     BlockDevice,
+    ElfParsing,
     Other
 }
 
@@ -26,6 +27,7 @@ static INTERRUPTS: AtomicBool = AtomicBool::new(false);
 static MEMORY_ALLOCATION: AtomicBool = AtomicBool::new(false);
 static VIRTIO: AtomicBool = AtomicBool::new(false);
 static BLOCK_DEVICE: AtomicBool = AtomicBool::new(false);
+static ELF_PARSING: AtomicBool = AtomicBool::new(true);
 
 /// Check if a debug mode is enabled
 pub fn check_debug(mode: DebugMode) -> bool
@@ -45,6 +47,7 @@ pub fn check_debug(mode: DebugMode) -> bool
         DebugMode::MemoryAllocation =>  MEMORY_ALLOCATION.load(core::sync::atomic::Ordering::Relaxed),
         DebugMode::VirtIO =>  VIRTIO.load(core::sync::atomic::Ordering::Relaxed),
         DebugMode::BlockDevice =>  BLOCK_DEVICE.load(core::sync::atomic::Ordering::Relaxed),
+        DebugMode::ElfParsing =>  ELF_PARSING.load(core::sync::atomic::Ordering::Relaxed),
         DebugMode::Other =>  true,
     }
 }

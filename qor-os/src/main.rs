@@ -6,6 +6,7 @@
 mod asm;
 mod debug;
 mod drivers;
+mod elf;
 mod fs;
 mod klib;
 mod mem;
@@ -78,12 +79,8 @@ fn kmain()
 
     interface.read_inode(data, &mut *buffer.as_mut_slice(), data.size as usize);
 
-    for c in &*buffer
+    if let Err(e) = elf::load_elf(&buffer)
     {
-        kprint!("{}", *c as char);
+        panic!("Unable to load Elf: `{}`", e.msg);
     }
-
-    kprintln!("\n");
-
-    interface.traverse(1, "/");
 }
