@@ -198,7 +198,7 @@ pub fn setup_block_device(ptr: *mut u32) -> bool
         let bd = BlockDevice { queue:        queue_ptr,
                             dev:          ptr,
                             idx:          0,
-                            ack_used_idx: 0,
+                            ack_used_idx: 1,
                             read_only:    ro, };
         BLOCK_DEVICES[idx] = Some(bd);
 
@@ -314,7 +314,11 @@ pub fn pending(bd: &mut BlockDevice)
             let ref elem = queue.used.ring[bd.ack_used_idx as usize];
             bd.ack_used_idx = (bd.ack_used_idx + 1) % VIRTIO_RING_SIZE as u16;
             let rq = queue.desc[elem.id as usize].addr as *const Request;
-            // Box::from_raw(rq as *mut u8);
+            
+            if rq as usize > 0
+            {
+                Box::from_raw(rq as *mut Request);
+            }
         }
     }
 }

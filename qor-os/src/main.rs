@@ -82,4 +82,8 @@ fn kmain()
     {
         kprint!("{}", *c as char);
     }
+
+    kprintln!("\n");
+
+    interface.traverse(1, "/");
 }

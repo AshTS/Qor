@@ -1,8 +1,27 @@
-use core::usize;
+use core::{u8, usize};
 
 use crate::*;
 
 use alloc::format;
+
+#[repr(C)]
+pub struct DirEntry
+{
+   pub inode: u32,
+   pub name:  [u8; 60]
+}
+
+impl DirEntry
+{
+    pub fn new() -> Self
+    {
+        Self
+        {
+            inode: 0,
+            name: [0; 60]
+        }
+    }
+}
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
@@ -158,6 +177,65 @@ impl FileSystemInterface
         }
     }
 
+    pub fn get_dir_entries(&mut self, inode: usize) -> Box<[DirEntry]>
+    {
+        let mut buffer = Box::new([0u8; 1024]);
+
+        let inode = self.get_inode(inode);
+
+        self.read_inode(inode, &mut *buffer, inode.size as usize);
+
+        unsafe {Box::from_raw(Box::leak(buffer) as *mut [u8] as *mut [DirEntry]) }
+    }
+
+    /// Traverse the file system
+    pub fn traverse(&mut self, inode: usize, path: &str)
+    {
+        let mut count = self.get_inode(inode).size / 64;
+        for dir_entry in &*self.get_dir_entries(inode)
+        {
+            if count == 0
+            {
+                break;
+            }
+            else
+            {
+                count -= 1;
+            }
+
+            if dir_entry.name[0] == '.' as u8
+            {
+                continue;
+            }
+
+            let mut p = String::from(path);
+
+            for c in &dir_entry.name
+            {
+
+                if *c != 0
+                {
+                    p.push(*c as char);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            kprintln!("{}", p);
+
+            p += "/";
+
+            let inode = self.get_inode(dir_entry.inode as usize);
+
+            if inode.mode & 16384 != 0
+            {
+                self.traverse(dir_entry.inode as usize, &p);
+            }
+        }
+    }
+
     /// Read the data from an inode
     pub fn read_inode(&mut self, inode: Inode, buffer: &mut [u8], size: usize)
     {
@@ -212,8 +290,6 @@ impl FileSystemInterface
             self.update_super_block();
         }
 
-        kprintln!("I {}", self.super_block.unwrap().imap_blocks);
-
         for i in self.last_first_free_inode / 8096 .. self.super_block.unwrap().imap_blocks as usize
         {
             let buffer = self.get_block_as_buffer(2 + i);
@@ -246,8 +322,6 @@ impl FileSystemInterface
         {
             self.update_super_block();
         }
-
-        kprintln!("Z {}", self.super_block.unwrap().zmap_blocks);
 
         for i in self.last_first_free_zone / 8096 .. self.super_block.unwrap().zmap_blocks as usize
         {
