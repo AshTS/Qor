@@ -16,6 +16,8 @@ fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, fr
 
     kdebug!(Interrupts, "CPU {}, Inst: 0x{:08x}:     ", hart, epc);
 
+    let mut pid = None;
+
     // Update the current process program counter if we are interrupting a user space process
     if let Some(process_manager) = process::get_process_manager()
     {
@@ -24,10 +26,15 @@ fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, fr
             if current.get_frame_pointer() == frame as *mut TrapFrame as usize
             {
                 kdebugln!(Interrupts, "Current PID: {}", current.get_pid());
+
+                pid = Some(current.get_pid());
+
                 current.update_program_counter(epc);
             }
         }
     }
+
+    let pid = pid;
 
     match (cause_num, is_async)
     {
@@ -56,7 +63,7 @@ fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, fr
         {
             // ECALL from User Mode
             kdebugln!(Interrupts, "User Mode ECALL");
-            return_pc = syscall::syscall_handle(return_pc, frame);
+            return_pc = syscall::syscall_handle(return_pc, frame, pid);
         },
         (11, false) =>
         {
