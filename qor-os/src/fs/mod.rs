@@ -2,7 +2,7 @@ use core::{u8, usize};
 
 use crate::*;
 
-use alloc::format;
+use alloc::{collections::BTreeMap, format};
 
 #[repr(C)]
 pub struct DirEntry
@@ -169,6 +169,11 @@ impl FileSystemInterface
 
             for v in &*data
             {
+                if *remaining == 0
+                {
+                    break;
+                }
+
                 if *v != 0
                 {
                     self.read_zone(*v as usize, level - 1, buffer, index, remaining);
@@ -234,6 +239,57 @@ impl FileSystemInterface
                 self.traverse(dir_entry.inode as usize, &p);
             }
         }
+    }
+
+    /// Traverse the file system
+    pub fn map(&mut self, inode: usize, path: &str) -> BTreeMap<String, usize>
+    {
+        let mut result = BTreeMap::new();
+
+        let mut count = self.get_inode(inode).size / 64;
+        for dir_entry in &*self.get_dir_entries(inode)
+        {
+            if count == 0
+            {
+                break;
+            }
+            else
+            {
+                count -= 1;
+            }
+
+            if dir_entry.name[0] == '.' as u8
+            {
+                continue;
+            }
+
+            let mut p = String::from(path);
+
+            for c in &dir_entry.name
+            {
+                if *c != 0
+                {
+                    p.push(*c as char);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            result.insert(p.clone(), dir_entry.inode as usize);
+
+            p += "/";
+
+            let inode = self.get_inode(dir_entry.inode as usize);
+
+            if inode.mode & 16384 != 0
+            {
+                result.append(&mut self.map(dir_entry.inode as usize, &p));
+            }
+        }
+
+        result
     }
 
     /// Read the data from an inode
