@@ -33,10 +33,10 @@ impl ProcessManager
         self.processes.get(&pid)
     }
 
-    /// Add a new process, and return the pid of that process
-    pub fn add_process(&mut self, func: fn()) -> u16
+
+    /// Add a new process (from process data)
+    pub fn add_process(&mut self, mut data: ProcessData) -> u16
     {
-        let mut data = ProcessData::new_default(func);
         data.start();
         let pid = data.get_pid();
 
@@ -47,7 +47,7 @@ impl ProcessManager
 
         pid
     }
-    
+
     // FIXME: This scheduler is a massive hack
     /// Increment the pid counter and return the new value
     pub fn get_next_pid(&mut self) -> u16

@@ -30,6 +30,7 @@ pub fn schedule_next(process_list: &mut ProcessManager) -> Result<ScheduleResult
                 let frame_addr = process.get_frame_pointer();
                 let mepc = process.get_program_counter();
                 let satp = process.get_satp();
+
                 break Ok(ScheduleResult{frame_addr, mepc, satp});
             }
         }

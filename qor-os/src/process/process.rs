@@ -1,5 +1,3 @@
-use core::{u16, usize};
-
 use crate::*;
 
 // Static PID counter
@@ -10,6 +8,12 @@ static DEFAULT_PROCESS_STACK: usize = 4;
 static DEFAULT_STACK_ADDR: usize = 0x2000_0000;
 static DEFAULT_ENTRY_POINT: usize = 0x4000_0000;
 
+// Bring in assembly function
+extern "C"
+{
+    /// Switch over into user mode
+	fn switch_to_user(frame: usize, mepc: usize, satp: usize) -> !;
+}
 /// States a process can be in
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProcessState
@@ -34,7 +38,6 @@ pub struct ProcessData
 }
 
 impl ProcessData
-
 {
     /// Instantiate and allocate space for a new default process
     pub fn new_default(func: fn()) -> Self
@@ -84,6 +87,46 @@ impl ProcessData
             mem::mmu::inner_map(root, entry_point + addr, func_addr + addr,
                             mem::EntryBits::UserReadExecute, mem::mmu::MMUPageLevel::Level4KiB);
         }
+
+        result
+    }
+
+    /// Switch to this process
+    pub fn switch_to_process(&self) -> !
+    {
+        let frame_addr = self.get_frame_pointer();
+        let mepc = self.get_program_counter();
+        let satp = self.get_satp();
+
+        kprintln!("Frame Addr: 0x{:x} MEPC: 0x{:x} SATP: 0x{:x}", frame_addr, mepc, satp);
+
+        unsafe { switch_to_user(frame_addr, mepc, satp) }
+    }
+    
+
+    /// Get the table reference
+    pub fn get_table(&self) -> &mem::pagetable::Table
+    {
+        unsafe { self.root.as_ref().unwrap() }
+    }
+
+    /// Create a new process
+    pub fn new_elf(table: *mut mem::pagetable::Table, stack_pages: usize, stack_addr: usize, entry_point: usize) -> Self
+    {
+        let mut result = Self
+        {
+            frame: trap::TrapFrame::zeroed(),
+            stack: mem::kpalloc(stack_pages),
+            pid: PID.fetch_add(1, core::sync::atomic::Ordering::SeqCst),
+            pc: entry_point,
+            root: table,
+            state: ProcessState::Waiting,
+        };
+
+        result.frame.satp = result.get_satp();
+
+        // Set the stack pointer
+        result.frame.regs[2] = stack_addr + mem::pages::PAGE_SIZE * stack_pages;
 
         result
     }

@@ -3,3 +3,10 @@
 [[package]]
 name = "prog"
 version = "0.1.0"
+dependencies = [
+ "slib",
+]
+
+[[package]]
+name = "slib"
+version = "0.1.0"

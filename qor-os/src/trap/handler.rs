@@ -23,6 +23,7 @@ fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, fr
         {
             if current.get_frame_pointer() == frame as *mut TrapFrame as usize
             {
+                kdebugln!(Interrupts, "Current PID: {}", current.get_pid());
                 current.update_program_counter(epc);
             }
         }
@@ -33,7 +34,7 @@ fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, fr
         (2, false) =>
         {
             // Illegal Instruction
-            panic!("Illegal Instruction 0x:{:08x}", tval);
+            panic!("Illegal Instruction: 0x{:08x}", tval);
         },
         (3, true) =>
         {
@@ -46,7 +47,7 @@ fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, fr
             kdebugln!(Interrupts, "Timer Interrupt");
 
             // Set frequency to 1KHz
-            drivers::TIMER_DRIVER.set_remaining_time(1000);
+            drivers::TIMER_DRIVER.set_remaining_time(1000000);
 
             // Switch processes
             process::process_switch();
@@ -76,17 +77,17 @@ fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, fr
         (12, false) =>
         {
             // Instruction Page Fault
-            panic!("Instruction Page Fault 0x:{:08x}", tval);
+            panic!("Instruction Page Fault: 0x{:08x}", tval);
         },
         (13, false) =>
         {
             // Load Page Fault
-            panic!("Load Page Fault 0x:{:08x}", tval);
+            panic!("Load Page Fault: 0x{:08x}", tval);
         },
         (15, false) =>
         {
             // Store Page Fault
-            panic!("Store Page Fault 0x:{:08x}", tval);
+            panic!("Store Page Fault: 0x{:08x}", tval);
         },
         _ => 
         {

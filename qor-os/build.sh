@@ -10,5 +10,7 @@ sudo mount /dev/loop11 /mnt
 
 sudo cp ../userland/prog/target/riscv64gc-unknown-none-elf/debug/prog /mnt/bin/prog
 
+stat /mnt/bin/prog
+
 sudo sync
 sudo umount /mnt

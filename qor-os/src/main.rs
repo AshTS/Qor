@@ -64,6 +64,9 @@ fn kmain()
 
     // Initialize the virtio interrtupts
     drivers::init_virtio_interrupts();
+
+    // Initialzize the process manager
+    process::init_process_manager();
     
     // Create the file system interface
     let mut interface = fs::FileSystemInterface::new(0);
@@ -78,9 +81,14 @@ fn kmain()
     let mut buffer = Box::new(vec![0u8; data.size as usize]);
 
     interface.read_inode(data, &mut *buffer.as_mut_slice(), data.size as usize);
-
-    if let Err(e) = elf::load_elf(&buffer)
+    
+    let data = match elf::load_elf(&buffer)
     {
-        panic!("Unable to load Elf: `{}`", e.msg);
-    }
+        Err(e) => { panic!("Unable to load Elf: `{}`", e.msg); },
+        Ok(data) => { data}
+    };
+
+    kprintln!("Adding Process With PID: {}", process::get_process_manager().unwrap().add_process(data));
+
+    drivers::TIMER_DRIVER.set_remaining_time(1);
 }

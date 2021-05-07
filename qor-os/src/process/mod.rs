@@ -1,6 +1,6 @@
-mod manager;
-mod process;
-mod scheduler;
+pub mod manager;
+pub mod process;
+pub mod scheduler;
 
 use crate::*;
 
