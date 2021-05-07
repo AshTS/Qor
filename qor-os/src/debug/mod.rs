@@ -28,8 +28,8 @@ static INTERRUPTS: AtomicBool = AtomicBool::new(false);
 static MEMORY_ALLOCATION: AtomicBool = AtomicBool::new(false);
 static VIRTIO: AtomicBool = AtomicBool::new(false);
 static BLOCK_DEVICE: AtomicBool = AtomicBool::new(false);
-static ELF_PARSING: AtomicBool = AtomicBool::new(true);
-static SYS_CALLS: AtomicBool = AtomicBool::new(true);
+static ELF_PARSING: AtomicBool = AtomicBool::new(false);
+static SYS_CALLS: AtomicBool = AtomicBool::new(false);
 
 /// Check if a debug mode is enabled
 pub fn check_debug(mode: DebugMode) -> bool
