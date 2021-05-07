@@ -1,6 +1,8 @@
 use crate::*;
 
-pub fn syscall_exit(process: &process::process::ProcessData, code: usize)
+pub fn syscall_exit(process: &mut process::process::ProcessData, code: usize)
 {
-    kprintln!("Exiting PID {} With Code `{}`", process.get_pid(), code);
+    kdebugln!(Syscall, "Exiting PID {} With Code `{}`", process.get_pid(), code);
+
+    process.halt();
 }

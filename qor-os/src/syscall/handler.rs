@@ -25,7 +25,7 @@ pub fn syscall_handle(mepc: usize, frame: *mut TrapFrame, pid: Option<u16>) -> u
         kprintln!("Syscall did not come from process `{}` ({}, {}, {}, {}, {}, {}, {})", syscall_number, args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
     }
 
-    if let Some(process) = process::get_process_manager().unwrap().process_by_pid(pid.unwrap())
+    if let Some(process) = process::get_process_manager().unwrap().process_by_pid_mut(pid.unwrap())
     {
         match syscall_number
         {

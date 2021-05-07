@@ -33,6 +33,11 @@ pub fn schedule_next(process_list: &mut ProcessManager) -> Result<ScheduleResult
 
                 break Ok(ScheduleResult{frame_addr, mepc, satp});
             }
+
+            if process.is_dead()
+            {
+                process_list.remove_process(next_pid);
+            }
         }
 
         next_pid = process_list.get_next_pid();

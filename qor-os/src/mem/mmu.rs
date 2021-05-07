@@ -172,7 +172,12 @@ pub unsafe fn unmap_table(root: *mut Table)
 
         if entry.is_valid() && !entry.is_leaf()
         {
-            unmap_table((entry.get_ppn() << 12) as *mut Table);
+            let next = entry.get_ppn() << 12;
+
+            if next != 0
+            {
+                unmap_table(next as *mut Table);
+            }
         }
     }
 

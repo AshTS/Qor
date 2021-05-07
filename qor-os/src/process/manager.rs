@@ -33,6 +33,11 @@ impl ProcessManager
         self.processes.get(&pid)
     }
 
+    /// Get a mutable process by pid
+    pub fn process_by_pid_mut(&mut self, pid: u16) -> Option<&mut ProcessData>
+    {
+        self.processes.get_mut(&pid)
+    }
 
     /// Add a new process (from process data)
     pub fn add_process(&mut self, mut data: ProcessData) -> u16
@@ -78,5 +83,11 @@ impl ProcessManager
         {
             None
         }   
+    }
+
+    /// Remove a process
+    pub fn remove_process(&mut self, pid: u16)
+    {
+        self.processes.remove(&pid);
     }
 }

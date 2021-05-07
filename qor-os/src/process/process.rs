@@ -143,6 +143,12 @@ impl ProcessData
         self.state == ProcessState::Running
     }
 
+    /// Is the process dead
+    pub fn is_dead(&self) -> bool
+    {
+        self.state == ProcessState::Dead
+    }
+
     /// Get the frame pointer
     pub fn get_frame_pointer(&self) -> usize
     {
@@ -172,6 +178,12 @@ impl ProcessData
     {
         self.pc = pc;
     } 
+
+    /// Halt the process (switch to the Dead state)
+    pub fn halt(&mut self)
+    {
+        self.state = ProcessState::Dead
+    }
 }
 
 impl core::ops::Drop for ProcessData
