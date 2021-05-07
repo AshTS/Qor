@@ -199,7 +199,7 @@ pub fn inner_virt_to_phys(root: &Table, virt_addr: usize) -> Option<usize>
 
     for i in (0..=2).rev()
     {
-        kdebugln!("Entry lvl {} at 0x{:x} :    0x:{:x}", i, ptr as *const Entry as usize, ptr.get_ppn());
+        kdebugln!(MemoryMapping, "Entry lvl {} at 0x{:x} :    0x:{:x}", i, ptr as *const Entry as usize, ptr.get_ppn());
         if !ptr.is_valid()
         {
             // The MMU would page fault here
@@ -207,7 +207,6 @@ pub fn inner_virt_to_phys(root: &Table, virt_addr: usize) -> Option<usize>
         }
         else if ptr.is_leaf()
         {
-            kprintln!("Leaf at lvl {}", i);
             let ppn = ptr.get_ppn();
 
             let offset_mask =  (1 << (12 + 9 * i)) - 1;
