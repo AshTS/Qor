@@ -45,6 +45,12 @@ impl ProcessData
         Self::new(func, DEFAULT_PROCESS_STACK, DEFAULT_STACK_ADDR, DEFAULT_ENTRY_POINT)
     }
 
+    /// Map a pointer through the page table
+    pub fn map_ptr(&mut self, ptr: usize) -> usize
+    {
+        mem::mmu::inner_virt_to_phys(unsafe { self.root.as_mut() }.unwrap(), ptr).unwrap()
+    }
+
     /// Instantiate and allocate space for a new process 
     pub fn new(func: fn(), stack_pages: usize, stack_addr: usize, entry_point: usize) -> Self
     {
