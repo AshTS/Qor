@@ -5,5 +5,6 @@
 extern "C"
 fn _start()
 {
-    slib::exit(5);
+    slib::write("Hello From Userland!\n");
+    slib::exit(4);
 }
