@@ -1,17 +1,27 @@
 #! /usr/bin/fish
+if not test -d ../userland/bin
+  mkdir ../userland/bin
+end
 
-cd ../userland/prog
+set programs slib prog
 
-cargo build
+cd ../userland
 
-cd ../../qor-os
+for i in $programs
+    cd $i
+    make $argv
+    cd ..
+end 
+
+cd ../qor-os
 
 sudo losetup /dev/loop11 hdd.dsk
 
 sudo mount /dev/loop11 /mnt
-sudo cp ../userland/prog/target/riscv64gc-unknown-none-elf/debug/prog /mnt/bin/prog
+sudo rm -rf /mnt/bin
+sudo cp -r ../userland/bin/ /mnt/bin/
 
-stat /mnt/bin/prog
+ls /mnt/bin
 
 sudo sync /mnt
 

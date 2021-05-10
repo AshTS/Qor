@@ -1,2 +1,3 @@
 qor-os/target
-userland/*/target
+userland/bin/*
+userland/*/build

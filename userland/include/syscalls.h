@@ -1,0 +1,1 @@
+extern unsigned int put(const char* str);
