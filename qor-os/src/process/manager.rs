@@ -85,6 +85,24 @@ impl ProcessManager
         }   
     }
 
+    /// Load an elf file
+    pub fn load_elf(&mut self, interface: &mut fs::FileSystemInterface, name: &str) -> Result<u16, fs::FileSystemError>
+    {
+        let stat = interface.stat_file(name)?;
+
+        let mut buffer = Box::new(vec![0u8; stat.size as usize]);
+
+        interface.read_file(name, &mut buffer, stat.size as usize)?;
+        
+        let data = match elf::load_elf(&buffer)
+        {
+            Err(e) => { panic!("Unable to load Elf: `{}`", e.msg); },
+            Ok(data) => { data}
+        };
+
+        Ok(process::get_process_manager().unwrap().add_process(data))
+    }
+
     /// Remove a process
     pub fn remove_process(&mut self, pid: u16)
     {

@@ -76,23 +76,8 @@ fn kmain()
         panic!("Unable to initialize file system: `{}`", e.msg);
     }
 
-    let map = interface.map(1, "/");
-
-    kprintln!("{:?}", map);
-
-    let data = interface.get_inode(*map.get("/bin/prog").unwrap());
-
-    let mut buffer = Box::new(vec![0u8; data.size as usize]);
-
-    interface.read_inode(data, &mut *buffer.as_mut_slice(), data.size as usize);
-    
-    let data = match elf::load_elf(&buffer)
-    {
-        Err(e) => { panic!("Unable to load Elf: `{}`", e.msg); },
-        Ok(data) => { data}
-    };
-
-    kprintln!("Adding Process With PID: {}", process::get_process_manager().unwrap().add_process(data));
+    kprintln!("Adding Process With PID: {}", process::get_process_manager().unwrap().load_elf(&mut interface, "/bin/prog").unwrap());
+    kprintln!("Adding Process With PID: {}", process::get_process_manager().unwrap().load_elf(&mut interface, "/bin/prog").unwrap());
 
     drivers::TIMER_DRIVER.set_remaining_time(1);
 }

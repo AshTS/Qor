@@ -80,7 +80,22 @@ pub struct Inode
 	pub zones:  [u32; 10]
 }
 
-pub struct BlockError
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct StatData
+{
+    pub mode:   u16,
+	pub nlinks: u16,
+	pub uid:    u16,
+	pub gid:    u16,
+	pub size:   u32,
+	pub atime:  u32,
+	pub mtime:  u32,
+	pub ctime:  u32,
+}
+
+#[derive(Debug)]
+pub struct FileSystemError
 {
     pub msg: String
 }
@@ -91,6 +106,7 @@ pub struct FileSystemInterface
     super_block: Option<SuperBlock>,
     last_first_free_inode: usize,
     last_first_free_zone: usize,
+    tree: Option<BTreeMap<String, usize>>
 }
 
 impl FileSystemInterface
@@ -103,8 +119,55 @@ impl FileSystemInterface
             block_device_driver: crate::drivers::block::get_driver_by_index(block_device_index),
             super_block: None,
             last_first_free_inode: 0,
-            last_first_free_zone: 0
+            last_first_free_zone: 0,
+            tree: None
         }
+    }
+
+    /// Get the inode for a file
+    pub fn get_inode_by_name(&mut self, name: &str) -> Result<usize, FileSystemError>
+    {
+        if let Some(tree) = &self.tree
+        {
+            Ok(*tree.get(name).ok_or(FileSystemError{ msg: format!("Unable to open file `{}`", name) })?)
+        }
+        else
+        {
+            self.tree = Some(self.map(1, "/"));
+            self.get_inode_by_name(name)
+        }
+    }
+
+    /// Get the buffer for a file by name
+    pub fn read_file(&mut self, name: &str, buffer: &mut [u8], size: usize) -> Result<usize, FileSystemError>
+    {
+        let inode_number = self.get_inode_by_name(name)?;
+
+        let inode = self.get_inode(inode_number);
+
+        Ok(self.read_inode(inode, buffer, size))
+    }
+
+    /// Get the stats for a file by name
+    pub fn stat_file(&mut self, name: &str) -> Result<StatData, FileSystemError>
+    {
+        let inode_number = self.get_inode_by_name(name)?;
+
+        let inode = self.get_inode(inode_number);
+
+        Ok(
+            StatData
+            {
+                mode: inode.mode,
+                nlinks: inode.nlinks,
+                uid: inode.uid,
+                gid: inode.gid,
+                size: inode.size,
+                atime: inode.atime,
+                mtime: inode.mtime,
+                ctime: inode.ctime,
+            }
+        )
     }
 
     /// Get a block as a buffer
@@ -194,54 +257,6 @@ impl FileSystemInterface
     }
 
     /// Traverse the file system
-    pub fn traverse(&mut self, inode: usize, path: &str)
-    {
-        let mut count = self.get_inode(inode).size / 64;
-        for dir_entry in &*self.get_dir_entries(inode)
-        {
-            if count == 0
-            {
-                break;
-            }
-            else
-            {
-                count -= 1;
-            }
-
-            if dir_entry.name[0] == '.' as u8
-            {
-                continue;
-            }
-
-            let mut p = String::from(path);
-
-            for c in &dir_entry.name
-            {
-
-                if *c != 0
-                {
-                    p.push(*c as char);
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            kprintln!("{}", p);
-
-            p += "/";
-
-            let inode = self.get_inode(dir_entry.inode as usize);
-
-            if inode.mode & 16384 != 0
-            {
-                self.traverse(dir_entry.inode as usize, &p);
-            }
-        }
-    }
-
-    /// Traverse the file system
     pub fn map(&mut self, inode: usize, path: &str) -> BTreeMap<String, usize>
     {
         let mut result = BTreeMap::new();
@@ -293,7 +308,7 @@ impl FileSystemInterface
     }
 
     /// Read the data from an inode
-    pub fn read_inode(&mut self, inode: Inode, buffer: &mut [u8], size: usize)
+    pub fn read_inode(&mut self, inode: Inode, buffer: &mut [u8], size: usize) -> usize
     {
         let mut remaining = size;
         let mut index = 0;
@@ -303,16 +318,18 @@ impl FileSystemInterface
             if *zone == 0 {continue; }
             self.read_zone(*zone as usize, i.max(6) - 6, buffer, &mut index, &mut remaining);
         }
+
+        index
     }
 
     /// Initialize the File System
-    pub fn initialize(&mut self) -> Result<(), BlockError>
+    pub fn initialize(&mut self) -> Result<(), FileSystemError>
     {
         self.update_super_block();
 
         if !self.verify()
         {
-            return Err(BlockError{msg: format!("The filesystem is not a minix3 file system")});
+            return Err(FileSystemError{msg: format!("The filesystem is not a minix3 file system")});
         }
 
         Ok(())
@@ -339,7 +356,7 @@ impl FileSystemInterface
     }
 
     /// Get the first free inode bit
-    pub fn first_free_inode(&mut self) -> Result<usize, BlockError>
+    pub fn first_free_inode(&mut self) -> Result<usize, FileSystemError>
     {
         if self.super_block.is_none()
         {
@@ -368,11 +385,11 @@ impl FileSystemInterface
             }
         }
 
-        Err(BlockError{msg: format!("There are no remaining free inodes")})
+        Err(FileSystemError{msg: format!("There are no remaining free inodes")})
     }
 
     /// Get the first free zone bit
-    pub fn first_free_zone(&mut self) -> Result<usize, BlockError>
+    pub fn first_free_zone(&mut self) -> Result<usize, FileSystemError>
     {
         if self.super_block.is_none()
         {
@@ -401,6 +418,6 @@ impl FileSystemInterface
             }
         }
 
-        Err(BlockError{msg: format!("There are no remaining free zones")})
+        Err(FileSystemError{msg: format!("There are no remaining free zones")})
     }
 }
