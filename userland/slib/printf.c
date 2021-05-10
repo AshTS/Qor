@@ -69,7 +69,7 @@ int printf(const char* data, ...)
                 }
 
                 int counter = 1;
-                while (counter * 10 < i)
+                while (counter < i / 10)
                 {
                     counter *= 10;
                 }
