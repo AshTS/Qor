@@ -1,0 +1,10 @@
+Add argument passing to processes
+Rework scheduler
+Add file descriptors
+    open
+    read
+    write
+    stat
+    close
+Add working directory to processes
+Add graphics handler and syscalls
