@@ -1,5 +1,4 @@
 use crate::process::manager::ProcessManager;
-use crate::*;
 
 // Bring in assembly function
 extern "C"
