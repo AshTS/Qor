@@ -67,6 +67,8 @@ fn kmain()
 
     // Initialzize the process manager
     process::init_process_manager();
+
+    process::get_process_manager().unwrap().add_process(process::process::ProcessData::new_default(process::init::init));
     
     // Create the file system interface
     let mut interface = fs::FileSystemInterface::new(0);
