@@ -53,25 +53,6 @@ impl ProcessManager
         pid
     }
 
-    // FIXME: This scheduler is a massive hack
-    /// Increment the pid counter and return the new value
-    pub fn get_next_pid(&mut self) -> u16
-    {
-        let last_key = self.processes.len() as u16;
-
-        if last_key == 0
-        {
-            return 0;
-        }
-
-        self.next_pid += 1;
-        self.next_pid %= last_key;
-
-        self.current = Some(self.next_pid);
-
-        self.next_pid
-    }
-
     /// Get mutable reference to the currently running process
     pub fn get_mut_current(&mut self) -> Option<&mut ProcessData>
     {
@@ -107,5 +88,37 @@ impl ProcessManager
     pub fn remove_process(&mut self, pid: u16)
     {
         self.processes.remove(&pid);
+    }
+
+    /// Schedule the next process
+    pub fn next_scheduled_pid(&mut self) -> Option<u16>
+    {
+        // Loop to try to find a process
+        loop
+        {
+            // If there are no processes remaining, do not schedule anything
+            if self.processes.len() == 0
+            {
+                return None;
+            }
+            
+            self.next_pid += 1;
+            self.next_pid %= self.processes.last_key_value().unwrap().0 + 1 - self.processes.first_key_value().unwrap().0;
+            self.next_pid += self.processes.first_key_value().unwrap().0;
+
+            if let Some(proc) = self.process_by_pid(self.next_pid)
+            {
+                if proc.is_running()
+                {
+                    self.current = Some(self.next_pid);
+                    return self.current;
+                }
+
+                if proc.is_dead()
+                {
+                    self.remove_process(self.next_pid);
+                }
+            }
+        }
     }
 }

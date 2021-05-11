@@ -3,7 +3,6 @@ use crate::*;
 pub fn syscall_write(process: &mut process::process::ProcessData, ptr: usize)
 {
     let ptr = process.map_ptr(ptr) as *const u8;
-
     let mut i = 0;
     loop
     {

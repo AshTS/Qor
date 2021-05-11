@@ -34,7 +34,7 @@ pub struct ProcessData
     pc: usize,
     pid: u16,
     root: *mut mem::pagetable::Table,
-    state: ProcessState
+    pub state: ProcessState
 }
 
 impl ProcessData

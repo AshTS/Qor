@@ -1,4 +1,5 @@
 use crate::process::manager::ProcessManager;
+use crate::*;
 
 // Bring in assembly function
 extern "C"
@@ -13,42 +14,33 @@ pub struct ScheduleResult
 {
     pub frame_addr: usize,
     pub mepc: usize,
-    pub satp: usize
+    pub satp: usize,
+    pub pid: u16
 }
 
 /// Schedule the next process to run
 pub fn schedule_next(process_list: &mut ProcessManager) -> Result<ScheduleResult, ()>
 {
-    let start_pid = process_list.get_next_pid();
-    let mut next_pid = start_pid;
-    loop
+    if let Some(pid) = process_list.next_scheduled_pid()
     {
-        if let Some(process) = process_list.process_by_pid(next_pid)
+        if let Some(process) = process_list.process_by_pid(pid)
         {
-            if process.is_running()
-            {
-                let frame_addr = process.get_frame_pointer();
-                let mepc = process.get_program_counter();
-                let satp = process.get_satp();
-
-                break Ok(ScheduleResult{frame_addr, mepc, satp});
-            }
-
-            if process.is_dead()
-            {
-                process_list.remove_process(next_pid);
-            }
+            let frame_addr = process.get_frame_pointer();
+            let mepc = process.get_program_counter();
+            let satp = process.get_satp();
+            
+            return Ok(ScheduleResult{frame_addr, mepc, satp, pid});
         }
-
-        next_pid = process_list.get_next_pid();
-
-        if start_pid == next_pid
+        else
         {
-            panic!("No running processes!");
+            panic!("Scheduled process does not exist (PID {})", pid);
         }
     }
+    else
+    {
+        panic!("No running processes!");
+    };
 }
-
 /// Trigger a process switch
 pub fn process_switch() -> !
 {
