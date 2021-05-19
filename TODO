@@ -1,5 +1,4 @@
 Add argument passing to processes
-Rework scheduler
 Add file descriptors
     open
     read
