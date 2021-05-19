@@ -53,8 +53,8 @@ fn m_trap(epc: usize, tval: usize, cause: usize, hart: usize, _status: usize, fr
             // Hardware Timer Interrupt
             kdebugln!(Interrupts, "Timer Interrupt");
 
-            // Set frequency to 1KHz
-            drivers::TIMER_DRIVER.set_remaining_time(1000);
+            // Set a delay of 100ms
+            drivers::TIMER_DRIVER.set_remaining_time(100000);
 
             // Switch processes
             process::process_switch();

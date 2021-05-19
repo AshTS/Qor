@@ -45,5 +45,8 @@ pub fn process_switch() -> !
 {
     let result = schedule_next(super::get_process_manager().unwrap()).unwrap();
 
+    // Set next switch to trigger in 10 ms
+    crate::drivers::TIMER_DRIVER.set_remaining_time(10000);
+
     unsafe { switch_to_user(result.frame_addr, result.mepc, result.satp) };
 }
