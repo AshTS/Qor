@@ -1,7 +1,5 @@
-extern int main();
-
-#include "../include/syscalls.h"
-#include "../include/printf.h"
+#include "syscalls.h"
+#include "printf.h"
 
 #include <stdbool.h>
 

@@ -8,5 +8,3 @@ Add file descriptors
 Add working directory to processes
 Add graphics handler and syscalls
 Make a standard userspace process architecture
-Clean up the compilation of userspace processes
-Clean up the userspace standard library

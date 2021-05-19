@@ -1,14 +1,38 @@
-../bin/slib.o : build/slib.o build/printf.o build
-	ld.lld -r build/slib.o build/printf.o -o ../bin/slib.o
 
-build/slib.o : slib.s build
-	clang --target=riscv64 -march=rv64gc -mno-relax -c slib.s -o build/slib.o
 
-build/printf.o : printf.c build
-	clang --target=riscv64 -march=rv64gc -mno-relax -c printf.c -o build/printf.o
+CC = clang
+CFLAGS = --target=riscv64 -march=rv64gc -mno-relax
+INCLUDE = -isystem ../include
 
-build:
-	[ ! -d "build" ] && mkdir build
+LINK = ld.lld
+LINKFLAGS = -r
+
+INCLUDES = ../include/syscalls.h ../include/printf.h
+
+LIB_DIR = ../bin
+OUTPUT_DIR = ../bin
+BUILD_DIR = build
+SRC_DIR = src
+
+_LIBS = 
+LIBS = $(patsubst %,$(LIB_DIR)/%,$(_LIBS))
+
+_OBJ = slib.o printf.o
+OBJ = $(patsubst %,$(BUILD_DIR)/%,$(_OBJ))
+
+$(OUTPUT_DIR)/slib : $(BUILD_DIR) $(OBJ)
+	$(LINK) $(LINKFLAGS) $(OBJ) $(LIBS) -o $@
+
+$(BUILD_DIR)/%.o : $(SRC_DIR)/%.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
+
+$(BUILD_DIR)/%.o : $(SRC_DIR)/%.s $(INCLUDES)
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
+
+$(BUILD_DIR) :
+	[ ! -d "$(BUILD_DIR)" ] && mkdir $(BUILD_DIR)
+
+.PHONY: clean
 
 clean:
-	rm -rf build
+	rm -rf build/*
