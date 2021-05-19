@@ -14,7 +14,7 @@ void local_put(const char* data)
 }
 
 // Helper function for printf
-int printf_helper(char* buffer, unsigned int* index, char c)
+void printf_helper(char* buffer, unsigned int* index, char c)
 {
     buffer[(*index++) % (PRINTF_BUFFER_LEN - 1)] = c;
     if (*index % (PRINTF_BUFFER_LEN - 1) == 0 || c == 0)
