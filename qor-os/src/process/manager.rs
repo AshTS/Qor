@@ -87,7 +87,7 @@ impl ProcessManager
     /// Remove a process
     pub fn remove_process(&mut self, pid: u16)
     {
-        self.processes.remove(&pid);
+        self.processes.remove_entry(&pid);
     }
 
     /// Schedule the next process
@@ -97,7 +97,7 @@ impl ProcessManager
         loop
         {
             // If there are no processes remaining, do not schedule anything
-            if self.processes.len() == 0
+            if self.processes.keys().len() == 0
             {
                 return None;
             }

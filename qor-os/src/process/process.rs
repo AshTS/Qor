@@ -188,7 +188,7 @@ impl ProcessData
     /// Halt the process (switch to the Dead state)
     pub fn halt(&mut self)
     {
-        self.state = ProcessState::Dead
+        self.state = ProcessState::Dead;
     }
 }
 
@@ -199,10 +199,6 @@ impl core::ops::Drop for ProcessData
         // First free the stack
         // Safety: If the stack was properly initialized, this is safe
         unsafe { mem::kpfree(self.stack, 1) };
-
-        // Free the page table
-        // Safety: If the page table was properly initialized, this is safe
-        unsafe { mem::mmu::unmap_table(self.root) };
 
         // Free the root of the page table
         // Safety: If the page table was properly initialized, this is safe
