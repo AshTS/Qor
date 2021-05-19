@@ -34,7 +34,8 @@ pub struct ProcessData
     pc: usize,
     pid: u16,
     root: *mut mem::pagetable::Table,
-    pub state: ProcessState
+    pub state: ProcessState,
+    pub data: process::info::ProcessInfo
 }
 
 impl ProcessData
@@ -66,7 +67,7 @@ impl ProcessData
             pc: entry_point + func_addr % mem::pages::PAGE_SIZE,
             root: mem::kpzalloc(1) as *mut mem::pagetable::Table,
             state: ProcessState::Waiting,
-
+            data: process::info::ProcessInfo::new()
         };
 
         // Set the stack pointer
@@ -127,6 +128,7 @@ impl ProcessData
             pc: entry_point,
             root: table,
             state: ProcessState::Waiting,
+            data: process::info::ProcessInfo::new()
         };
 
         result.frame.satp = result.get_satp();

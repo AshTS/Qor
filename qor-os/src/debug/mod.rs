@@ -16,6 +16,7 @@ pub enum DebugMode
     BlockDevice,
     ElfParsing,
     Syscall,
+    FileSystemSyscall,
     Other
 }
 
@@ -30,6 +31,7 @@ static VIRTIO: AtomicBool = AtomicBool::new(false);
 static BLOCK_DEVICE: AtomicBool = AtomicBool::new(false);
 static ELF_PARSING: AtomicBool = AtomicBool::new(false);
 static SYS_CALLS: AtomicBool = AtomicBool::new(false);
+static FS_SYSCALLS: AtomicBool = AtomicBool::new(true);
 
 /// Check if a debug mode is enabled
 pub fn check_debug(mode: DebugMode) -> bool
@@ -51,6 +53,7 @@ pub fn check_debug(mode: DebugMode) -> bool
         DebugMode::BlockDevice =>  BLOCK_DEVICE.load(core::sync::atomic::Ordering::Relaxed),
         DebugMode::ElfParsing =>  ELF_PARSING.load(core::sync::atomic::Ordering::Relaxed),
         DebugMode::Syscall =>  SYS_CALLS.load(core::sync::atomic::Ordering::Relaxed),
+        DebugMode::FileSystemSyscall =>  FS_SYSCALLS.load(core::sync::atomic::Ordering::Relaxed),
         DebugMode::Other =>  true,
     }
 }

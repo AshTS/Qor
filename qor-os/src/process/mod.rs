@@ -1,4 +1,5 @@
 pub mod manager;
+pub mod info;
 pub mod init;
 pub mod process;
 pub mod scheduler;

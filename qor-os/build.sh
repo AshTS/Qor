@@ -3,7 +3,7 @@ if not test -d ../userland/bin
   mkdir ../userland/bin
 end
 
-set programs slib prog
+set programs slib prog fs_test
 
 cd ../userland
 
@@ -20,6 +20,7 @@ sudo losetup /dev/loop11 hdd.dsk
 sudo mount /dev/loop11 /mnt
 sudo rm -rf /mnt/bin
 sudo cp -r ../userland/bin/ /mnt/bin/
+sudo cp -r ../userland/root/ /mnt/
 
 ls /mnt/bin
 

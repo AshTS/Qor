@@ -29,6 +29,8 @@ pub fn syscall_handle(mepc: usize, frame: *mut TrapFrame, pid: Option<u16>) -> u
     {
         match syscall_number
         {
+            2 => {unsafe { (*frame).regs[10] = syscalls::syscall_open(process, args[0], args[1])}},
+            3 => {unsafe { (*frame).regs[10] = syscalls::syscall_close(process, args[0])}},
             10 => {syscalls::syscall_write(process, args[0])}
             60 => {syscalls::syscall_exit(process, args[0])},
             _ => { kprintln!("Got unknown system call `{}` ({}, {}, {}, {}, {}, {}, {}) from pid {:?}", syscall_number, args[0], args[1], args[2], args[3], args[4], args[5], args[6], pid); }

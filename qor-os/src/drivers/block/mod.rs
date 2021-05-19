@@ -339,6 +339,7 @@ pub fn handle_interrupt(idx: usize)
     }
 }
 
+#[derive(Debug)]
 pub struct BlockDeviceDriver(usize);
 
 impl BlockDeviceDriver

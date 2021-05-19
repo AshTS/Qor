@@ -26,3 +26,15 @@ put:
     li a7, 10
     ecall
     ret
+
+.globl open
+open:
+    li a7, 2
+    ecall
+    ret
+
+.globl close
+close:
+    li a7, 3
+    ecall
+    ret

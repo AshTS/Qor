@@ -4,6 +4,8 @@ use crate::*;
 
 use alloc::{collections::BTreeMap, format};
 
+pub static mut INTERFACE: Option<FileSystemInterface> = None;
+
 #[repr(C)]
 pub struct DirEntry
 {
@@ -100,6 +102,11 @@ pub struct FileSystemError
     pub msg: String
 }
 
+/// Wraps an inode reference
+#[derive(Debug)]
+pub struct FilePtr(usize);
+
+#[derive(Debug)]
 pub struct FileSystemInterface
 {
     block_device_driver: crate::drivers::block::BlockDeviceDriver,
@@ -125,11 +132,11 @@ impl FileSystemInterface
     }
 
     /// Get the inode for a file
-    pub fn get_inode_by_name(&mut self, name: &str) -> Result<usize, FileSystemError>
+    pub fn get_inode_by_name(&mut self, name: &str) -> Result<FilePtr, FileSystemError>
     {
         if let Some(tree) = &self.tree
         {
-            Ok(*tree.get(name).ok_or(FileSystemError{ msg: format!("Unable to open file `{}`", name) })?)
+            Ok(FilePtr(*tree.get(name).ok_or(FileSystemError{ msg: format!("Unable to open file `{}`", name) })?))
         }
         else
         {
@@ -183,19 +190,19 @@ impl FileSystemInterface
     }
 
     /// Read a buffer in the given inode
-    pub fn get_inode(&mut self, inode: usize) -> Inode
+    pub fn get_inode(&mut self, inode: FilePtr) -> Inode
     {
         if self.super_block.is_none()
         {
             self.update_super_block();
         }
 
-        let index = (inode - 1) / 1024;
+        let index = (inode.0 - 1) / 1024;
 
         let buffer = self.get_block_as_buffer(2 + self.super_block.unwrap().imap_blocks as usize + self.super_block.unwrap().zmap_blocks as usize + index);
 
         let inode_ptr = Box::leak(buffer) as *mut [u8] as *mut Inode;
-        let inode = unsafe { *inode_ptr.add((inode - 1) % (1024 / 64)) };
+        let inode = unsafe { *inode_ptr.add((inode.0 - 1) % (1024 / 64)) };
 
         inode
     }
@@ -245,7 +252,7 @@ impl FileSystemInterface
         }
     }
 
-    pub fn get_dir_entries(&mut self, inode: usize) -> Box<[DirEntry]>
+    pub fn get_dir_entries(&mut self, inode: FilePtr) -> Box<[DirEntry]>
     {
         let mut buffer = Box::new([0u8; 1024]);
 
@@ -261,8 +268,8 @@ impl FileSystemInterface
     {
         let mut result = BTreeMap::new();
 
-        let mut count = self.get_inode(inode).size / 64;
-        for dir_entry in &*self.get_dir_entries(inode)
+        let mut count = self.get_inode(FilePtr(inode)).size / 64;
+        for dir_entry in &*self.get_dir_entries(FilePtr(inode))
         {
             if count == 0
             {
@@ -296,7 +303,7 @@ impl FileSystemInterface
 
             p += "/";
 
-            let inode = self.get_inode(dir_entry.inode as usize);
+            let inode = self.get_inode(FilePtr(dir_entry.inode as usize));
 
             if inode.mode & 16384 != 0
             {

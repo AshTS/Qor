@@ -69,7 +69,7 @@ fn kmain()
     process::init_process_manager();
 
     process::get_process_manager().unwrap().add_process(process::process::ProcessData::new_default(process::init::init));
-    
+
     // Create the file system interface
     let mut interface = fs::FileSystemInterface::new(0);
 
@@ -78,7 +78,9 @@ fn kmain()
         panic!("Unable to initialize file system: `{}`", e.msg);
     }
 
-    kprintln!("Adding Process With PID: {}", process::get_process_manager().unwrap().load_elf(&mut interface, "/bin/prog").unwrap());
+    kprintln!("Adding Process With PID: {}", process::get_process_manager().unwrap().load_elf(&mut interface, "/bin/fs_test").unwrap());
+
+    unsafe { fs::INTERFACE = Some(interface) };
 
     drivers::TIMER_DRIVER.set_remaining_time(1);
 }
