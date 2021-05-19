@@ -79,7 +79,6 @@ fn kmain()
     }
 
     kprintln!("Adding Process With PID: {}", process::get_process_manager().unwrap().load_elf(&mut interface, "/bin/prog").unwrap());
-    kprintln!("Adding Process With PID: {}", process::get_process_manager().unwrap().load_elf(&mut interface, "/bin/prog").unwrap());
 
     drivers::TIMER_DRIVER.set_remaining_time(1);
 }
