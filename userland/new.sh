@@ -11,9 +11,8 @@ mkdir build
 mkdir src
 
 touch src/main.c
-echo "" > src/main.c
 
-echo "#include \"printf.h\"" >> src/main.c
+echo "#include \"printf.h\"" > src/main.c
 echo "" >> src/main.c
 echo "int main()" >> src/main.c
 echo "{" >> src/main.c
@@ -22,9 +21,7 @@ echo "    return 0;" >> src/main.c
 echo "}" >> src/main.c
 
 touch makefile
-echo "" > makefile
-
-echo 'CC = clang' >> makefile
+echo 'CC = clang' > makefile
 echo 'CFLAGS = --target=riscv64 -march=rv64gc -mno-relax' >> makefile
 echo 'INCLUDE = -isystem ../include' >> makefile
 echo '' >> makefile
