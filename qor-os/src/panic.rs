@@ -1,9 +1,22 @@
 //! Panic Implementation
 
+use crate::*;
+
 /// Panic handler for the kernel
 #[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> !
+fn panic(info: &core::panic::PanicInfo) -> !
 {
+    kerror!("Aborting: ");
+
+    if let Some(p) = info.location()
+    {
+        kerrorln!("line {}, file {}: {}", p.line(), p.file(), info.message().unwrap());
+    }
+    else
+    {
+        kerrorln!("no info available");
+    }
+
     abort();
 }
 

@@ -1,5 +1,6 @@
 // Required features
-#![feature(global_asm)]     // For assembly file compilation
+#![feature(global_asm)]         // For assembly file compilation
+#![feature(panic_info_message)] // For panic messages
 
 // Allow dead code for partial implementations
 #![allow(dead_code)]
