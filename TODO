@@ -1,9 +1,13 @@
-Add argument passing to processes
-Add file descriptors
-    open
-    read
-    write
-    stat
-    close
-Add working directory to processes
-Add graphics handler and syscalls
+Page Grain Memory Allocation
+    kpalloc
+    kpzalloc
+    kpfree
+Kernel Allocator
+Interrupts
+    Timer Driver
+    External Interrupts
+Processes
+System Calls
+Block Driver
+File System
+Load Process From ELF
