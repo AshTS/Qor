@@ -38,3 +38,9 @@ close:
     li a7, 3
     ecall
     ret
+
+.globl read
+read:
+    li a7, 0
+    ecall
+    ret

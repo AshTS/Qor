@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#define PRINTF_BUFFER_LEN 2
+#define PRINTF_BUFFER_LEN 5
 
 // Put implementation for printf
 void local_put(const char* data)
@@ -14,7 +14,7 @@ void local_put(const char* data)
 // Helper function for printf
 void printf_helper(char* buffer, unsigned int* index, char c)
 {
-    buffer[(*index++) % (PRINTF_BUFFER_LEN - 1)] = c;
+    buffer[((*index)++) % (PRINTF_BUFFER_LEN - 1)] = c;
     if (*index % (PRINTF_BUFFER_LEN - 1) == 0 || c == 0)
     {
         local_put(buffer);
