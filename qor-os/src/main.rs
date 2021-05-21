@@ -1,6 +1,9 @@
 // Required features
 #![feature(global_asm)]     // For assembly file compilation
 
+// Allow dead code for partial implementations
+#![allow(dead_code)]
+
 // Use the _start symbol instead of main
 #![no_main]
 
@@ -10,6 +13,9 @@
 
 // Includes
 mod asm;
+mod debug;
+mod drivers;
+mod kprint;
 mod panic;
 
 /// Kernel Initialize Function (Called immediately after boot)
@@ -17,5 +23,7 @@ mod panic;
 pub extern "C"
 fn kinit()
 {
-
+    // Initialize the UART driver
+    drivers::init_uart_driver();
+    kdebugln!(Initialization, "UART Driver Initialized");
 }
