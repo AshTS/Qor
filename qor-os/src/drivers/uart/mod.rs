@@ -109,7 +109,6 @@ impl generic::ByteInterface for UARTDriver
     }
 }
 
-
 // Implement the core::fmt::Write trait for the UART Driver
 impl core::fmt::Write for UARTDriver
 {
