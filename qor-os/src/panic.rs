@@ -6,7 +6,7 @@ use crate::*;
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> !
 {
-    kerror!("Aborting: ");
+    kerror!("\nAborting: ");
 
     if let Some(p) = info.location()
     {
