@@ -37,7 +37,7 @@ macro_rules! kdebug
         {
             if crate::kprint::COLORED
             {
-                crate::kprint!(concat!("\x1B[34m", $fmt, "\x1B[1m"), $($args)+)
+                crate::kprint!(concat!("\x1B[34m", $fmt, "\x1B[m"), $($args)+)
             }
             else
             {
@@ -51,7 +51,7 @@ macro_rules! kdebug
         {
             if crate::kprint::COLORED
             {
-                crate::kprint!(concat!("\x1B[34m", $fmt, "\x1B[1m"))
+                crate::kprint!(concat!("\x1B[34m", $fmt, "\x1B[m"))
             }
             else
             {
@@ -101,7 +101,7 @@ macro_rules! kwarn
     ($fmt:expr, $($args:tt)+) => ({
         if crate::kprint::COLORED
         {
-            crate::kprint!(concat!("\x1B[33m", $fmt, "\x1B[1m"), $($args)+)
+            crate::kprint!(concat!("\x1B[33m", $fmt, "\x1B[m"), $($args)+)
         }
         else
         {
@@ -112,7 +112,7 @@ macro_rules! kwarn
     ($fmt:expr) => ({
         if crate::kprint::COLORED
         {
-            crate::kprint!(concat!("\x1B[33m", $fmt, "\x1B[1m"))
+            crate::kprint!(concat!("\x1B[33m", $fmt, "\x1B[m"))
         }
         else
         {
@@ -143,7 +143,7 @@ macro_rules! kerror
     ($fmt:expr, $($args:tt)+) => ({
         if crate::kprint::COLORED
         {
-            crate::kprint!(concat!("\x1B[31m", $fmt, "\x1B[1m"), $($args)+)
+            crate::kprint!(concat!("\x1B[31m", $fmt, "\x1B[m"), $($args)+)
         }
         else
         {
@@ -154,7 +154,7 @@ macro_rules! kerror
     ($fmt:expr) => ({
         if crate::kprint::COLORED
         {
-            crate::kprint!(concat!("\x1B[31m", $fmt, "\x1B[1m"))
+            crate::kprint!(concat!("\x1B[31m", $fmt, "\x1B[m"))
         }
         else
         {
