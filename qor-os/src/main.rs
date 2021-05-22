@@ -1,4 +1,5 @@
 // Required features
+#![feature(const_option)]           // Allow constant unwraps
 #![feature(global_asm)]         // For assembly file compilation
 #![feature(panic_info_message)] // For panic messages
 
@@ -16,6 +17,7 @@
 mod asm;
 mod debug;
 mod drivers;
+mod mem;
 mod kprint;
 mod panic;
 
@@ -27,4 +29,10 @@ fn kinit()
     // Initialize the UART driver
     drivers::init_uart_driver();
     kdebugln!(Initialization, "UART Driver Initialized");
+
+    // Initialize the global kernel page allocator
+    mem::init_kernel_page_allocator();
+    kdebugln!(Initialization, "Global Kernel Page Allocator Initialized");
+
+    
 }
