@@ -1,0 +1,116 @@
+/// Test Kernel Page Grained Allocator - Allocate and free 4096 pages
+#[test_case]
+pub fn test_kernel_page_allocator_allocate_all()
+{
+    // Pages to test
+    let page_count = 4096;
+
+    // The first address in the allocator
+    let first = super::kpalloc(1).unwrap();
+
+    // Allocate every page
+    for _ in 0..(page_count - 1)
+    {
+        super::kpalloc(1).unwrap();
+    }
+
+    // Free every page
+    for i in 0..page_count
+    {
+        super::kpfree(first + super::PAGE_SIZE * i, 1).unwrap();
+    }
+
+    // Assert that all of the pages are free
+    assert_eq!(super::allocated_kernel_pages(), 0);
+}
+
+/// Test Kernel Page Grained Allocator - Ensure Zero Alloc
+#[test_case]
+pub fn test_kernel_page_allocator_zalloc()
+{
+    // Pages to test
+    let page_count = 4096;
+
+    // The first address in the allocator
+    let first = super::kpzalloc(1).unwrap();
+
+    // Ensure the first page is zero allocated
+    if unsafe { (first as *mut [u8; super::PAGE_SIZE]).read() } != [0; super::PAGE_SIZE]
+    {
+        panic!("Page 0x{:x} is not zero initialized", first);
+    }
+
+    // Allocate every page
+    for _ in 0..(page_count - 1)
+    {
+        let ptr = super::kpzalloc(1).unwrap();
+
+        // Ensure the pages are zero allocated
+        if unsafe { (ptr as *mut [u8; super::PAGE_SIZE]).read() } != [0; super::PAGE_SIZE]
+        {
+            panic!("Page 0x{:x} is not zero initialized", ptr);
+        }
+    }
+
+    // Free every page
+    for i in 0..page_count
+    {
+        super::kpfree(first + super::PAGE_SIZE * i, 1).unwrap();
+    }
+
+    // Assert that all of the pages are free
+    assert_eq!(super::allocated_kernel_pages(), 0);
+}
+
+/// Test Kernel Page Grained Allocator - Ensure Unique Allocations
+#[test_case]
+pub fn test_kernel_page_allocator_no_overwrite()
+{
+    // Pages to test
+    let page_count = 256;
+
+    // The first address in the allocator
+    let first = super::kpzalloc(1).unwrap();
+
+    // Allocate every page
+    for _ in 0..(page_count - 1)
+    {
+        super::kpzalloc(1).unwrap();
+    }
+
+    // Go over every page
+    for i in 0..page_count
+    {
+        let this_ptr = first + i * super::PAGE_SIZE;
+
+        // Overwrite this page with 0xFF
+        unsafe { (this_ptr as *mut [u8; super::PAGE_SIZE]).write([0xFF; super::PAGE_SIZE]) }
+
+        // Loop over all other pages
+        for j in 0..page_count
+        {
+            // Skip this page
+            if j == i {continue;}
+
+            let ptr = first + j * super::PAGE_SIZE;
+
+            // Ensure the other pages have not been overwritten
+            if unsafe { (ptr as *mut [u8; super::PAGE_SIZE]).read() } != [0; super::PAGE_SIZE]
+            {
+                panic!("Page 0x{:x} is not zero initialized", ptr);
+            }
+        }
+
+        // Correct the page by writing it with zeros again
+        unsafe { (this_ptr as *mut [u8; super::PAGE_SIZE]).write([0; super::PAGE_SIZE]) }
+    }
+
+    // Free every page
+    for i in 0..page_count
+    {
+        super::kpfree(first + super::PAGE_SIZE * i, 1).unwrap();
+    }
+
+    // Assert that all of the pages are free
+    assert_eq!(super::allocated_kernel_pages(), 0);
+}

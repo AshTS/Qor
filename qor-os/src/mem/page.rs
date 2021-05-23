@@ -222,6 +222,7 @@ impl PageMap
             }
             else
             {
+                #[cfg(not(test))]
                 kerrorln!("Unable to free 0x{:x}, because it is not in the table", addr);
                 Err(KernelPageAllocationError::NotInTable(addr))
             }
@@ -240,12 +241,14 @@ impl PageMap
                 }
                 else
                 {
+                    #[cfg(not(test))]
                     kerrorln!("Unable to free 0x{:x}, because it is not allocated", addr);
                     Err(KernelPageAllocationError::NotAllocated(addr))
                 }
             }
             else
             {
+                #[cfg(not(test))]
                 kerrorln!("Unable to free 0x{:x}, because it is not aligned", addr);
                 Err(KernelPageAllocationError::NotAligned(addr))
             }
@@ -311,8 +314,46 @@ impl PageMap
         }
         else
         {
+            #[cfg(not(test))]
             kerrorln!("Unable to allocate {} page{}, no space remaining", count, if count > 1 { "s" } else { "" });
             Err(KernelPageAllocationError::NotEnoughPages(count))
+        }
+    }
+
+    /// Total pages linked
+    pub fn total_pages(&self) -> usize
+    {
+        // If the address is not in this map, skip to the next page
+        if let Some(next) = unsafe { self.next_page.as_ref() }
+        {
+            next.total_pages() + self.number
+        }
+        else
+        {
+            self.number
+        }
+    }
+
+    /// Total allocated pages
+    pub fn total_alloc_pages(&self) -> usize
+    {
+        let mut total = 0;
+        for i in 0..self.number
+        {
+            if self.check_allocation(i) == Some(true)
+            {
+                total += 1;
+            }
+        }
+
+        // If the address is not in this map, skip to the next page
+        if let Some(next) = unsafe { self.next_page.as_ref() }
+        {
+            next.total_alloc_pages() + total
+        }
+        else
+        {
+            total
         }
     }
 }

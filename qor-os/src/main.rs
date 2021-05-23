@@ -41,7 +41,7 @@ fn kinit()
     // Initialize the global kernel page allocator
     mem::init_kernel_page_allocator();
     kdebugln!(Initialization, "Global Kernel Page Allocator Initialized");
-
+    
     // Run any tests as loop when they terminate if testing is requested
     #[cfg(test)]
     {test_main(); loop {}}
