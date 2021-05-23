@@ -1,7 +1,3 @@
-Page Grain Memory Allocation
-    kpalloc
-    kpzalloc
-    kpfree
 Kernel Allocator
 Interrupts
     Timer Driver
