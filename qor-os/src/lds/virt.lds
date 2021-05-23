@@ -64,9 +64,13 @@ SECTIONS
   PROVIDE(_memory_start = ORIGIN(ram));
   
   PROVIDE(_stack_start = _bss_end);
-  PROVIDE(_stack_end = _stack_start + 0x80000);
+
+  . = _stack_start;
+  . = . + 0x80000;
+
+  PROVIDE(_stack_end = .);
   PROVIDE(_memory_end = ORIGIN(ram) + LENGTH(ram));
-  
+
   . = ALIGN(4096);
   PROVIDE(_heap_start = .);
   PROVIDE(_heap_size = _memory_end - _heap_start);
