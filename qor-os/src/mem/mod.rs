@@ -1,6 +1,8 @@
 //! Memory Allocation Handling
 
+use crate::*;
 // Includes
+pub mod alloc;
 pub mod lds;
 pub mod page;
 
@@ -23,6 +25,8 @@ pub fn init_kernel_page_allocator()
 /// Allocate consecutive pages from the kernel
 pub fn kpalloc(count: usize) -> Result<usize, page::KernelPageAllocationError>
 {
+    kdebug!(MemoryAllocation, "kpalloc({}) -> ", count);
+
     // Ensure the global kernel page allocator was initialized
     if unsafe { GLOBAL_KERNEL_PAGE_ALLOCATOR.is_null() }
     {
@@ -31,12 +35,20 @@ pub fn kpalloc(count: usize) -> Result<usize, page::KernelPageAllocationError>
     
     // Safety: The above ensured it was initialized, and the only method of
     // initialization is through the proper initializer
-    unsafe
+    // Panic Safety: This is safe because a null would have been caught
+    // above
+    let result = unsafe { GLOBAL_KERNEL_PAGE_ALLOCATOR.as_mut() }.unwrap().alloc_pages(count);
+    
+    if let Ok(ptr) = result
     {
-        // Panic Safety: This is safe because a null would have been caught
-        // above
-        GLOBAL_KERNEL_PAGE_ALLOCATOR.as_mut().unwrap().alloc_pages(count)
+        kdebugln!(MemoryAllocation, "0x{:x}", ptr);
     }
+    else
+    {
+        kdebugln!(MemoryAllocation, "{:?}", result);
+    }
+
+    result
 }
 
 /// Allocate consecutive pages from the kernel to zero
@@ -61,6 +73,9 @@ pub fn kpzalloc(count: usize) -> Result<usize, page::KernelPageAllocationError>
 /// Free consecutive pages from the kernel
 pub fn kpfree(addr: usize, count: usize) -> Result<(), page::KernelPageAllocationError>
 {
+    kdebugln!(MemoryAllocation, "kpfree(0x{:x}, {})", addr, count);
+
+    
     // Ensure the global kernel page allocator was initialized
     if unsafe { GLOBAL_KERNEL_PAGE_ALLOCATOR.is_null() }
     {
