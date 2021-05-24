@@ -11,10 +11,10 @@ pub enum DebugCategories
 
 // Flags for debug prints
 pub const ALL: bool = true;
-pub const BYTE_MEMORY_ALLOCATION: bool = true;
+pub const BYTE_MEMORY_ALLOCATION: bool = false;
 pub const INITIALIZATION: bool = true;
-pub const KERNEL_PAGE_TABLE: bool = true;
-pub const MEMORY_ALLOCATION: bool = true;
+pub const KERNEL_PAGE_TABLE: bool = false;
+pub const MEMORY_ALLOCATION: bool = false;
 
 /// Helper function to determine if a debug print should occur
 pub const fn check_debug(cat: DebugCategories) -> bool

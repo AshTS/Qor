@@ -1,3 +1,5 @@
+use crate::*;
+
 /// Test Kernel Page Grained Allocator - Allocate and free 4096 pages
 #[test_case]
 pub fn test_kernel_page_allocator_allocate_all()
@@ -113,4 +115,45 @@ pub fn test_kernel_page_allocator_no_overwrite()
 
     // Assert that all of the pages are free
     assert_eq!(super::allocated_kernel_pages(), 0);
+}
+
+/// Test Kernel Byte Grained Allocator - Test Simple Allocation
+#[test_case]
+pub fn test_kernel_byte_allocator_simple()
+{
+    // Initialize a small global allocator
+    super::alloc::init_kernel_global_allocator(2);
+
+    // Attempt to allocate a box
+    let b = Box::leak(Box::new(42usize)) as *mut usize;
+
+    unsafe { b.write_volatile(24); }
+
+    // Attempt to free the box
+    unsafe { Box::from_raw(b) };
+}
+
+/// Test Kernel Byte Grained Allocator - Test Multiple Allocation
+#[test_case]
+pub fn test_kernel_byte_allocator_multiple()
+{
+    // Initialize a small global allocator
+    super::alloc::init_kernel_global_allocator(2);
+
+    let mut v = Vec::new();
+
+    for i in 0..16
+    {
+        v.push(Box::leak(Box::new(42usize)) as *mut usize);
+    }
+
+    for ptr in &v
+    {
+        unsafe { ptr.write(5); }
+    }
+
+    for ptr in v
+    {
+        unsafe { Box::from_raw(ptr) };
+    }
 }

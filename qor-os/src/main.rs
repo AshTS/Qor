@@ -55,9 +55,4 @@ fn kinit()
     // Initialize the kernel heap
     mem::alloc::init_kernel_global_allocator(64);
     kdebugln!(Initialization, "Global Kernel Byte Allocator Initialized");
-
-    for i in 0..2
-    {
-        let mut b = Box::new(42);
-    }
 }

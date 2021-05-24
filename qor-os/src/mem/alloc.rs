@@ -388,8 +388,14 @@ impl AllocationHeader
                     {
                         self.combine_specific(prev, index);
                     }
-
-                    prev = Some(index);
+                    else
+                    {
+                        prev = Some(index);
+                    }
+                }
+                else
+                {
+                    prev = None;
                 }
 
                 if let Some(next) = next
