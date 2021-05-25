@@ -4,6 +4,7 @@ use crate::*;
 // Includes
 pub mod alloc;
 pub mod lds;
+pub mod mmu;
 pub mod page;
 
 // Tests

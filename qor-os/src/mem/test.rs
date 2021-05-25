@@ -142,7 +142,7 @@ pub fn test_kernel_byte_allocator_multiple()
 
     let mut v = Vec::new();
 
-    for i in 0..16
+    for _ in 0..16
     {
         v.push(Box::leak(Box::new(42usize)) as *mut usize);
     }

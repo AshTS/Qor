@@ -1,6 +1,7 @@
 // Required features
 #![feature(alloc_error_handler)]        // Allow custom allocator
 #![feature(alloc_prelude)]              // Allocation prelude
+#![feature(llvm_asm)]                   // Allow inline assembly
 #![feature(const_option)]               // Allow constant unwraps
 #![feature(custom_test_frameworks)]     // Allow cargo test
 #![feature(global_asm)]                 // For assembly file compilation
