@@ -430,10 +430,7 @@ pub fn test_mapping_virtual_address_translation()
     
     let root_ppn = table as *mut mem::mmu::PageTable as usize >> 12;
     let satp_val = 8 << 60 | root_ppn;
-    unsafe
-    {
-        llvm_asm!("csrw satp, $0" :: "r"(satp_val));
-    }
+    riscv::register::satp::write(satp_val);
 
     let ptr = 0x3F_0000_0123;
     let next_ptr = table.virt_to_phys(ptr).unwrap();
