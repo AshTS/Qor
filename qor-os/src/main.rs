@@ -61,3 +61,11 @@ fn kinit()
     mem::identity_map_kernel();
     kdebugln!(Initialization, "Identity Mapped Kernel");
 }
+
+/// Kernel Main Function (Called in supervisor mode)
+#[no_mangle]
+pub extern "C"
+fn kmain()
+{
+    kdebugln!(Initialization, "Started Supervisor Mode");
+}
