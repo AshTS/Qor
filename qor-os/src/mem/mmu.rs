@@ -172,19 +172,10 @@ impl PageTable
         unsafe { page_ptr.as_mut().unwrap() }
     }
 
-    /// Add a new mapping to the page table
-    pub fn map(&mut self, vaddr: usize, paddr: usize, flags: PageTableEntryFlags, level: usize)
+    /// Inner mapping implementation
+    fn inner_map(&mut self, vaddr: usize, paddr: usize, flags: PageTableEntryFlags, level: usize)
     {
         assert!(level < 3);
-
-        kdebugln!(MemoryMapping, "Mapping Virt 0x{:x} to Phys 0x{:x} ({})", vaddr, paddr,
-            match level
-            {
-                0 => "4KiB",
-                1 => "2MiB",
-                2 => "1GiB",
-                _ => unreachable!()
-            });
 
         // Ensure a leaf is being mapped
         assert!(flags.0 & 0xe != 0);
@@ -219,6 +210,21 @@ impl PageTable
 
         // Insert the leaf entry
         *v = PageTableEntry::new(paddr >> 12, flags | PageTableEntryFlags::valid());
+    }
+
+    /// Add a new mapping to the page table
+    pub fn map(&mut self, vaddr: usize, paddr: usize, flags: PageTableEntryFlags, level: usize)
+    {
+        kdebugln!(MemoryMapping, "Mapping Virt 0x{:x} to Phys 0x{:x} ({})", vaddr, paddr,
+            match level
+            {
+                0 => "4KiB",
+                1 => "2MiB",
+                2 => "1GiB",
+                _ => unreachable!()
+            });
+
+        self.inner_map(vaddr, paddr, flags, level);
     }
 
     /// Drop the given page table assuming it is at the given level
@@ -315,6 +321,57 @@ impl PageTable
         }
 
         Err(TranslationError::NoLeaf)
+    }
+
+    /// Internal identity map helper
+    fn identity_map_helper(&mut self, start_addr: usize, end_addr: usize, flags: PageTableEntryFlags)
+    {
+        // Convert the addresses to pages to map
+        let start_page = start_addr & !(4096 - 1);
+        let end_page = end_addr & !(4096 - 1);
+
+        // Get the length of the region in bytes
+        let mut length = 4096 + end_page - start_page;
+
+        // Running page poitner
+        let mut current_page = start_page;
+
+        while length > 0
+        {
+            // If the length is greater than one GiB and is aligned to a 1 GiB boundary
+            if length >= 0x4000_0000 && current_page & (0x4000_0000 - 1) == 0
+            {
+                // Map a one GiB page
+                self.inner_map(current_page, current_page, flags, 2);
+
+                current_page += 0x4000_0000;
+                length -= 0x4000_0000;
+            }
+
+            // If the length is greater than 2 MiB and is aligned to a 2 MiB boundary
+            if length >= 0x20_0000 && current_page & (0x20_0000 - 1) == 0
+            {
+                // Map a 2 MiB page
+                self.inner_map(current_page, current_page, flags, 1);
+
+                current_page += 0x20_0000;
+                length -= 0x20_0000;
+            }
+
+            // Otherwise, map the individual 4 KiB pages
+            self.inner_map(current_page, current_page, flags, 0);
+
+            current_page += 0x1000;
+            length -= 0x1000;
+        }
+    }
+
+    /// Identity map a region of memory
+    pub fn identity_map(&mut self, start_addr: usize, end_addr: usize, flags: PageTableEntryFlags)
+    {
+        kdebugln!(MemoryMapping, "Identity Mapping 0x{:x} - 0x{:x}", start_addr, end_addr);
+
+        self.identity_map_helper(start_addr, end_addr, flags);
     }
 }
 

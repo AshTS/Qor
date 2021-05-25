@@ -130,3 +130,39 @@ pub fn total_kernel_pages() -> usize
         GLOBAL_KERNEL_PAGE_ALLOCATOR.as_ref().unwrap().total_pages()
     }
 }
+
+/// Identity map the kernel
+pub fn identity_map_kernel()
+{
+    use mmu::PageTableEntryFlags;
+
+    // Allocate a new page table
+    let page_table = mmu::PageTable::allocate();
+
+    // Identity map the segments from the linker script
+    page_table.identity_map(lds::text_start(), lds::text_end(), PageTableEntryFlags::readable() | PageTableEntryFlags::executable());
+    page_table.identity_map(lds::rodata_start(), lds::rodata_end(), PageTableEntryFlags::readable() | PageTableEntryFlags::executable());
+    page_table.identity_map(lds::data_start(), lds::data_end(), PageTableEntryFlags::readable() | PageTableEntryFlags::writable());
+    page_table.identity_map(lds::bss_start(), lds::bss_end(), PageTableEntryFlags::readable() | PageTableEntryFlags::writable());
+    page_table.identity_map(lds::stack_start(), lds::stack_end(), PageTableEntryFlags::readable() | PageTableEntryFlags::writable());
+    page_table.identity_map(lds::heap_start(), lds::heap_end(), PageTableEntryFlags::readable() | PageTableEntryFlags::writable());
+
+    // Map the CLINT MMIO
+    page_table.identity_map(0x200_0000, 0x200_b000, PageTableEntryFlags::readable() | PageTableEntryFlags::writable());
+
+    // Map the PLIC MMIO
+    page_table.identity_map(0xc00_0000, 0xc00_2000, PageTableEntryFlags::readable() | PageTableEntryFlags::writable());
+    page_table.identity_map(0xc20_0000, 0xc20_0000, PageTableEntryFlags::readable() | PageTableEntryFlags::writable());
+
+    // Map the UART MMIO
+    page_table.identity_map(0x1000_0000, 0x1000_0000, PageTableEntryFlags::readable() | PageTableEntryFlags::writable());
+
+    // Map the VirtIO MMIO
+    page_table.identity_map(0x1000_1000, 0x1000_8000, PageTableEntryFlags::readable() | PageTableEntryFlags::writable());
+
+    // Write the current page to SATP
+    let root_ppn = page_table as *mut mmu::PageTable as usize >> 12;
+    let satp_val = 8 << 60 | root_ppn;
+    
+    riscv::register::satp::write(satp_val);
+}

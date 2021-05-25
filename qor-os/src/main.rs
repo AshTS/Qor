@@ -56,4 +56,8 @@ fn kinit()
     // Initialize the kernel heap
     mem::alloc::init_kernel_global_allocator(64);
     kdebugln!(Initialization, "Global Kernel Byte Allocator Initialized");
+
+    // Identity map the kernel
+    mem::identity_map_kernel();
+    kdebugln!(Initialization, "Identity Mapped Kernel");
 }
