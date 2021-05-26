@@ -72,4 +72,10 @@ pub extern "C"
 fn kmain()
 {
     kdebugln!(Initialization, "Started Supervisor Mode");
+
+    unsafe
+    {
+        drivers::TIMER_DRIVER.set_frequency(1);
+        drivers::TIMER_DRIVER.trigger();
+    }
 }

@@ -3,8 +3,13 @@
 use crate::*;
 
 // Modules
+pub mod context;
 pub mod frame;
 pub mod handler;
+pub mod raw;
+
+pub use context::InterruptContext;
+pub use context::InterruptType;
 
 pub use frame::TrapFrame;
 

@@ -64,12 +64,6 @@ asm_trap_vector:
         load_gp %i
         .set i, i + 1
     .endr
-
-    .set i, 1
-    .rept 31
-        load_fp %i
-        .set i, i + 1
-    .endr
     
     # Jump back to where the interrupt was triggered
     mret

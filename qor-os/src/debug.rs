@@ -4,6 +4,7 @@ pub enum DebugCategories
 {
     ByteMemoryAllocation,
     Initialization,
+    Interrupts,
     KernelPageTable,
     MemoryAllocation,
     MemoryMapping,
@@ -22,6 +23,11 @@ pub const BYTE_MEMORY_ALLOCATION: bool = false;
 pub const INITIALIZATION: bool = true;
 #[cfg(test)]
 pub const INITIALIZATION: bool = true;
+
+#[cfg(not(test))]
+pub const INTERRUPTS: bool = true;
+#[cfg(test)]
+pub const INTERRUPTS: bool = true;
 
 #[cfg(not(test))]
 pub const KERNEL_PAGE_TABLE: bool = false;
@@ -51,6 +57,7 @@ pub const fn check_debug(cat: DebugCategories) -> bool
         {
             DebugCategories::ByteMemoryAllocation => BYTE_MEMORY_ALLOCATION,
             DebugCategories::Initialization => INITIALIZATION,
+            DebugCategories::Interrupts => INTERRUPTS,
             DebugCategories::KernelPageTable => KERNEL_PAGE_TABLE,
             DebugCategories::MemoryAllocation => MEMORY_ALLOCATION,
             DebugCategories::MemoryMapping => MEMORY_MAPPING,

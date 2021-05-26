@@ -1,18 +1,21 @@
 use crate::*;
 
-use super::TrapFrame;
+use super::InterruptContext;
+// use super::InterruptType;
 
-/// Trap handler (only called from the trap handler in assembly)
-#[no_mangle]
-extern "C" fn m_trap(epc: usize,
-                     _tval: usize,
-                     _cause: usize,
-                     _hart: usize,
-                     _status: usize,
-                     _frame: &'static mut TrapFrame)
-                     -> usize
+/// Interrupt Handler
+pub fn interrupt_handler(interrupt_context: InterruptContext) -> usize
 {
-    kprintln!("Interrupt!");
+    kdebugln!("{}", interrupt_context);
 
-    epc
+    match interrupt_context.get_cause()
+    {
+        trap::InterruptType::MachineTimerInterrupt =>
+        {
+            unsafe { drivers::TIMER_DRIVER.trigger() }
+        },
+        default => panic!("Unhandled Trap: {:?}", default)
+    }
+
+    interrupt_context.instruction_address()
 }

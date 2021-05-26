@@ -89,4 +89,4 @@ _start_kinit_return:
 
 _start_wfi_loop:
     wfi
-    j _start_kinit_return
+    j _start_wfi_loop

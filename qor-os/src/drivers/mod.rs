@@ -3,10 +3,12 @@
 // Modules for each driver
 pub mod generic;
 pub mod mmio;
+pub mod timer;
 pub mod uart;
 
 // Static Driver Implementations
 pub static mut UART_DRIVER: uart::UARTDriver = unsafe { uart::UARTDriver::new(0x1000_0000) };
+pub static mut TIMER_DRIVER: timer::TimerDriver = unsafe { timer::TimerDriver::new(0x200_0000) };
 
 /// Initialize the UART Driver
 pub fn init_uart_driver()
