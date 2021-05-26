@@ -1,7 +1,7 @@
 use crate::*;
 
 use super::InterruptContext;
-// use super::InterruptType;
+use super::InterruptType;
 
 /// Interrupt Handler
 pub fn interrupt_handler(interrupt_context: InterruptContext) -> usize
@@ -10,8 +10,9 @@ pub fn interrupt_handler(interrupt_context: InterruptContext) -> usize
 
     match interrupt_context.get_cause()
     {
-        trap::InterruptType::MachineTimerInterrupt =>
+        InterruptType::MachineTimerInterrupt =>
         {
+            // Prepare the timer for the next tick
             unsafe { drivers::TIMER_DRIVER.trigger() }
         },
         default => panic!("Unhandled Trap: {:?}", default)
