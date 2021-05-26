@@ -34,6 +34,7 @@ mod mem;
 mod kprint;
 mod panic;
 mod test;
+mod trap;
 
 /// Kernel Initialize Function (Called immediately after boot)
 #[no_mangle]
@@ -59,6 +60,10 @@ fn kinit()
     // Identity map the kernel
     mem::identity_map_kernel();
     kdebugln!(Initialization, "Identity Mapped Kernel");
+
+    // Set up the trap frame
+    trap::init_trap_frame();
+    kdebugln!(Initialization, "Trap Frame Initialized");
 }
 
 /// Kernel Main Function (Called in supervisor mode)

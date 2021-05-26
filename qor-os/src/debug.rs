@@ -34,7 +34,7 @@ pub const MEMORY_ALLOCATION: bool = false;
 pub const MEMORY_ALLOCATION: bool = false;
 
 #[cfg(not(test))]
-pub const MEMORY_MAPPING: bool = true;
+pub const MEMORY_MAPPING: bool = false;
 #[cfg(test)]
 pub const MEMORY_MAPPING: bool = false;
 
