@@ -25,9 +25,9 @@ pub const INITIALIZATION: bool = true;
 pub const INITIALIZATION: bool = true;
 
 #[cfg(not(test))]
-pub const INTERRUPTS: bool = true;
+pub const INTERRUPTS: bool = false;
 #[cfg(test)]
-pub const INTERRUPTS: bool = true;
+pub const INTERRUPTS: bool = false;
 
 #[cfg(not(test))]
 pub const KERNEL_PAGE_TABLE: bool = false;

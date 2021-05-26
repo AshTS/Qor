@@ -73,9 +73,12 @@ fn kmain()
 {
     kdebugln!(Initialization, "Started Supervisor Mode");
 
-    unsafe
-    {
-        drivers::TIMER_DRIVER.set_frequency(1);
-        drivers::TIMER_DRIVER.trigger();
-    }
+    // Initialize the PLIC
+    drivers::init_plic_driver();
+    kdebugln!(Initialization, "PLIC Driver Initialized");
+    
+    // Start the timer
+    drivers::init_timer_driver(1);
+    kdebugln!(Initialization, "Timer Started");
+    
 }
