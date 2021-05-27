@@ -8,6 +8,9 @@ pub enum DebugCategories
     KernelPageTable,
     MemoryAllocation,
     MemoryMapping,
+    Processes,
+    Scheduling,
+    Syscalls,
     Other,
 }
 
@@ -44,6 +47,21 @@ pub const MEMORY_MAPPING: bool = false;
 #[cfg(test)]
 pub const MEMORY_MAPPING: bool = false;
 
+#[cfg(not(test))]
+pub const PROCESSES: bool = true;
+#[cfg(test)]
+pub const PROCESSES: bool = false;
+
+#[cfg(not(test))]
+pub const SCHEDULING: bool = false;
+#[cfg(test)]
+pub const SCHEDULING: bool = false;
+
+#[cfg(not(test))]
+pub const SYSCALLS: bool = true;
+#[cfg(test)]
+pub const SYSCALLS: bool = false;
+
 /// Helper function to determine if a debug print should occur
 pub const fn check_debug(cat: DebugCategories) -> bool
 {
@@ -61,6 +79,9 @@ pub const fn check_debug(cat: DebugCategories) -> bool
             DebugCategories::KernelPageTable => KERNEL_PAGE_TABLE,
             DebugCategories::MemoryAllocation => MEMORY_ALLOCATION,
             DebugCategories::MemoryMapping => MEMORY_MAPPING,
+            DebugCategories::Processes => PROCESSES,
+            DebugCategories::Scheduling => SCHEDULING,
+            DebugCategories::Syscalls => SYSCALLS,
             DebugCategories::Other => true // This defaults to true to allow unspecified prints to pass
         }
     }

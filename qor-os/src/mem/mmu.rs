@@ -256,7 +256,7 @@ impl PageTable
     }
 
     /// Drop a top level table
-    pub fn drop(&mut self)
+    pub fn drop_table(&mut self)
     {
         kdebugln!(MemoryMapping, "Dropping the page table at 0x{:x}", self as *mut PageTable as usize);
 
@@ -437,5 +437,5 @@ pub fn test_mapping_virtual_address_translation()
 
     assert_eq!(next_ptr, 0x1_0000_0123);
 
-    table.drop();
+    table.drop_table();
 }

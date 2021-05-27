@@ -41,7 +41,7 @@ pub struct InterruptContext
     cause: InterruptType,
     hart: usize,
     status: usize,
-    frame: &'static mut TrapFrame,
+    frame: *mut TrapFrame,
     async_trap: bool
 }
 
@@ -125,10 +125,16 @@ impl InterruptContext
         self.status
     }
 
-    /// Get a mutable reference to the Trap Frame
-    pub fn get_frame(&mut self) -> & mut TrapFrame
+    /// Get the ptr to the Trap Frame
+    pub fn get_frame(&self) -> *mut TrapFrame
     {
         self.frame
+    }
+
+    /// Get a mutable reference to the Trap Frame
+    pub fn get_frame_mut(&self) -> &mut TrapFrame
+    {
+        unsafe { self.frame.as_mut() }.unwrap()
     }
 
     /// Returns true iff the trap is async

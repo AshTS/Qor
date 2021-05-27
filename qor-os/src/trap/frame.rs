@@ -29,4 +29,17 @@ impl TrapFrame
 			hartid: 0
 		}
 	}
+
+	/// Create a zeroed trap frame
+	pub fn zeroed() -> Self
+	{
+		Self
+		{
+			regs: [0; 32],
+			fregs: [0; 32],
+			satp: 0,
+			trap_stack: 0 as *mut u8,
+			hartid: 0
+		}
+	}
 }

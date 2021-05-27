@@ -28,7 +28,7 @@ pub fn init_timer_driver(freq: usize)
 
     unsafe
     {
-        drivers::TIMER_DRIVER.set_interval(drivers::timer::KernelTime::seconds(10));
+        drivers::TIMER_DRIVER.set_frequency(freq);
         drivers::TIMER_DRIVER.trigger();
     }
 }
