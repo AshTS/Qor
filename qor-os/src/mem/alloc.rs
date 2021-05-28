@@ -419,7 +419,6 @@ impl AllocationHeader
     pub fn deallocate(&mut self, ptr: *mut u8, layout: core::alloc::Layout)
     {
         kdebugln!(ByteMemoryAllocation, "Dellocating {} bytes with an alignment of {} bytes at 0x{:x}", layout.size(), layout.align(), ptr as usize);
-
         let mut index = 0;
 
         loop

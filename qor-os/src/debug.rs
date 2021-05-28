@@ -4,6 +4,7 @@ pub enum DebugCategories
 {
     BlockDevice,
     ByteMemoryAllocation,
+    Filesystem,
     Initialization,
     Interrupts,
     KernelPageTable,
@@ -30,6 +31,12 @@ pub const BYTE_MEMORY_ALLOCATION: bool = false;
 pub const BYTE_MEMORY_ALLOCATION: bool = false;
 
 #[cfg(not(test))]
+pub const FILESYSTEM: bool = false;
+#[cfg(test)]
+pub const FILESYSTEM: bool = false;
+
+
+#[cfg(not(test))]
 pub const INITIALIZATION: bool = true;
 #[cfg(test)]
 pub const INITIALIZATION: bool = true;
@@ -55,7 +62,7 @@ pub const MEMORY_MAPPING: bool = false;
 pub const MEMORY_MAPPING: bool = false;
 
 #[cfg(not(test))]
-pub const PROCESSES: bool = true;
+pub const PROCESSES: bool = false;
 #[cfg(test)]
 pub const PROCESSES: bool = false;
 
@@ -70,7 +77,7 @@ pub const SYSCALLS: bool = false;
 pub const SYSCALLS: bool = false;
 
 #[cfg(not(test))]
-pub const VIRTIO: bool = true;
+pub const VIRTIO: bool = false;
 #[cfg(test)]
 pub const VIRTIO: bool = false;
 
@@ -87,6 +94,7 @@ pub const fn check_debug(cat: DebugCategories) -> bool
         {
             DebugCategories::BlockDevice => BLOCK_DEVICE,
             DebugCategories::ByteMemoryAllocation => BYTE_MEMORY_ALLOCATION,
+            DebugCategories::Filesystem => FILESYSTEM,
             DebugCategories::Initialization => INITIALIZATION,
             DebugCategories::Interrupts => INTERRUPTS,
             DebugCategories::KernelPageTable => KERNEL_PAGE_TABLE,

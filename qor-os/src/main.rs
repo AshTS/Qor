@@ -31,6 +31,7 @@ use alloc::prelude::v1::*;
 mod asm;
 mod debug;
 mod drivers;
+mod fs;
 mod mem;
 mod kprint;
 mod panic;
@@ -38,6 +39,7 @@ mod process;
 mod syscalls;
 mod test;
 mod trap;
+mod utils;
 
 /// Kernel Initialize Function (Called immediately after boot)
 #[no_mangle]
@@ -91,6 +93,11 @@ fn kmain()
     // Initialize the virtio interrtupts
     drivers::virtio::init_virtio_interrupts();
     kdebugln!(Initialization, "VirtIO Interrupts Initialized");
+
+    let mut interface = fs::interface::FilesystemInterface::new(0);
+    interface.initialize().unwrap();
+
+    interface.test();
 
     // Start the timer
     drivers::init_timer_driver(1000);

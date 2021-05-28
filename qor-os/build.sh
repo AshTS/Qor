@@ -18,7 +18,7 @@ cd ../qor-os
 sudo losetup /dev/loop11 hdd.dsk
 
 sudo mount /dev/loop11 /mnt
-sudo rm -rf /mnt/bin
+sudo rm -rf /mnt/*
 sudo cp -r ../userland/bin/ /mnt/bin/
 sudo cp -r ../userland/root/ /mnt/
 
