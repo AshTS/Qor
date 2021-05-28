@@ -2,6 +2,7 @@
 #[derive(PartialEq, Eq)]
 pub enum DebugCategories
 {
+    BlockDevice,
     ByteMemoryAllocation,
     Initialization,
     Interrupts,
@@ -11,11 +12,17 @@ pub enum DebugCategories
     Processes,
     Scheduling,
     Syscalls,
+    VirtIO,
     Other,
 }
 
 // Flags for debug prints
 pub const ALL: bool = true;
+
+#[cfg(not(test))]
+pub const BLOCK_DEVICE: bool = false;
+#[cfg(test)]
+pub const BLOCK_DEVICE: bool = false;
 
 #[cfg(not(test))]
 pub const BYTE_MEMORY_ALLOCATION: bool = false;
@@ -58,9 +65,14 @@ pub const SCHEDULING: bool = false;
 pub const SCHEDULING: bool = false;
 
 #[cfg(not(test))]
-pub const SYSCALLS: bool = true;
+pub const SYSCALLS: bool = false;
 #[cfg(test)]
 pub const SYSCALLS: bool = false;
+
+#[cfg(not(test))]
+pub const VIRTIO: bool = true;
+#[cfg(test)]
+pub const VIRTIO: bool = false;
 
 /// Helper function to determine if a debug print should occur
 pub const fn check_debug(cat: DebugCategories) -> bool
@@ -73,6 +85,7 @@ pub const fn check_debug(cat: DebugCategories) -> bool
     {
         match cat
         {
+            DebugCategories::BlockDevice => BLOCK_DEVICE,
             DebugCategories::ByteMemoryAllocation => BYTE_MEMORY_ALLOCATION,
             DebugCategories::Initialization => INITIALIZATION,
             DebugCategories::Interrupts => INTERRUPTS,
@@ -82,6 +95,7 @@ pub const fn check_debug(cat: DebugCategories) -> bool
             DebugCategories::Processes => PROCESSES,
             DebugCategories::Scheduling => SCHEDULING,
             DebugCategories::Syscalls => SYSCALLS,
+            DebugCategories::VirtIO => VIRTIO,
             DebugCategories::Other => true // This defaults to true to allow unspecified prints to pass
         }
     }

@@ -69,53 +69,6 @@ fn kinit()
     kdebugln!(Initialization, "Trap Frame Initialized");
 }
 
-pub fn init_proc()
-{
-    loop {}
-}
-
-pub fn test_proc()
-{
-    let mut i = 0;
-    let mut j = 0;
-
-    while j < 10
-    {
-        while i < 50_000_000
-        {
-            i += 1;
-        }
-
-        i = 0;
-        j += 1;
-
-        unsafe { asm!("ecall") };
-    }
-
-    unsafe { asm!("li a0, 60") };
-    unsafe { asm!("li a1, 42") };
-    unsafe { asm!("ecall") };
-    loop {};
-}
-
-pub fn test_proc2()
-{
-    let mut i = 0;
-
-    loop
-    {
-        while i < 10_000_000
-        {
-            i += 1;
-        }
-
-        i = 0;
-
-        unsafe { asm!("ecall") };
-    }
-}
-
-
 /// Kernel Main Function (Called in supervisor mode)
 #[no_mangle]
 pub extern "C"
@@ -127,16 +80,17 @@ fn kmain()
     drivers::init_plic_driver();
     kdebugln!(Initialization, "PLIC Driver Initialized");
     
+    // Initialize the Process Manager
     process::scheduler::init_process_manager();
+    kdebugln!(Initialization, "Process Manager Initialized");
 
-    let process = process::process::Process::from_fn_ptr(init_proc);
-    process::scheduler::add_process(process);
+    // Initialize the virtio drivers (including the block device driver)
+    drivers::virtio::probe_virt_io();
+    kdebugln!(Initialization, "VirtIO Devices Initialized");
 
-    let process = process::process::Process::from_fn_ptr(test_proc);
-    process::scheduler::add_process(process);
-
-    let process = process::process::Process::from_fn_ptr(test_proc2);
-    process::scheduler::add_process(process);
+    // Initialize the virtio interrtupts
+    drivers::virtio::init_virtio_interrupts();
+    kdebugln!(Initialization, "VirtIO Interrupts Initialized");
 
     // Start the timer
     drivers::init_timer_driver(1000);

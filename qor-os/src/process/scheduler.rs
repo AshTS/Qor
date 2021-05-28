@@ -143,6 +143,11 @@ impl ProcessManager
         // If this is the first scheduling, schedule the init process
         else
         {
+            // Ensure the 0 process exists, otherwise panic
+            if !self.processes.contains_key(&0)
+            {
+                panic!("No Processes Initialized");
+            }
             0
         }
     }
@@ -168,6 +173,10 @@ pub fn init_process_manager()
     {
         GLOBAL_PROC_MANAGER = Some(ProcessManager::new());
     }
+
+    // Add the init process
+    let process = super::process::Process::from_fn_ptr(super::init::init_proc);
+    add_process(process);
 }
 
 /// Add a process to the global process manager

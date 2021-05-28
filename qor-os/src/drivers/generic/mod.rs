@@ -10,3 +10,14 @@ pub trait ByteInterface
     /// Write a byte to the interface
     fn write_byte(&mut self, data: u8);
 }
+
+/// Block Device Driver Trait
+/// Allows for reading and writing blocks from a block device
+pub trait BlockDeviceDriver
+{
+    /// Read data from the block device
+    fn read_data(buffer: *mut u8, offset: usize, size: usize);
+
+    /// Write data to the block device
+    fn write_data(buffer: *mut u8, offset: usize, size: usize);
+}
