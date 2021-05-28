@@ -335,6 +335,7 @@ impl AllocationHeader
                         }
 
                         // Return the properly padded pointer
+                        kdebugln!(ByteMemoryAllocation, " -> 0x{:x}", ptr as usize);
                         break ptr;
                     }
                 }
@@ -426,7 +427,7 @@ impl AllocationHeader
             if let Some(node) = self.mut_node(index)
             {
                 // Check if the pointer sits within the current node
-                if node.ptr as usize <= ptr as usize && node.ptr as usize + node.size as usize >= ptr as usize
+                if node.ptr as usize <= ptr as usize && node.ptr as usize + node.size as usize > ptr as usize
                 {
                     // Then free that node
                     node.flags.set_free();
