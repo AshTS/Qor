@@ -157,7 +157,7 @@ impl ProcessManager
     {
         if let Some(proc) = self.processes.get(&pid)
         {
-            (&proc.frame as *const trap::TrapFrame as usize, proc.program_counter, (8 << 60) | (proc.root as usize >> 12))
+            (&proc.frame as *const trap::TrapFrame as usize, proc.program_counter, (8 << 60) | ((pid as usize) << 44) | (proc.root as usize >> 12))
         }
         else
         {

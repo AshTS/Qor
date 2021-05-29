@@ -6,12 +6,18 @@ use process::process::Process;
 
 // Modules
 mod exit;
+mod write;
 
 /// Syscall callback
 pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, arg2: usize, arg3: usize, arg4: usize, arg5: usize, arg6: usize) -> usize
 {
     match num
     {
+        // Write Syscall
+        10 =>
+        {
+            write::syscall_write(proc, arg0)
+        },
         // Exit Syscall
         60 =>
         {

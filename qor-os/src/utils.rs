@@ -10,7 +10,7 @@ pub fn mem_dump(address: *mut u8, size: usize)
     {
         kprint!(" {:x}\t", start_row / 16 + row);
 
-        let row: &[u8; 16] = unsafe{ (address as *mut [u8; 16]).add(row).as_ref().unwrap() };
+        let row: &[u8; 16] = unsafe{ (start_row as *mut [u8; 16]).add(row).as_ref().unwrap() };
 
         for i in 0..16
         {

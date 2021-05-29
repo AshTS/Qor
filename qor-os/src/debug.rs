@@ -4,6 +4,7 @@ pub enum DebugCategories
 {
     BlockDevice,
     ByteMemoryAllocation,
+    Elf,
     Filesystem,
     Initialization,
     Interrupts,
@@ -31,10 +32,14 @@ pub const BYTE_MEMORY_ALLOCATION: bool = false;
 pub const BYTE_MEMORY_ALLOCATION: bool = false;
 
 #[cfg(not(test))]
+pub const ELF: bool = false;
+#[cfg(test)]
+pub const ELF: bool = false;
+
+#[cfg(not(test))]
 pub const FILESYSTEM: bool = false;
 #[cfg(test)]
 pub const FILESYSTEM: bool = false;
-
 
 #[cfg(not(test))]
 pub const INITIALIZATION: bool = true;
@@ -94,6 +99,7 @@ pub const fn check_debug(cat: DebugCategories) -> bool
         {
             DebugCategories::BlockDevice => BLOCK_DEVICE,
             DebugCategories::ByteMemoryAllocation => BYTE_MEMORY_ALLOCATION,
+            DebugCategories::Elf => ELF,
             DebugCategories::Filesystem => FILESYSTEM,
             DebugCategories::Initialization => INITIALIZATION,
             DebugCategories::Interrupts => INTERRUPTS,

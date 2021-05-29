@@ -97,7 +97,8 @@ fn kmain()
     let mut interface = fs::interface::FilesystemInterface::new(0);
     interface.initialize().unwrap();
 
-    interface.test();
+    let elf_proc = process::elf::load_elf(&mut interface, "/bin/prog").unwrap();
+    process::scheduler::add_process(elf_proc);
 
     // Start the timer
     drivers::init_timer_driver(1000);

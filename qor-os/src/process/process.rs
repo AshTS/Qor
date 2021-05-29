@@ -3,6 +3,7 @@ use crate::*;
 use super::data::ProcessData;
 
 use mem::mmu::PageTable;
+use mem::mmu::TranslationError;
 
 use trap::TrapFrame;
 
@@ -80,6 +81,34 @@ impl Process
         temp_result
     }
 
+    /// Create a new process from components
+    pub fn from_components(entry_point: usize, page_table: *mut PageTable, stack_size: usize, stack_ptr: usize) -> Self
+    {
+        // Create the process
+        let mut temp_result = 
+            Process
+            {
+                frame: TrapFrame::new(2),
+                stack: stack_ptr as *mut u8,
+                program_counter: entry_point,
+                pid: next_pid(),
+                root: page_table,
+                state: ProcessState::Running,
+                data: ProcessData { stack_size, mem_ptr: 0 as *mut u8, mem_size: 0 }
+            };
+
+        // Update the stack pointer
+        temp_result.frame.regs[2] = stack_ptr + stack_size * mem::PAGE_SIZE;
+
+        temp_result
+    }
+
+    /// Map memory based on its page table
+    pub fn map_mem(&self, addr: usize) -> Result<usize, TranslationError>
+    {
+        unsafe { (*self.root).virt_to_phys(addr) }
+    }
+
     /// Get the current state
     pub fn get_state(&self) -> ProcessState
     {
@@ -99,10 +128,10 @@ impl core::ops::Drop for Process
 {
     fn drop(&mut self) 
     {
-
+        let true_stack = unsafe { (*self.root).virt_to_phys(self.stack as usize) }.unwrap();
 
         // Drop the stack
-        mem::kpfree(self.stack as usize, self.data.stack_size).unwrap();
+        mem::kpfree(true_stack, self.data.stack_size).unwrap();
 
         // Drop the page table
         unsafe { self.root.as_mut() }.unwrap().drop_table();
