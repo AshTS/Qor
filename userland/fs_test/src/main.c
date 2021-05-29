@@ -10,9 +10,9 @@ int main()
 
     if (fd != -1)
     {
-        // read(fd, buffer, 32);
+        read(fd, buffer, 1024);
 
-        // printf("Got Text: `%s`", buffer);
+        printf("Got Text: `%s`", buffer);
 
         close(fd);
     }

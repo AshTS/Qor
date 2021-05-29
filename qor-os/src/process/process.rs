@@ -1,3 +1,5 @@
+use core::usize;
+
 use crate::*;
 
 use super::data::ProcessData;
@@ -29,7 +31,6 @@ pub enum ProcessState
     Waiting,
     Dead
 }
-
 /// Process Structure
 #[repr(C)]
 pub struct Process
@@ -40,34 +41,24 @@ pub struct Process
     pub pid: u16,
     pub root: *mut PageTable,
     state: ProcessState,
-    data: ProcessData
+    pub data: ProcessData,
+    pub fs_interface: Option<Box<fs::interface::FilesystemInterface>>
 } 
 
 impl Process
 {
-    /// Create a new process from a function pointer (for testing only)
+    /// Create a new process from a function pointer
     pub fn from_fn_ptr(f: fn()) -> Self
     {
         let stack_size = 2;
         let entry_point = f as usize;
 
-        let mut temp_result = 
-                Process
-                {
-                    frame: TrapFrame::new(2),
-                    stack: 0 as *mut u8,
-                    program_counter: entry_point,
-                    pid: next_pid(),
-                    root: mem::kpzalloc(1).unwrap() as *mut PageTable,
-                    state: ProcessState::Running,
-                    data: ProcessData { stack_size, mem_ptr: 0 as *mut u8, mem_size: 0 }
-                };
+        let page_table_ptr = mem::kpzalloc(1).unwrap() as *mut PageTable;
 
         // Initialize the stack
         let stack = mem::kpzalloc(stack_size).unwrap();
-        temp_result.stack = stack as *mut u8;
-        temp_result.frame.regs[2] = stack + stack_size * mem::PAGE_SIZE;
-        let page_table = unsafe {temp_result.root.as_mut()}.unwrap();
+
+        let page_table = unsafe {page_table_ptr.as_mut()}.unwrap();
 
         use mem::mmu::PageTableEntryFlags;
 
@@ -78,7 +69,7 @@ impl Process
         // Map the stack
         page_table.identity_map(stack, stack + (stack_size - 1) * mem::PAGE_SIZE, PageTableEntryFlags::readable() | PageTableEntryFlags::writable() | PageTableEntryFlags::user());
 
-        temp_result
+        Self::from_components(entry_point, page_table_ptr, stack_size, stack)
     }
 
     /// Create a new process from components
@@ -94,7 +85,8 @@ impl Process
                 pid: next_pid(),
                 root: page_table,
                 state: ProcessState::Running,
-                data: ProcessData { stack_size, mem_ptr: 0 as *mut u8, mem_size: 0 }
+                data: unsafe { ProcessData::new(stack_size, 0, 0) },
+                fs_interface: None,
             };
 
         // Update the stack pointer
@@ -121,6 +113,93 @@ impl Process
         kdebugln!(Processes, "Killing PID {} with exit code: {}", self.pid, value);
 
         self.state = ProcessState::Dead;
+    }
+
+    /// Initialize the file system
+    pub fn init_fs(&mut self)
+    {
+        let mut fsi = Box::new(fs::interface::FilesystemInterface::new(0));
+        fsi.initialize().unwrap();
+        self.fs_interface = Some(fsi);
+    }
+
+    /// Ensure file system
+    pub fn ensure_fs(&mut self)
+    {
+        if self.fs_interface.is_none()
+        {
+            self.init_fs();
+        }
+    }
+
+    /// Open a file by path
+    pub fn open(&mut self, path: &str, _mode: usize) -> Result<usize, fs::interface::FilesystemError>
+    {
+        self.ensure_fs();
+        
+        let inode = self.fs_interface.as_mut().unwrap().get_inode_by_path(path)?;
+
+        let mut i = 3;
+
+        while self.data.descriptors.contains_key(&i)
+        {
+            i += 1;
+        }
+
+        self.data.descriptors.insert(i, Box::new(super::descriptor::InodeFileDescriptor(inode)));
+
+        Ok(i) 
+    }
+
+    /// Read from a file descriptor
+    pub fn read(&mut self, fd: usize, buffer: *mut u8, count: usize) -> usize
+    {
+        self.ensure_fs();
+
+        if let Some(fd) = self.data.descriptors.get_mut(&fd)
+        {
+            fd.read(self.fs_interface.as_mut().unwrap(), buffer, count)
+        }
+        else
+        {
+            0xFFFFFFFFFFFFFFFF
+        }
+    }
+
+    /// Write to a file descriptor
+    pub fn write(&mut self, fd: usize, buffer: *mut u8, count: usize) -> usize
+    {
+        self.ensure_fs();
+
+        if let Some(fd) = self.data.descriptors.get_mut(&fd)
+        {
+            fd.write(self.fs_interface.as_mut().unwrap(), buffer, count)
+        }
+        else
+        {
+            0xFFFFFFFFFFFFFFFF
+        }
+    }
+
+    /// Close a file descriptor
+    pub fn close(&mut self, fd: usize) -> usize
+    {
+        let v = if let Some(fd) = self.data.descriptors.get_mut(&fd)
+        {
+            fd.close();
+            0
+        }
+        else
+        {
+            0xFFFFFFFFFFFFFFFF
+        };
+
+        if v == 0
+        {
+            self.data.descriptors.remove(&fd);
+        }
+
+        v
     }
 }
 

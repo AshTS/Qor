@@ -8,7 +8,13 @@
 // Put implementation for printf
 void local_put(const char* data)
 {
-    put(data);
+    int count = 0;
+    while (*(data + count))
+    {
+        count++;
+    }
+
+    write(1, data, count);
 }
 
 // Helper function for printf

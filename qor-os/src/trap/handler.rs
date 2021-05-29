@@ -33,15 +33,17 @@ pub fn interrupt_handler(interrupt_context: InterruptContext) -> usize
         },
         InterruptType::UserEnvironmentCall =>
         {
-            syscalls::handle_syscall(process::scheduler::current_process().unwrap(),
-                                     interrupt_context.get_frame_mut().regs[17],
-                                     interrupt_context.get_frame_mut().regs[10],
-                                     interrupt_context.get_frame_mut().regs[11],
-                                     interrupt_context.get_frame_mut().regs[12],
-                                     interrupt_context.get_frame_mut().regs[13],
-                                     interrupt_context.get_frame_mut().regs[14],
-                                     interrupt_context.get_frame_mut().regs[15],
-                                     interrupt_context.get_frame_mut().regs[16]);
+            let result =syscalls::handle_syscall(process::scheduler::current_process().unwrap(),
+                                                    interrupt_context.get_frame_mut().regs[17],
+                                                    interrupt_context.get_frame_mut().regs[10],
+                                                    interrupt_context.get_frame_mut().regs[11],
+                                                    interrupt_context.get_frame_mut().regs[12],
+                                                    interrupt_context.get_frame_mut().regs[13],
+                                                    interrupt_context.get_frame_mut().regs[14],
+                                                    interrupt_context.get_frame_mut().regs[15],
+                                                    interrupt_context.get_frame_mut().regs[16]);
+
+            interrupt_context.get_frame_mut().regs[10] = result;
 
             return interrupt_context.instruction_address() + 4;
         },

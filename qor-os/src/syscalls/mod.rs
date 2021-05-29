@@ -5,7 +5,10 @@ use crate::*;
 use process::process::Process;
 
 // Modules
+mod close;
 mod exit;
+mod open;
+mod read;
 mod write;
 
 /// Syscall callback
@@ -13,10 +16,25 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
 {
     match num
     {
-        // Write Syscall
-        10 =>
+        // Read Syscall
+        0 =>
         {
-            write::syscall_write(proc, arg0)
+            read::syscall_read(proc, arg0, arg1, arg2)
+        },
+        // Write Syscall
+        1 =>
+        {
+            write::syscall_write(proc, arg0, arg1, arg2)
+        },
+        // Open Syscall
+        2 =>
+        {
+            open::syscall_open(proc, arg0, arg1)
+        },
+        // Close Syscall
+        3 =>
+        {
+            close::syscall_close(proc, arg0)
         },
         // Exit Syscall
         60 =>
@@ -26,8 +44,8 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         },
         default =>
         {
-            kdebugln!(Syscalls, "Syscall from PID {}", proc.pid);
-            kdebugln!(Syscalls, "Syscall {} ({}, {}, {}, {}, {}, {}, {})", default, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+            kwarnln!("Syscall from PID {}", proc.pid);
+            kwarnln!("Syscall {} ({}, {}, {}, {}, {}, {}, {})", default, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
             0
         }
     }

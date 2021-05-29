@@ -93,11 +93,11 @@ fn kmain()
     // Initialize the virtio interrtupts
     drivers::virtio::init_virtio_interrupts();
     kdebugln!(Initialization, "VirtIO Interrupts Initialized");
-
+    
     let mut interface = fs::interface::FilesystemInterface::new(0);
     interface.initialize().unwrap();
 
-    let elf_proc = process::elf::load_elf(&mut interface, "/bin/prog").unwrap();
+    let elf_proc = process::elf::load_elf(&mut interface, "/bin/fs_test").unwrap();
     process::scheduler::add_process(elf_proc);
 
     // Start the timer

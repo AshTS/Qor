@@ -1,4 +1,5 @@
 use crate::*;
+use crate::process::elf;
 
 use super::structures::*;
 
@@ -173,6 +174,36 @@ impl FilesystemInterface
         index
     }
 
+    /// Read the data from an inode
+    pub fn read_file(&mut self, inode: usize, buffer: *mut u8, size: usize) -> usize
+    {
+        let mut remaining = size;
+        let mut index = 0;
+
+        let inode = self.get_inode(inode);
+
+        for (i, zone) in inode.zones.iter().enumerate()
+        {
+            if *zone == 0 {continue; }
+            self.read_zone(*zone as usize, i.max(6) - 6, buffer, &mut index, &mut remaining);
+        }
+
+        index
+    }
+
+    /// Get an inode number by path
+    pub fn get_inode_by_path(&mut self, path: &str) -> Result<usize, FilesystemError>
+    {
+        if let Some(inode) = self.tree.get(path)
+        {
+            Ok(*inode)
+        }
+        else
+        {
+            Err(FilesystemError::FileNotFound(String::from(path)))
+        }
+    }
+
     /// Get the directory entries for the given inode number
     fn get_dir_entries(&mut self, inode: usize) -> Vec<DirEntry>
     {
@@ -252,26 +283,5 @@ impl FilesystemInterface
         self.read_inode(inode, data.as_slice().as_ptr() as *mut u8, data.len());
 
         Ok(data)
-    }
-
-    /// Test the file system (this is just for development)
-    pub fn test(&mut self)
-    {
-        for (key, _) in self.tree.iter()
-        {
-            if !key.ends_with("/.") && !key.ends_with("/..")
-            {
-                kprintln!("{}", key);
-            }
-        }
-
-        let data = self.read_to_buffer("/root/test.txt").unwrap();
-
-        for v in &data[0..data.len()]
-        {
-            kprint!("{}", *v as char);
-        }
-
-        kprintln!();
     }
 }

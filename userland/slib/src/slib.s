@@ -21,9 +21,9 @@ syscall:
     ecall
     ret
 
-.globl put
-put:
-    li a7, 10
+.globl write
+write:
+    li a7, 1
     ecall
     ret
 
