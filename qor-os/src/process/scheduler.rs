@@ -125,6 +125,7 @@ impl ProcessManager
                 step_pid = (step_pid + 1) % (highest + 1);
 
                 let mut children = None;
+                let mut adoption_data: Option<(u16, Vec<u16>)> = None;
 
                 // Check the current step_pid
                 if let Some(proc) = self.get_process_by_pid(step_pid)
@@ -147,6 +148,7 @@ impl ProcessManager
                         ProcessState::Dead => 
                         {
                             kdebugln!(Processes, "Cleaning Up PID {}", step_pid);
+                            adoption_data = Some((proc.data.parent_pid, proc.data.children.clone()));
                             self.processes.remove(&step_pid);
                         }
                     }
@@ -173,6 +175,21 @@ impl ProcessManager
                         self.get_process_by_pid_mut(step_pid).unwrap().frame.regs[10] = stopped as usize;
                         self.get_process_by_pid_mut(step_pid).unwrap().state = ProcessState::Running;
                         break;
+                    }
+                }
+
+                // If data needs to be adopted
+                if let Some((pid, data)) = adoption_data
+                {
+                    if let Some(r) = self.get_process_by_pid_mut(pid)
+                    {
+                        for cpid in data
+                        {
+                            if !r.data.children.contains(&cpid)
+                            {
+                                r.register_child(cpid);
+                            }
+                        }
                     }
                 }
             }
