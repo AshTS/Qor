@@ -35,7 +35,6 @@ pub fn syscall_execve(proc: &mut super::Process, path_ptr: usize) -> usize
     }
     else
     {
-        kdebugln!("ERORR");
         0xFFFFFFFFFFFFFFFF
     }
 }
