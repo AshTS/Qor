@@ -56,3 +56,9 @@ execve:
     li a7, 59
     ecall
     ret
+
+.globl wait
+wait:
+    li a7, 61
+    ecall
+    ret

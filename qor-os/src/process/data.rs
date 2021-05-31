@@ -8,7 +8,9 @@ pub struct ProcessData
     pub stack_size: usize, // Stack size in pages
     pub mem_ptr: *mut u8,
     pub mem_size: usize, // Size of the memory allocated in pages,
-    pub descriptors: BTreeMap<usize, Box<dyn super::descriptor::FileDescriptor>>
+    pub descriptors: BTreeMap<usize, Box<dyn super::descriptor::FileDescriptor>>,
+    pub children: Vec<u16>,
+    pub parent_pid: u16,
 }
 
 impl ProcessData
@@ -28,7 +30,9 @@ impl ProcessData
             stack_size,
             mem_ptr: mem_ptr as *mut u8,
             mem_size,
-            descriptors
+            descriptors,
+            children: Vec::new(),
+            parent_pid: 0
         }
     }
 
@@ -38,5 +42,17 @@ impl ProcessData
         self.descriptors.insert(0, Box::new(super::descriptor::UARTIn{}));
         self.descriptors.insert(1, Box::new(super::descriptor::UARTOut{}));
         self.descriptors.insert(2, Box::new(super::descriptor::UARTError{}));
+    }
+
+    /// Register a child process
+    pub fn register_child(&mut self, child_pid: u16)
+    {
+        self.children.push(child_pid);
+    }
+
+    /// Set the parent PID
+    pub fn set_parent(&mut self, parent: u16)
+    {
+        self.parent_pid = parent;
     }
 }

@@ -4,3 +4,4 @@ extern unsigned int close(int fd);
 extern unsigned int read(int fd, void* buffer, int size);
 extern unsigned int fork();
 extern unsigned int execve(const char* path);
+extern unsigned int wait(int* wstatus);

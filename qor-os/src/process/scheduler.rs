@@ -117,10 +117,14 @@ impl ProcessManager
 
             let mut step_pid = pid;
 
+            let mut stopped_pid = None;
+
             loop
             {
                 // Increment and wrap back to zero
                 step_pid = (step_pid + 1) % (highest + 1);
+
+                let mut children = None;
 
                 // Check the current step_pid
                 if let Some(proc) = self.get_process_by_pid(step_pid)
@@ -132,20 +136,44 @@ impl ProcessManager
                         {
                             break;
                         },
-                        // If it is asleep or waiting, skip
-                        ProcessState::Sleeping | ProcessState::Waiting => {},
+                        // If the process is waiting, perform the proper wait checks
+                        ProcessState::Waiting =>
+                        {
+                            children = Some(proc.get_children().clone())
+                        },
+                        // If it is asleep or a zombie, skip
+                        ProcessState::Sleeping | ProcessState::Zombie => {},
                         // If it is dead, remove it from the process tree
                         ProcessState::Dead => 
                         {
+                            kdebugln!(Processes, "Cleaning Up PID {}", step_pid);
                             self.processes.remove(&step_pid);
                         }
                     }
                 }
 
-                // If the step wraps back to the original pid, panic
-                if step_pid == pid
+                // If this process is waiting
+                if let Some(children) = children
                 {
-                    panic!("No processes remaining");
+                    for child in children
+                    {
+                        if let Some(child_proc) = self.get_process_by_pid_mut(child)
+                        {
+                            if child_proc.wait_check()
+                            {
+                                stopped_pid = Some(child);
+                                break;
+                            }
+                        }
+                    }
+
+                    if let Some(stopped) = stopped_pid
+                    {
+                        self.get_process_by_pid_mut(step_pid).unwrap().remove_child(stopped);
+                        self.get_process_by_pid_mut(step_pid).unwrap().frame.regs[10] = stopped as usize;
+                        self.get_process_by_pid_mut(step_pid).unwrap().state = ProcessState::Running;
+                        break;
+                    }
                 }
             }
 
@@ -196,6 +224,24 @@ pub fn add_process(proc: Process)
     unsafe 
     {
         GLOBAL_PROC_MANAGER.as_mut().unwrap().add_process(proc);
+    }
+}
+
+/// Get a reference to the init process
+pub fn get_init_process() -> Option<&'static Box<Process>>
+{
+    unsafe 
+    {
+        GLOBAL_PROC_MANAGER.as_mut().unwrap().get_process_by_pid(0)
+    }
+}
+
+/// Get a mutable reference to the init process
+pub fn get_init_process_mut() -> Option<&'static mut Box<Process>>
+{
+    unsafe 
+    {
+        GLOBAL_PROC_MANAGER.as_mut().unwrap().get_process_by_pid_mut(0)
     }
 }
 

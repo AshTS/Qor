@@ -1,5 +1,3 @@
-use core::usize;
-
 use crate::*;
 
 use super::data::ProcessData;
@@ -23,13 +21,14 @@ fn next_pid() -> u16
 }
 
 /// Process State Enumeration
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProcessState
 {
     Running,
     Sleeping,
     Waiting,
-    Dead
+    Dead,
+    Zombie
 }
 /// Process Structure
 #[repr(C)]
@@ -112,7 +111,7 @@ impl Process
     {
         kdebugln!(Processes, "Killing PID {} with exit code: {}", self.pid, value);
 
-        self.state = ProcessState::Dead;
+        self.state = ProcessState::Zombie;
     }
 
     /// Initialize the file system
@@ -217,7 +216,7 @@ impl Process
     }
 
     /// Get a forked version of the current process
-    pub fn forked(&self) -> Self
+    pub fn forked(&mut self) -> Self
     {
         let stack_size = self.data.stack_size;
 
@@ -228,7 +227,48 @@ impl Process
 
         temp.connect_to_term();
 
+        self.register_child(temp.pid);
+
         temp
+    }
+
+    /// Check if the state has changed for the wait syscall
+    pub fn wait_check(&mut self) -> bool
+    {
+        if self.state == ProcessState::Zombie
+        {
+            self.state = ProcessState::Dead;
+            true
+        }
+        else
+        {
+            false
+        }
+    }
+
+    /// Register a child with the process
+    pub fn register_child(&mut self, child_pid: u16)
+    {
+        self.data.register_child(child_pid);
+    }
+
+    /// Remove a child  process
+    pub fn remove_child(&mut self, child_pid: u16)
+    {
+        for i in 0..self.data.children.len()
+        {
+            if self.data.children[i] == child_pid
+            {
+                self.data.children.remove(i);
+                break;
+            }
+        }
+    }
+
+    /// Get a reference to the children pids
+    pub fn get_children(&self) -> &Vec<u16>
+    {
+        &self.data.children
     }
 }
 

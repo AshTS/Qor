@@ -3,7 +3,7 @@ if not test -d ../userland/bin
   mkdir ../userland/bin
 end
 
-set programs slib prog hello
+set programs slib shell prog hello
 
 cd ../userland
 

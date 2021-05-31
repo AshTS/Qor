@@ -11,6 +11,7 @@ mod exit;
 mod fork;
 mod open;
 mod read;
+mod wait;
 mod write;
 
 /// Syscall callback
@@ -52,6 +53,12 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         60 =>
         {
             exit::syscall_exit(proc, arg0);
+            0
+        },
+        // Wait Syscall
+        61 =>
+        {
+            wait::syscall_wait(proc, arg0);
             0
         },
         default =>

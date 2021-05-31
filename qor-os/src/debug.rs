@@ -67,7 +67,7 @@ pub const MEMORY_MAPPING: bool = false;
 pub const MEMORY_MAPPING: bool = false;
 
 #[cfg(not(test))]
-pub const PROCESSES: bool = true;
+pub const PROCESSES: bool = false;
 #[cfg(test)]
 pub const PROCESSES: bool = false;
 
