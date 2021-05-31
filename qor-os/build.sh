@@ -3,7 +3,7 @@ if not test -d ../userland/bin
   mkdir ../userland/bin
 end
 
-set programs slib prog fs_test fork-test hello
+set programs slib prog hello
 
 cd ../userland
 
