@@ -3,6 +3,12 @@ use crate::*;
 use super::InterruptContext;
 use super::InterruptType;
 
+/// Dump on error
+pub fn dump_on_error()
+{
+    kerrorln!("Error Dump:");
+}
+
 /// Interrupt Handler
 pub fn interrupt_handler(interrupt_context: InterruptContext) -> usize
 {
@@ -58,6 +64,7 @@ pub fn interrupt_handler(interrupt_context: InterruptContext) -> usize
         default =>
         {
             kerrorln!("{}", interrupt_context);
+            dump_on_error();
             panic!("Unhandled Trap: {:?}", default);
         }
     }

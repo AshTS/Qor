@@ -188,7 +188,7 @@ pub fn setup_block_device(ptr: *mut u32) -> bool
         super::mmio::write_offset::<u32>(ptr as usize, MmioOffsets::QueueSel as usize, 0);
 
 
-        let queue_ptr = mem::kpzalloc(num_pages).unwrap() as *mut Queue;
+        let queue_ptr = mem::kpzalloc(num_pages, "Block Driver Queue").unwrap() as *mut Queue;
         let queue_pfn = queue_ptr as u32;
         super::mmio::write_offset::<u32>(ptr as usize, MmioOffsets::GuestPageSize as usize, 4096 as u32);
 

@@ -53,10 +53,10 @@ impl Process
         let stack_size = 2;
         let entry_point = f as usize;
 
-        let page_table_ptr = mem::kpzalloc(1).unwrap() as *mut PageTable;
+        let page_table_ptr = mem::kpzalloc(1, "Fn Ptr Page Table").unwrap() as *mut PageTable;
 
         // Initialize the stack
-        let stack = mem::kpzalloc(stack_size).unwrap();
+        let stack = mem::kpzalloc(stack_size, "Fn Ptr Stack").unwrap();
 
         let page_table = unsafe {page_table_ptr.as_mut()}.unwrap();
 
@@ -79,7 +79,7 @@ impl Process
         let mut temp_result = 
             Process
             {
-                frame: TrapFrame::new(2),
+                frame: TrapFrame::new(4),
                 stack: stack_ptr as *mut u8,
                 program_counter: entry_point,
                 pid: next_pid(),
@@ -200,6 +200,14 @@ impl Process
         }
 
         v
+    }
+
+    /// Display the memory map for this process
+    pub fn display_memory_map(&self)
+    {
+        let pt = unsafe { self.root.as_ref().unwrap() };
+
+        pt.display_mapping();
     }
 }
 

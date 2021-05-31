@@ -24,9 +24,9 @@ pub fn init_kernel_page_allocator()
 }
 
 /// Allocate consecutive pages from the kernel
-pub fn kpalloc(count: usize) -> Result<usize, page::KernelPageAllocationError>
+pub fn kpalloc(count: usize, reason: &'static str) -> Result<usize, page::KernelPageAllocationError>
 {
-    kdebug!(MemoryAllocation, "kpalloc({}) -> ", count);
+    kdebug!(MemoryAllocation, "`{}`: kpalloc({}) -> ", reason, count);
 
     // Ensure the global kernel page allocator was initialized
     if unsafe { GLOBAL_KERNEL_PAGE_ALLOCATOR.is_null() }
@@ -53,10 +53,10 @@ pub fn kpalloc(count: usize) -> Result<usize, page::KernelPageAllocationError>
 }
 
 /// Allocate consecutive pages from the kernel to zero
-pub fn kpzalloc(count: usize) -> Result<usize, page::KernelPageAllocationError>
+pub fn kpzalloc(count: usize, reason: &'static str) -> Result<usize, page::KernelPageAllocationError>
 {
     // Allocate the pages
-    let ptr = kpalloc(count)? as *mut [u8; 4096];
+    let ptr = kpalloc(count, reason)? as *mut [u8; 4096];
 
     // Write zeros to each page
     for i in 0..count

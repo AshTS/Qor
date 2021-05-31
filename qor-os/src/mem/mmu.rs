@@ -166,7 +166,7 @@ impl PageTable
     pub fn allocate() -> &'static mut Self
     {
         // Allocate a new page on the kernel heap
-        let page_ptr = super::kpzalloc(4096 / super::PAGE_SIZE).unwrap() as *mut Self;
+        let page_ptr = super::kpzalloc(4096 / super::PAGE_SIZE, "Extra Page Table").unwrap() as *mut Self;
 
         // Safety: The kernel will only give valid, free memory, and the memory has been zeroed
         unsafe { page_ptr.as_mut().unwrap() }
@@ -321,6 +321,126 @@ impl PageTable
         }
 
         Err(TranslationError::NoLeaf)
+    }
+
+    /// Display the mapping given by this table (assuming this table is at level 2)
+    pub fn display_mapping(&self)
+    {
+        self.display_mapping_inner(2, 0);
+    }
+
+    fn display_mapping_inner(&self, level: usize, vaddr: usize)
+    {
+        kprintln!("Level: {} Page: 0x{:x}", level, self as *const PageTable as usize);
+
+        for (i, entry) in self.entries.iter().enumerate()
+        {
+            // If this entry is invalid, skip
+            if !(entry.flag() & PageTableEntryFlags::valid())
+            {
+                continue;
+            }
+
+            let phys_addr = ((entry.0 & !0x3ff) << 2) as usize;
+
+            // If this level is a leaf, display it
+            if entry.flag().0 & 0xE != 0
+            {
+                kprint!("0x{:016x} -> 0x{:016x} ", vaddr + (i << (9 * level + 12)), phys_addr);
+
+                if entry.flag() & PageTableEntryFlags::readable()
+                {
+                    kprint!("r");
+                }
+                else
+                {
+                    kprint!("-");
+                }
+
+                if entry.flag() & PageTableEntryFlags::writable()
+                {
+                    kprint!("w");
+                }
+                else
+                {
+                    kprint!("-");
+                }
+
+                if entry.flag() & PageTableEntryFlags::executable()
+                {
+                    kprint!("x");
+                }
+                else
+                {
+                    kprint!("-");
+                }
+
+                if entry.flag() & PageTableEntryFlags::user()
+                {
+                    kprint!("u");
+                }
+                else
+                {
+                    kprint!("-");
+                }
+
+                if entry.flag() & PageTableEntryFlags::global()
+                {
+                    kprint!("g");
+                }
+                else
+                {
+                    kprint!("-");
+                }
+
+                if entry.flag() & PageTableEntryFlags::accessed()
+                {
+                    kprint!("a");
+                }
+                else
+                {
+                    kprint!("-");
+                }
+
+                if entry.flag() & PageTableEntryFlags::dirty()
+                {
+                    kprint!("d");
+                }
+                else
+                {
+                    kprint!("-");
+                }
+
+                kprintln!("    {}",
+                    if level == 2
+                    {
+                        "1 GiB"
+                    }
+                    else if level == 1
+                    {
+                        "2 MiB"
+                    }
+                    else if level == 0
+                    {
+                        "4 KiB"
+                    }
+                    else
+                    {
+                        "ERROR"
+                    });
+            }
+            else
+            {
+                if level == 0
+                {
+
+                }
+                else
+                {
+                    unsafe { (phys_addr as *const PageTable).as_ref().unwrap() }.display_mapping_inner(level - 1, vaddr + (i << (9 * level + 12)));
+                }
+            }
+        }
     }
 
     /// Internal identity map helper

@@ -16,7 +16,7 @@ impl TrapFrame
 	pub fn new(stack_size: usize) -> Self
 	{
 		// Allocate space for the stack
-		let stack_start = crate::mem::kpzalloc(stack_size).unwrap();
+		let stack_start = crate::mem::kpzalloc(stack_size, "Trap Frame").unwrap();
 
 		let trap_stack = (stack_start + stack_size * crate::mem::PAGE_SIZE) as *mut u8;
 

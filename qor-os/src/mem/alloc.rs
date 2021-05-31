@@ -2,6 +2,9 @@
 
 use crate::*;
 
+// Overwrite sentinel flag
+const SENTINEL: bool = false;
+
 // Kernel Heap Pointer
 static KERNEL_HEAP_POINTER: core::sync::atomic::AtomicPtr<AllocationHeader> = core::sync::atomic::AtomicPtr::new(0 as *mut AllocationHeader);
 
@@ -138,10 +141,10 @@ impl AllocationHeader
     pub fn new(starting_pages: usize) -> Result<&'static mut AllocationHeader, super::page::KernelPageAllocationError>
     {
         // Allocate a new page
-        let page = unsafe { (super::kpalloc(1)? as *mut AllocationHeader).as_mut() }.unwrap();
+        let page = unsafe { (super::kpalloc(1, "Byte Allocator Header")? as *mut AllocationHeader).as_mut() }.unwrap();
 
         // Allocate the memory for the kernel
-        let kernel_mem = super::kpalloc(starting_pages)? as *mut u8;
+        let kernel_mem = super::kpalloc(starting_pages, "Byte Allocator Data")? as *mut u8;
 
         // Set this as the only allocator header
         page.next_allocator = None;
@@ -291,19 +294,30 @@ impl AllocationHeader
 
         let next_free = self.get_free();
 
+        let size = 
+        if SENTINEL
+        {
+            layout.size() * 2
+        }
+        else
+        {
+            layout.size()
+        };
+        
+
         loop
         {
             if let Some(node) = self.mut_node(index)
             {
                 // If a valid, free, and properly sized node is found
-                if node.flags.is_valid() && node.flags.is_free() && node.size as usize >= layout.size()
+                if node.flags.is_valid() && node.flags.is_free() && node.size as usize >= size
                 {
                     // And that node supports the proper padding
                     let padding_needed = (layout.align() - (node.ptr as usize % layout.align())) % layout.align();
-                    if node.size as usize >= layout.size() + padding_needed
+                    if node.size as usize >= size + padding_needed
                     {
                         // Total space required (size and padding)
-                        let space = layout.size() + padding_needed;
+                        let space = size + padding_needed;
 
                         // If there is space left over
                         let new_node = if node.size as usize > space
@@ -336,6 +350,16 @@ impl AllocationHeader
 
                         // Return the properly padded pointer
                         kdebugln!(ByteMemoryAllocation, " -> 0x{:x}", ptr as usize);
+
+                        // Sentinel Write
+                        if SENTINEL
+                        {
+                            for i in 0..size / 2
+                            {
+                                unsafe {ptr.add(i + layout.size()).write((i & 0xFF) as u8)};
+                            }   
+                        }
+
                         break ptr;
                     }
                 }
@@ -419,6 +443,19 @@ impl AllocationHeader
     pub fn deallocate(&mut self, ptr: *mut u8, layout: core::alloc::Layout)
     {
         kdebugln!(ByteMemoryAllocation, "Dellocating {} bytes with an alignment of {} bytes at 0x{:x}", layout.size(), layout.align(), ptr as usize);
+        
+        // Sentinel Read
+        if SENTINEL
+        {
+            for i in 0..layout.size()
+            {
+                if unsafe {ptr.add(i + layout.size()).read() != (i & 0xFF) as u8}
+                {
+                    panic!("Sentinel Triggered at 0x{:x}", ptr as usize);
+                }
+            }   
+        }
+        
         let mut index = 0;
 
         loop

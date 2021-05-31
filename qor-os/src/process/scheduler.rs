@@ -14,7 +14,7 @@ pub struct ProcessManager
 {
     current_pid: Option<u16>,
     max_pid: Option<u16>,
-    processes: BTreeMap<u16, Process>
+    processes: BTreeMap<u16, Box<Process>>
 }
 
 impl ProcessManager
@@ -44,23 +44,23 @@ impl ProcessManager
             self.max_pid = Some(proc.pid);
         }
 
-        self.processes.insert(proc.pid, proc);
+        self.processes.insert(proc.pid, Box::new(proc));
     }
 
     /// Get a reference to a process by pid
-    pub fn get_process_by_pid(&self, pid: u16) -> Option<&Process>
+    pub fn get_process_by_pid(&self, pid: u16) -> Option<&Box<Process>>
     {
         self.processes.get(&pid)
     }
 
     /// Get a mutable reference to a process by pid
-    pub fn get_process_by_pid_mut(&mut self, pid: u16) -> Option<&mut Process>
+    pub fn get_process_by_pid_mut(&mut self, pid: u16) -> Option<&mut Box<Process>>
     {
         self.processes.get_mut(&pid)
     }
 
     /// Get a reference to the currently running process
-    pub fn currently_running(&self) -> Option<&Process>
+    pub fn currently_running(&self) -> Option<&Box<Process>>
     {
         if let Some(pid) = self.current_pid
         {
@@ -73,7 +73,7 @@ impl ProcessManager
     }
     
     /// Get a mutable reference to the currently running process
-    pub fn currently_running_mut(&mut self) -> Option<&mut Process>
+    pub fn currently_running_mut(&mut self) -> Option<&mut Box<Process>>
     {
         if let Some(pid) = self.current_pid
         {
@@ -189,7 +189,7 @@ pub fn add_process(proc: Process)
 }
 
 /// Get the current process
-pub fn current_process() -> Option<&'static mut Process>
+pub fn current_process() -> Option<&'static mut Box<Process>>
 {
     unsafe 
     {

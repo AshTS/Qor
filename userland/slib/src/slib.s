@@ -44,3 +44,9 @@ read:
     li a7, 0
     ecall
     ret
+
+.globl execve
+execve:
+    li a7, 53
+    ecall
+    ret

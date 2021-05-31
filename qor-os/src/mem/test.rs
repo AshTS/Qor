@@ -8,12 +8,12 @@ pub fn test_kernel_page_allocator_allocate_all()
     let page_count = 4096;
 
     // The first address in the allocator
-    let first = super::kpalloc(1).unwrap();
+    let first = super::kpalloc(1, "Test").unwrap();
 
     // Allocate every page
     for _ in 0..(page_count - 1)
     {
-        super::kpalloc(1).unwrap();
+        super::kpalloc(1, "Test").unwrap();
     }
 
     // Free every page
@@ -34,7 +34,7 @@ pub fn test_kernel_page_allocator_zalloc()
     let page_count = 4096;
 
     // The first address in the allocator
-    let first = super::kpzalloc(1).unwrap();
+    let first = super::kpzalloc(1, "Test").unwrap();
 
     // Ensure the first page is zero allocated
     if unsafe { (first as *mut [u8; super::PAGE_SIZE]).read() } != [0; super::PAGE_SIZE]
@@ -45,7 +45,7 @@ pub fn test_kernel_page_allocator_zalloc()
     // Allocate every page
     for _ in 0..(page_count - 1)
     {
-        let ptr = super::kpzalloc(1).unwrap();
+        let ptr = super::kpzalloc(1, "Test").unwrap();
 
         // Ensure the pages are zero allocated
         if unsafe { (ptr as *mut [u8; super::PAGE_SIZE]).read() } != [0; super::PAGE_SIZE]
@@ -72,12 +72,12 @@ pub fn test_kernel_page_allocator_no_overwrite()
     let page_count = 256;
 
     // The first address in the allocator
-    let first = super::kpzalloc(1).unwrap();
+    let first = super::kpzalloc(1, "Test").unwrap();
 
     // Allocate every page
     for _ in 0..(page_count - 1)
     {
-        super::kpzalloc(1).unwrap();
+        super::kpzalloc(1, "Test").unwrap();
     }
 
     // Go over every page

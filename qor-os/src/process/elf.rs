@@ -151,12 +151,12 @@ pub fn load_elf(interface: &mut fs::interface::FilesystemInterface, path: &str) 
     }
 
     // Allocate a new page table
-    let table = unsafe { (mem::kpzalloc(1).unwrap() as *mut mem::mmu::PageTable).as_mut().unwrap() };
+    let table = unsafe { (mem::kpzalloc(1, "ELF Page Table").unwrap() as *mut mem::mmu::PageTable).as_mut().unwrap() };
 
     // Map the segments
     for segment in segments
     {
-        let phys_ptr = mem::kpzalloc((segment.msize + mem::PAGE_SIZE - 1) / mem::PAGE_SIZE).unwrap() as *mut u8;
+        let phys_ptr = mem::kpzalloc((segment.msize + mem::PAGE_SIZE - 1) / mem::PAGE_SIZE, "ELF Segment").unwrap() as *mut u8;
 
         let poff = segment.f_offset & (mem::PAGE_SIZE - 1);
 
@@ -169,7 +169,7 @@ pub fn load_elf(interface: &mut fs::interface::FilesystemInterface, path: &str) 
     }
 
     // Allocate space for four pages of stack space
-    let stack_space = mem::kpzalloc(4).unwrap();
+    let stack_space = mem::kpzalloc(4, "ELF Stack Space").unwrap();
 
     // Map the stack space
     for i in 0..4

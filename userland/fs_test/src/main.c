@@ -17,5 +17,7 @@ int main()
         close(fd);
     }
 
+    execve("/bin/prog");
+
     return 0;
 }
