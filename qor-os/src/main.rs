@@ -97,7 +97,8 @@ fn kmain()
     let mut interface = fs::interface::FilesystemInterface::new(0);
     interface.initialize().unwrap();
 
-    let elf_proc = process::elf::load_elf(&mut interface, "/bin/fs_test").unwrap();
+    let mut elf_proc = process::elf::load_elf(&mut interface, "/bin/fork-test").unwrap();
+    elf_proc.connect_to_term();
     process::scheduler::add_process(elf_proc);
 
     // Start the timer

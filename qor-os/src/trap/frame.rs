@@ -1,6 +1,6 @@
 /// Stores backup data for traps
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct TrapFrame
 {
 	pub regs:       [usize; 32], // 0 - 255

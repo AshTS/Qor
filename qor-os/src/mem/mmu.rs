@@ -323,6 +323,62 @@ impl PageTable
         Err(TranslationError::NoLeaf)
     }
 
+    /// Duplicate this memory map
+    pub fn duplicate_map(&self) -> *mut PageTable
+    {
+        // Allocate memory for the new page table
+        let new_table = mem::kpzalloc(1, "Duplicate Page Table").unwrap();
+
+        // Construct a mutable reference to the table
+        let table = unsafe {(new_table as *mut PageTable).as_mut().unwrap()};
+
+        self.duplicate_level(2, 0, table);
+
+        table as *mut PageTable
+    }
+
+    /// Duplicate the given level of the page table
+    pub fn duplicate_level(&self, level: usize, vaddr: usize, other: &mut PageTable)
+    {
+        for (i, entry) in self.entries.iter().enumerate()
+        {
+            // If this entry is invalid, skip
+            if !(entry.flag() & PageTableEntryFlags::valid())
+            {
+                continue;
+            }
+
+            let phys_addr = ((entry.0 & !0x3ff) << 2) as usize;
+
+            // If this level is a leaf, display it
+            if entry.flag().0 & 0xE != 0
+            {
+                let size = 4096 << (9 * level);
+                let new_ptr = mem::kpzalloc(size / mem::PAGE_SIZE, "Duplicate Data Page").unwrap();
+            
+                // Copy the contents of the other mapped pages
+                for i in 0..size
+                {
+                    unsafe { (new_ptr as *mut u8).add(i).write((phys_addr as *mut u8).add(i).read()) }
+                }
+
+                // Create the new mapping
+                other.map(vaddr + (i << (9 * level + 12)), new_ptr, entry.flag(), level);
+            }
+            else
+            {
+                if level == 0
+                {
+
+                }
+                else
+                {
+                    unsafe { (phys_addr as *const PageTable).as_ref().unwrap() }.duplicate_level(level - 1, vaddr + (i << (9 * level + 12)), other);
+                }
+            }
+        }
+    }
+
     /// Display the mapping given by this table (assuming this table is at level 2)
     pub fn display_mapping(&self)
     {

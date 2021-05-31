@@ -8,6 +8,7 @@ use process::process::Process;
 mod close;
 mod execve;
 mod exit;
+mod fork;
 mod open;
 mod read;
 mod write;
@@ -37,11 +38,16 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         {
             close::syscall_close(proc, arg0)
         },
+        // Fork Syscall
+        57 =>
+        {
+            fork::syscall_fork(proc)
+        }
         // Execve Syscall
-        53 =>
+        59 =>
         {
             execve::syscall_execve(proc, arg0)
-        }
+        },
         // Exit Syscall
         60 =>
         {

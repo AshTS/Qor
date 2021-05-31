@@ -20,8 +20,8 @@ impl ProcessData
         let mut descriptors: BTreeMap<usize, Box<dyn super::descriptor::FileDescriptor>> = BTreeMap::new();
 
         descriptors.insert(0, Box::new(super::descriptor::NullDescriptor{}));
-        descriptors.insert(1, Box::new(super::descriptor::UARTOut{}));
-        descriptors.insert(2, Box::new(super::descriptor::UARTError{}));
+        descriptors.insert(1, Box::new(super::descriptor::NullDescriptor{}));
+        descriptors.insert(2, Box::new(super::descriptor::NullDescriptor{}));
 
         Self
         {
@@ -30,5 +30,13 @@ impl ProcessData
             mem_size,
             descriptors
         }
+    }
+
+    /// Connect the process to stdin, stderr, and stdout
+    pub fn connect_to_term(&mut self)
+    {
+        self.descriptors.insert(0, Box::new(super::descriptor::NullDescriptor{}));
+        self.descriptors.insert(1, Box::new(super::descriptor::UARTOut{}));
+        self.descriptors.insert(2, Box::new(super::descriptor::UARTError{}));
     }
 }

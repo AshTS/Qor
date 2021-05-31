@@ -45,8 +45,14 @@ read:
     ecall
     ret
 
+.globl fork
+fork:
+    li a7, 57
+    ecall
+    ret
+
 .globl execve
 execve:
-    li a7, 53
+    li a7, 59
     ecall
     ret

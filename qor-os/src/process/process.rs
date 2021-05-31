@@ -36,11 +36,11 @@ pub enum ProcessState
 pub struct Process
 {
     pub frame: TrapFrame,
-    stack: *mut u8,
+    pub stack: *mut u8,
     pub program_counter: usize,
     pub pid: u16,
     pub root: *mut PageTable,
-    state: ProcessState,
+    pub state: ProcessState,
     pub data: ProcessData,
     pub fs_interface: Option<Box<fs::interface::FilesystemInterface>>
 } 
@@ -209,16 +209,40 @@ impl Process
 
         pt.display_mapping();
     }
+
+    /// Connect the process to a terminal
+    pub fn connect_to_term(&mut self)
+    {
+        self.data.connect_to_term();
+    }
+
+    /// Get a forked version of the current process
+    pub fn forked(&self) -> Self
+    {
+        let stack_size = self.data.stack_size;
+
+        let mut temp = Self::from_components(self.program_counter + 4, unsafe { self.root.as_mut().unwrap().duplicate_map() }, stack_size, self.stack as usize);
+
+        temp.frame = self.frame.clone();
+        temp.frame.regs[10] = 0;
+
+        temp.connect_to_term();
+
+        temp
+    }
 }
 
 impl core::ops::Drop for Process
 {
     fn drop(&mut self) 
     {
-        let true_stack = unsafe { (*self.root).virt_to_phys(self.stack as usize) }.unwrap();
+        for i in 0..self.data.stack_size
+        {
+            let true_stack = unsafe { (*self.root).virt_to_phys(self.stack as usize + mem::PAGE_SIZE * i) }.unwrap();
 
-        // Drop the stack
-        mem::kpfree(true_stack, self.data.stack_size).unwrap();
+            // Drop the stack
+            mem::kpfree(true_stack, 1).unwrap();
+        }
 
         // Drop the page table
         unsafe { self.root.as_mut() }.unwrap().drop_table();

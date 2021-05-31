@@ -47,6 +47,17 @@ impl ProcessManager
         self.processes.insert(proc.pid, Box::new(proc));
     }
 
+    /// Replace a process
+    pub fn replace_process(&mut self, pid: u16, mut proc: Process)
+    {
+        kdebugln!(Processes, "Replacing process with PID {}", pid);
+        assert!(self.processes.contains_key(&pid));
+
+        proc.pid = pid;
+
+        self.processes.insert(pid, Box::new(proc));
+    }
+
     /// Get a reference to a process by pid
     pub fn get_process_by_pid(&self, pid: u16) -> Option<&Box<Process>>
     {
@@ -187,6 +198,16 @@ pub fn add_process(proc: Process)
         GLOBAL_PROC_MANAGER.as_mut().unwrap().add_process(proc);
     }
 }
+
+/// Replace a running process
+pub fn replace_process(pid: u16, proc: Process)
+{
+    unsafe 
+    {
+        GLOBAL_PROC_MANAGER.as_mut().unwrap().replace_process(pid, proc);
+    }
+}
+
 
 /// Get the current process
 pub fn current_process() -> Option<&'static mut Box<Process>>

@@ -16,6 +16,7 @@ pub trait FileDescriptor
 // ========== Utility File Descriptors ==========
 
 /// Null File Descriptor
+#[derive(Debug, Clone)]
 pub struct NullDescriptor;
 
 impl FileDescriptor for NullDescriptor
@@ -39,6 +40,7 @@ impl FileDescriptor for NullDescriptor
 }
 
 /// UART Out File Descriptor
+#[derive(Debug, Clone)]
 pub struct UARTOut;
 
 impl FileDescriptor for UARTOut
@@ -62,6 +64,7 @@ impl FileDescriptor for UARTOut
 }
 
 /// UART Error File Descriptor
+#[derive(Debug, Clone)]
 pub struct UARTError;
 
 impl FileDescriptor for UARTError
@@ -85,7 +88,9 @@ impl FileDescriptor for UARTError
 }
 
 /// Filesystem Inode File Descriptor
+#[derive(Debug, Clone)]
 pub struct InodeFileDescriptor(pub usize);
+
 
 impl FileDescriptor for InodeFileDescriptor
 {
