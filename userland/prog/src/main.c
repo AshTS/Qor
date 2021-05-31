@@ -1,22 +1,18 @@
 #include "printf.h"
-
-int factorial(int v);
+#include "syscalls.h"
 
 int main()
 {
-    for (int i = 0; i < 10; i++)
-    {
-        printf("%i!\t = %i\n", i, factorial(i));
-    }
-    return 0;
-}
+    printf("Stdin Test Program\n");
 
-int factorial(int v)
-{
-    if (v < 2)
-    {
-        return 1;
-    }
+    printf("Enter Some Text: ");
 
-    return factorial(v - 1) * v;
+    char buffer[64];
+    buffer[63] = 0;
+
+    while (read(0, buffer, 63) == 0) {}
+
+    printf("Got Text: `%s`\n", buffer);
+
+
 }

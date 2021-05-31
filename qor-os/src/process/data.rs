@@ -35,7 +35,7 @@ impl ProcessData
     /// Connect the process to stdin, stderr, and stdout
     pub fn connect_to_term(&mut self)
     {
-        self.descriptors.insert(0, Box::new(super::descriptor::NullDescriptor{}));
+        self.descriptors.insert(0, Box::new(super::descriptor::UARTIn{}));
         self.descriptors.insert(1, Box::new(super::descriptor::UARTOut{}));
         self.descriptors.insert(2, Box::new(super::descriptor::UARTError{}));
     }

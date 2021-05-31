@@ -50,7 +50,8 @@ impl PLICDriver
         // Safety: See the safety requirement for this driver's initialization
         unsafe 
         {
-            super::mmio::write_offset(self.base, 0x2000, id_raw)
+            let data: u32 = super::mmio::read_offset(self.base, 0x2000);
+            super::mmio::write_offset(self.base, 0x2000, data | id_raw)
         }
     }
 

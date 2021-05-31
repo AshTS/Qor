@@ -2,6 +2,9 @@ use crate::*;
 
 use drivers::plic::PLICInterrupt;
 
+// UART Input Raw Ring Buffer
+static mut UART_IN_BUFFER: utils::ByteRingBuffer = utils::ByteRingBuffer::new();
+
 /// External Interrupt Handler
 pub fn external_interrupt_handler(interrupt: PLICInterrupt, _interrupt_context: &super::InterruptContext)
 {
@@ -25,9 +28,33 @@ pub fn external_interrupt_handler(interrupt: PLICInterrupt, _interrupt_context: 
 
             match c
             {
-                Some(10) | Some(13) => kprintln!(),
-                Some(8) | Some(127) => kprint!("{} {}", 8 as char, 8 as char),
-                Some(c) => kprint!("{}", c as char),
+                Some(10) | Some(13) => 
+                {
+                    kprintln!();
+
+                    unsafe { UART_IN_BUFFER.enqueue_byte(10) };
+
+                    // Move the line from the ring buffer to the stdin buffer
+                    while let Some(byte) = unsafe { UART_IN_BUFFER.dequeue_byte() }
+                    {
+                        unsafe 
+                        {
+                            process::descriptor::STDIN_BUFFER.enqueue_byte(byte);
+                        }
+                    }
+                }, 
+                Some(8) | Some(127) =>
+                {
+                    kprint!("{} {}", 8 as char, 8 as char);
+
+                    unsafe { UART_IN_BUFFER.pop_byte() };
+                },
+                Some(c) =>
+                {
+                    kprint!("{}", c as char);
+
+                    unsafe { UART_IN_BUFFER.enqueue_byte(c) };
+                },
                 _ => {}
             }
         },

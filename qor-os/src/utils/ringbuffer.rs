@@ -12,7 +12,7 @@ pub struct ByteRingBuffer
 impl ByteRingBuffer
 {
     /// Create a new, empty byte ring buffer
-    pub fn new() -> Self
+    pub const fn new() -> Self
     {
         Self
         {
