@@ -7,7 +7,7 @@ pub const VIRT_IO_END: usize = 0x1000_1000;
 pub const VIRT_IO_STEP: usize = 0x1000;
 
 // Set the ring size
-pub const VIRTIO_RING_SIZE: usize = 1 << 7;
+pub const VIRTIO_RING_SIZE: usize = 1 << 10;
 
 pub const MMIO_VIRTIO_MAGIC: u32 = 0x74_72_69_76;
 
@@ -67,7 +67,7 @@ pub struct Queue {
 	pub avail: Available,
 	// Calculating padding, we need the used ring to start on a page boundary. We take the page size, subtract the
 	// amount the descriptor ring takes then subtract the available structure and ring.
-	pub padding0: [u8; 4096 - core::mem::size_of::<Descriptor>() * VIRTIO_RING_SIZE - core::mem::size_of::<Available>()],
+	pub padding0: [u8; mem::PAGE_SIZE * 8 - core::mem::size_of::<Descriptor>() * VIRTIO_RING_SIZE - core::mem::size_of::<Available>()],
 	pub used:     Used,
 }
 

@@ -1,5 +1,4 @@
 use crate::*;
-use crate::process::elf;
 
 use super::structures::*;
 
@@ -47,6 +46,7 @@ impl FilesystemInterface
         {
             let mut ptr = Box::new([0u8; 512]);
 
+            kdebugln!(Filesystem, "Reading the Super Block");
             self.block_driver.sync_read(ptr.as_mut() as *mut [u8; 512] as *mut u8, 512, 1024);
 
             self.super_block = Some(unsafe { *(ptr.as_mut() as *mut [u8; 512] as *mut SuperBlock) });
@@ -96,6 +96,7 @@ impl FilesystemInterface
         let block_index = (inode_number - 1) / 16 + 2 + superblock.imap_blocks as usize + superblock.zmap_blocks as usize;
 
         // Read the block into a buffer
+        kdebugln!(Filesystem, "Reading inode {}", inode_number);
         let mut buffer = self.read_block_to_buffer(block_index);
 
         // Read the inode out of the buffer
@@ -117,6 +118,7 @@ impl FilesystemInterface
         if level == 0
         {
             // Read the block to a buffer
+            kdebugln!(Filesystem, "Reading zone {}, lvl {}", zone, level);
             let data = self.read_block_to_buffer(zone);
 
             // Read byte by byte
@@ -136,6 +138,7 @@ impl FilesystemInterface
         else
         {
             // Read the block to a buffer
+            kdebugln!(Filesystem, "Reading zone {}, lvl {}", zone, level);
             let data = unsafe { core::mem::transmute::<Box<[u8; 1024]>, Box<[u32; 256]>>(self.read_block_to_buffer(zone)) };
 
             // Read byte by byte
@@ -177,6 +180,7 @@ impl FilesystemInterface
     /// Read the data from an inode
     pub fn read_file(&mut self, inode: usize, buffer: *mut u8, size: usize) -> usize
     {
+        kdebugln!(Filesystem, "Reading file at {}", inode);
         let mut remaining = size;
         let mut index = 0;
 
@@ -218,6 +222,7 @@ impl FilesystemInterface
     /// Mount the given inode at the given path
     fn mount(&mut self, inode: usize, path: &str)
     {
+        kdebugln!(Filesystem, "Mapping Filesystem");
         self.tree.insert(String::from(path), inode);
 
         for dir_entry in self.get_dir_entries(inode)

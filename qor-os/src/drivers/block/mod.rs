@@ -5,6 +5,9 @@ use core::mem::size_of;
 
 use crate::*;
 
+// TODO: The driver will fail after it hits the end of the ring - 1, really,
+// this is part of this driver needing to be rewritten.
+
 #[repr(C)]
 pub struct Header
 {
@@ -224,9 +227,13 @@ pub fn fill_next_descriptor(bd: &mut BlockDevice, desc: Descriptor) -> u16
     }
 }
 
+static mut COUNT: usize = 0;
 
 pub fn block_op(dev: usize, buffer: *mut u8, size: u32, offset: u64, write: bool) -> Option<*mut Request>
 {
+    kdebugln!(BlockDevice, "Block Operation {}: Buffer: 0x{:x} {} bytes at offset 0x{:x} | {}", unsafe { COUNT }, buffer as usize, size, offset, if write {"WRITE"} else {"READ"});
+    
+    unsafe {COUNT += 1};
     if let Some(bdev) = unsafe { BLOCK_DEVICES[dev - 1].as_mut() }
     {
         // Check to see if we are trying to write to a read only device.
@@ -278,7 +285,7 @@ pub fn block_op(dev: usize, buffer: *mut u8, size: u32, offset: u64, write: bool
         unsafe
         {
             (*bdev.queue).avail.ring[(*bdev.queue).avail.idx as usize] = head_idx;
-            (*bdev.queue).avail.idx = ((*bdev.queue).avail.idx + 1) % virtio::VIRTIO_RING_SIZE as u16;
+            (*bdev.queue).avail.idx = ((*bdev.queue).avail.idx + 1) % VIRTIO_RING_SIZE as u16;
             // The only queue a block device has is 0, which is the request
             // queue.
             bdev.dev.add(MmioOffsets::QueueNotify.scale32()).write_volatile(0);

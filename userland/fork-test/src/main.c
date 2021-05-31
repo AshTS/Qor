@@ -5,8 +5,10 @@ int main()
 {
     printf("Trying to fork!\n");
     int result = fork();
-
-    printf("Got Result: %i\n", result);
+    if (result == 0)
+    {
+        execve("/bin/prog");
+    }
 
     return 0;
 }
