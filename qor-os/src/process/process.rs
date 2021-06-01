@@ -1,5 +1,7 @@
 use crate::*;
 
+use alloc::format;
+
 use super::data::ProcessData;
 
 use mem::mmu::PageTable;
@@ -136,7 +138,17 @@ impl Process
     {
         self.ensure_fs();
         
-        let inode = self.fs_interface.as_mut().unwrap().get_inode_by_path(path)?;
+        
+        let inode = 
+            if path.starts_with("/")
+            {
+                self.fs_interface.as_mut().unwrap().get_inode_by_path(path)?
+            }
+            else
+            {
+                let combined = format!("{}{}", self.data.cwd, path);
+                self.fs_interface.as_mut().unwrap().get_inode_by_path(&combined)?
+            };
 
         let mut i = 3;
 

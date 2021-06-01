@@ -1,5 +1,7 @@
 use crate::*;
 
+use alloc::format;
+
 /// Execve Syscall
 pub fn syscall_execve(proc: &mut super::Process, path_ptr: usize) -> usize
 {
@@ -21,6 +23,11 @@ pub fn syscall_execve(proc: &mut super::Process, path_ptr: usize) -> usize
         path.push(v);
 
         i += 1;
+    }
+
+    if !path.starts_with("/")
+    {
+        path = format!("{}{}", proc.data.cwd, path);
     }
      
     // Create a process from an elf file

@@ -9,6 +9,7 @@ mod close;
 mod execve;
 mod exit;
 mod fork;
+mod getcwd;
 mod open;
 mod read;
 mod wait;
@@ -60,6 +61,11 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         {
             wait::syscall_wait(proc, arg0);
             0
+        },
+        // Getcwd Syscall
+        79 =>
+        {
+            getcwd::syscall_getcwd(proc, arg0, arg1)
         },
         default =>
         {

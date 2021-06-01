@@ -11,6 +11,7 @@ pub struct ProcessData
     pub descriptors: BTreeMap<usize, Box<dyn super::descriptor::FileDescriptor>>,
     pub children: Vec<u16>,
     pub parent_pid: u16,
+    pub cwd: String,
 }
 
 impl ProcessData
@@ -32,7 +33,8 @@ impl ProcessData
             mem_size,
             descriptors,
             children: Vec::new(),
-            parent_pid: 0
+            parent_pid: 0,
+            cwd: String::from("/bin/")
         }
     }
 
