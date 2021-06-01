@@ -12,6 +12,7 @@ pub enum FilesystemError
 {
     NotMinix3,
     FileNotFound(String),
+    INodeNotFound(usize),
 }
 
 /// Minix3 Filesystem Interface
@@ -19,7 +20,8 @@ pub struct FilesystemInterface
 {
     block_driver: drivers::block::BlockDeviceDriver,
     super_block: Option<SuperBlock>,
-    tree: BTreeMap<String, usize>
+    tree: BTreeMap<String, usize>,
+    reverse_tree: BTreeMap<usize, String>
 }
 
 impl FilesystemInterface
@@ -31,7 +33,8 @@ impl FilesystemInterface
         {
             block_driver: drivers::block::get_driver_by_index(block_device_driver),
             super_block: None,
-            tree: BTreeMap::new()
+            tree: BTreeMap::new(),
+            reverse_tree: BTreeMap::new(),
         }
     }
 
@@ -208,6 +211,21 @@ impl FilesystemInterface
         }
     }
 
+    /// Simplify an address
+    pub fn simplify_address(&mut self, path: &str) -> Result<&str, FilesystemError>
+    {
+        let inode = self.get_inode_by_path(path)?;
+
+        if let Some(path) = self.reverse_tree.get(&inode)
+        {
+            Ok(path)
+        }
+        else
+        {
+            Err(FilesystemError::INodeNotFound(inode))
+        }
+    }
+
     /// Get the directory entries for the given inode number
     fn get_dir_entries(&mut self, inode: usize) -> Vec<DirEntry>
     {
@@ -251,6 +269,8 @@ impl FilesystemInterface
             {
                 continue;
             }
+
+            self.reverse_tree.insert(dir_entry.inode as usize, name.clone());
 
             // Otherwise check the inode to see if this entry is a directory
             let inode = self.get_inode(dir_entry.inode as usize);
