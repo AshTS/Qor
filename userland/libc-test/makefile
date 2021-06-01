@@ -1,26 +1,24 @@
-
-
 CC = clang
 CFLAGS = --target=riscv64 -march=rv64gc -mno-relax
 INCLUDE = -isystem ../include
 
 LINK = ld.lld
-LINKFLAGS = -r
+LINKFLAGS =
 
-INCLUDES = ../include/syscalls.h ../include/printf.h ../include/string.h
+INCLUDES = ../include/printf.h ../include/string.h
 
 LIB_DIR = ../bin
 OUTPUT_DIR = ../bin
 BUILD_DIR = build
 SRC_DIR = src
 
-_LIBS = 
+_LIBS = slib
 LIBS = $(patsubst %,$(LIB_DIR)/%,$(_LIBS))
 
-_OBJ = slib.o printf.o string.o
+_OBJ = main.o
 OBJ = $(patsubst %,$(BUILD_DIR)/%,$(_OBJ))
 
-$(OUTPUT_DIR)/slib : $(BUILD_DIR) $(OBJ)
+$(OUTPUT_DIR)/libc-test : $(BUILD_DIR) $(OBJ)
 	$(LINK) $(LINKFLAGS) $(OBJ) $(LIBS) -o $@
 
 $(BUILD_DIR)/%.o : $(SRC_DIR)/%.c $(INCLUDES)
@@ -31,6 +29,7 @@ $(BUILD_DIR)/%.o : $(SRC_DIR)/%.s $(INCLUDES)
 
 $(BUILD_DIR) :
 	[ ! -d "$(BUILD_DIR)" ] && mkdir $(BUILD_DIR)
+
 
 .PHONY: clean
 

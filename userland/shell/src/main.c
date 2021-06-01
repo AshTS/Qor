@@ -1,21 +1,6 @@
 #include "printf.h"
 #include "syscalls.h"
-
-int strcmp(char* A, char* B)
-{
-    while (*A)
-    {
-        if (*A != *B)
-        {
-            break;
-        }
-
-        A++;
-        B++;
-    }
-
-    return *(const unsigned char*)A - *(const unsigned char*)B;
-}
+#include "string.h"
 
 int main()
 {
@@ -43,6 +28,9 @@ int main()
         if (fork() == 0)
         {
             execve(buffer);
+
+            printf("Unable to open file `%s`\n", buffer);
+
             return -1;
         }
         else
