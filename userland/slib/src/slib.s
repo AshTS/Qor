@@ -62,3 +62,9 @@ wait:
     li a7, 61
     ecall
     ret
+
+.globl getcwd
+getcwd:
+    li a7, 79
+    ecall
+    ret
