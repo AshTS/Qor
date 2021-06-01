@@ -1,5 +1,3 @@
-use crate::*;
-
 /// Getcwd Syscall
 pub fn syscall_getcwd(proc: &mut super::Process, buffer_ptr: usize, size: usize) -> usize
 {

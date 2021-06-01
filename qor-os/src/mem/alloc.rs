@@ -138,10 +138,10 @@ static_assertions::const_assert_eq!((core::mem::size_of::<AllocationHeader>() < 
 impl AllocationHeader
 {
     /// Allocate a new Allocation Header and return a pointer to that header
-    pub fn new(starting_pages: usize) -> Result<&'static mut AllocationHeader, super::page::KernelPageAllocationError>
+    pub fn new(starting_pages: usize, header_count: usize) -> Result<&'static mut AllocationHeader, super::page::KernelPageAllocationError>
     {
         // Allocate a new page
-        let page = unsafe { (super::kpalloc(1, "Byte Allocator Header")? as *mut AllocationHeader).as_mut() }.unwrap();
+        let mut page = unsafe { (super::kpalloc(1, "Byte Allocator Header")? as *mut AllocationHeader).as_mut() }.unwrap();
 
         // Allocate the memory for the kernel
         let kernel_mem = super::kpalloc(starting_pages, "Byte Allocator Data")? as *mut u8;
@@ -163,6 +163,29 @@ impl AllocationHeader
 
         // Insert the first node
         page.nodes[0] = first_node;
+
+        let mut walking_prev = Some(core::ptr::NonNull::new(page as *mut AllocationHeader).unwrap());
+
+        // Loop over the possible remaining nodes
+        for _ in 1..header_count
+        {
+            let mut page = unsafe { (super::kpalloc(1, "Byte Allocator Header")? as *mut AllocationHeader).as_mut() }.unwrap();
+
+            // Set the pointers
+            page.next_allocator = None;
+            page.prev_allocator = walking_prev;
+
+            unsafe { walking_prev.unwrap().as_mut().next_allocator = Some(core::ptr::NonNull::new(page as *mut AllocationHeader).unwrap()) };
+
+            // Fill in the nodes with invalid nodes
+            for node in &mut page.nodes[..]
+            {
+                node.flags.set_invalid();
+            }
+
+            walking_prev = Some(core::ptr::NonNull::new(page as *mut AllocationHeader).unwrap());
+        }
+
 
         Ok(page)
     }
@@ -193,8 +216,48 @@ impl AllocationHeader
         }
     }
 
-    /// Get a refernce to the node with the given index
+    /// Get a reference to the previous allocator
+    pub fn ref_prev(&self) -> Option<&AllocationHeader>
+    {
+        if let Some(next) = self.prev_allocator
+        {
+            unsafe { Some((next.as_ptr()).as_ref().unwrap())}
+        }
+        else
+        {
+            None
+        }
+    }
+
+    /// Get a mutable reference to the previous allocator
+    pub fn mut_prev(&self) -> Option<&mut AllocationHeader>
+    {
+        if let Some(next) = self.prev_allocator
+        {
+            unsafe { Some((next.as_ptr()).as_mut().unwrap())}
+        }
+        else
+        {
+            None
+        }
+    }
+
+
+    /// Get a reference to the node with the given index
     pub fn ref_node(&self, index: usize) -> Option<&AllocationNode>
+    {
+        if let Some(prev) = self.ref_prev()
+        {
+            prev.ref_node(index)
+        }
+        else
+        {
+            self.ref_node_inner(index)
+        }
+    }
+
+    /// Inner node reference function
+    pub fn ref_node_inner(&self, index: usize) -> Option<&AllocationNode>
     {
         if index < ALLOCATION_NODES
         {
@@ -213,8 +276,23 @@ impl AllocationHeader
         }
     }
 
-    /// Get a mutable refernce to the node with the given index
+    /// Get a mutable reference to the node with the given index
     pub fn mut_node(&mut self, index: usize) -> Option<&mut AllocationNode>
+    {
+        if self.prev_allocator.is_none()
+        {
+            return self.mut_node_inner(index);
+        }
+        if let Some(prev) = self.mut_prev()
+        {
+            return prev.mut_node(index);
+        }
+
+        unreachable!()
+    }
+
+    /// Inner node mutable reference function
+    pub fn mut_node_inner(&mut self, index: usize) -> Option<&mut AllocationNode>
     {
         if index < ALLOCATION_NODES
         {
@@ -234,14 +312,34 @@ impl AllocationHeader
     }
 
     /// Get the index of the first free node
-    pub fn get_free(&mut self) -> Option<usize>
+    pub fn get_free(&self) -> Option<usize>
     {
-        for (i, node) in self.nodes.iter_mut().enumerate()
+        if self.prev_allocator.is_none()
+        {
+            return self.get_free_inner(0)
+        }
+        if let Some(prev) = self.ref_prev()
+        {
+            return prev.get_free()
+        }
+
+        unreachable!()
+    }
+
+    /// Get free helper function
+    fn get_free_inner(&self, start: usize) -> Option<usize>
+    {
+        for (i, node) in self.nodes.iter().enumerate()
         {
             if !node.flags.is_valid()
             {
-                return Some(i);
+                return Some(start + i);
             }
+        }
+
+        if let Some(next) = self.ref_next()
+        {
+            return next.get_free_inner(start + ALLOCATION_NODES);
         }
 
         None
@@ -289,7 +387,7 @@ impl AllocationHeader
     pub fn allocate(&mut self, layout: core::alloc::Layout) -> *mut u8
     {
         kdebugln!(ByteMemoryAllocation, "Allocating {} bytes with an alignment of {} bytes", layout.size(), layout.align());
-        
+
         let mut index = 0;
 
         let next_free = self.get_free();
@@ -345,7 +443,7 @@ impl AllocationHeader
                         // If a new node needs to be added, add it
                         if let Some(n) = new_node
                         {
-                            self.nodes[next_free.unwrap()] = n;
+                            *self.mut_node(next_free.unwrap()).unwrap() = n;
                         }
 
                         // Return the properly padded pointer
@@ -497,7 +595,7 @@ pub fn init_kernel_global_allocator(page_count: usize)
     kdebugln!(ByteMemoryAllocation, "Initialize the Kernel Global Allocator with {} KBs", page_count * super::PAGE_SIZE / 1024);
 
     // Insert a new allocation header
-    KERNEL_HEAP_POINTER.store(AllocationHeader::new(page_count).unwrap(), core::sync::atomic::Ordering::SeqCst);
+    KERNEL_HEAP_POINTER.store(AllocationHeader::new(page_count, 2).unwrap(), core::sync::atomic::Ordering::SeqCst);
 }
 
 /// Structure to hold the kernel heap allocator
