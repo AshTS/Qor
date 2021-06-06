@@ -7,7 +7,7 @@ INCLUDE = -isystem ../include
 LINK = ld.lld
 LINKFLAGS = -r
 
-INCLUDES = ../include/syscalls.h ../include/printf.h ../include/string.h
+INCLUDES = ../include/syscalls.h ../include/printf.h ../include/string.h ../include/malloc.h
 
 LIB_DIR = ../bin
 OUTPUT_DIR = ../bin
@@ -17,7 +17,7 @@ SRC_DIR = src
 _LIBS = 
 LIBS = $(patsubst %,$(LIB_DIR)/%,$(_LIBS))
 
-_OBJ = slib.o printf.o string.o
+_OBJ = slib.o printf.o string.o malloc.o
 OBJ = $(patsubst %,$(BUILD_DIR)/%,$(_OBJ))
 
 $(OUTPUT_DIR)/slib : $(BUILD_DIR) $(OBJ)
