@@ -84,6 +84,57 @@ int printf(const char* data, ...)
                     counter /= 10;
                 }
             }
+            if (c == 'l')
+            {
+                long i = va_arg(args, long);
+
+                if (i < 0)
+                {
+                    i = -i;
+                    printf_helper(buffer, &index, '-');
+                }
+
+                long counter = 1;
+                while (counter <= i / 10)
+                {
+                    counter *= 10;
+                }
+
+                while (counter >= 1)
+                {
+                    printf_helper(buffer, &index, '0' + (i / counter) % 10);
+                    counter /= 10;
+                }
+            }
+            if (c == 'p')
+            {
+                unsigned long i = va_arg(args, unsigned long);
+
+                printf_helper(buffer, &index, '0');
+                printf_helper(buffer, &index, 'x');
+
+                unsigned long counter = 1;
+                while (counter <= i / 16)
+                {
+                    counter *= 16;
+                }
+
+                while (counter >= 1)
+                {
+                    char digit = (i / counter) % 16;
+
+                    if (digit < 10)
+                    {
+                        printf_helper(buffer, &index, '0' + digit);
+                    }
+                    else
+                    {
+                        printf_helper(buffer, &index, 'A' + (digit - 10));
+                    }
+                    
+                    counter /= 16;
+                }
+            }
             else if (c == 's')
             {
                 const char* s = va_arg(args, const char*);
