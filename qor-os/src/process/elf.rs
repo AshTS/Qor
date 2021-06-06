@@ -136,7 +136,7 @@ pub fn load_elf(interface: &mut fs::interface::FilesystemInterface, path: &str) 
             kdebug!(Elf, "READ ");
             flags = flags | mem::mmu::PageTableEntryFlags::readable() | mem::mmu::PageTableEntryFlags::accessed();
         }
-        kdebugln!(Elf);
+        kdebugln!(Elf, "{} bytes", header.memsz);
 
         segments.push(
             Segment
@@ -156,16 +156,20 @@ pub fn load_elf(interface: &mut fs::interface::FilesystemInterface, path: &str) 
     // Map the segments
     for segment in segments
     {
-        let phys_ptr = mem::kpzalloc((segment.msize + mem::PAGE_SIZE - 1) / mem::PAGE_SIZE, "ELF Segment").unwrap() as *mut u8;
-
         let poff = segment.f_offset & (mem::PAGE_SIZE - 1);
+
+        let num_pages = (segment.msize + poff + mem::PAGE_SIZE - 1) / mem::PAGE_SIZE;
+        let phys_ptr = mem::kpzalloc(num_pages, "ELF Segment").unwrap() as *mut u8;
 
         for i in 0..segment.fsize
         {
             unsafe { phys_ptr.add(i + poff).write( file_data[segment.f_offset + i] ) }
         }
 
-        table.map(segment.vaddr, phys_ptr as usize, segment.flags, 0);
+        for i in 0..num_pages
+        {
+            table.map(segment.vaddr + i * mem::PAGE_SIZE, phys_ptr as usize + i * mem::PAGE_SIZE, segment.flags, 0);
+        }
     }
 
     // Allocate space for four pages of stack space
