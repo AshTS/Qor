@@ -69,6 +69,12 @@ execve:
     ecall
     ret
 
+.globl exit
+exit:
+    li a7, 60
+    ecall
+    ret
+
 .globl wait
 wait:
     li a7, 61

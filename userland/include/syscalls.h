@@ -11,6 +11,7 @@
 
 #define MAP_ANONYMOUS 1
 
+extern unsigned int exit(int val);
 extern unsigned int write(int fd, void* buffer, int size);
 extern unsigned int open(const char* name, int mode);
 extern unsigned int close(int fd);
