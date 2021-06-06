@@ -235,4 +235,9 @@ void dump()
         walk = walk->next;
     }
 }
+#else
+void dump()
+{
+    
+}
 #endif
