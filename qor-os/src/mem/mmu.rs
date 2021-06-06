@@ -56,6 +56,12 @@ pub struct PageTableEntryFlags(u8);
 
 impl PageTableEntryFlags
 {
+    /// Invalid Flag
+    pub fn invalid() -> Self
+    {
+        Self(0)
+    }
+
     /// Valid Flag
     pub fn valid() -> Self
     {
@@ -226,6 +232,59 @@ impl PageTable
 
         self.inner_map(vaddr, paddr, flags, level);
     }
+
+    /// Inner unmapping implementation
+    fn inner_unmap(&mut self, vaddr: usize, level: usize)
+    {
+        assert!(level < 3);
+        
+        // Separate out the vpn
+        let vpn = [
+				(vaddr >> 12) & 0x1ff,
+				(vaddr >> 21) & 0x1ff,
+				(vaddr >> 30) & 0x1ff,
+	        ];
+
+        // Reference to the current entry
+        let mut v = &mut self.entries[vpn[2]];
+
+        // Loop over all of the levels needed
+        for i in (level..2).rev()
+        {
+            // If there is no entry placed here
+            if !(v.flag() & PageTableEntryFlags::valid())
+            {
+                // Create a new table to link to
+                let sub_table = PageTable::allocate();
+                
+                // Create the link
+                *v = PageTableEntry::new((sub_table as *mut PageTable as usize) >> 12, PageTableEntryFlags::valid());
+            }
+            
+            // Update the walking pointer
+            let entry = ((v.0 & !0x3ff) << 2) as *mut PageTableEntry;
+	        v = unsafe { entry.add(vpn[i]).as_mut().unwrap() };
+        }
+
+        // Insert the leaf entry
+        *v = PageTableEntry::new(0, PageTableEntryFlags::invalid());
+    }
+
+    /// Unmap a region of memory
+    pub fn unmap(&mut self, vaddr: usize, level: usize)
+    {
+        kdebugln!(MemoryMapping, "Unmapping Virt 0x{:x} ({})", vaddr,
+            match level
+            {
+                0 => "4KiB",
+                1 => "2MiB",
+                2 => "1GiB",
+                _ => unreachable!()
+            });
+
+        self.inner_unmap(vaddr, level);
+    }
+
 
     /// Drop the given page table assuming it is at the given level
     fn drop_level(&mut self, level: usize)

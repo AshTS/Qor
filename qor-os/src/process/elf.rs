@@ -174,7 +174,7 @@ pub fn load_elf(interface: &mut fs::interface::FilesystemInterface, path: &str) 
     // Map the stack space
     for i in 0..4
     {
-        table.map(0x2000_0000 + mem::PAGE_SIZE * i,
+        table.map(0x2_0000_0000 + mem::PAGE_SIZE * i,
             stack_space + mem::PAGE_SIZE * i,
             mem::mmu::PageTableEntryFlags::user() | mem::mmu::PageTableEntryFlags::readable() | mem::mmu::PageTableEntryFlags::executable() | mem::mmu::PageTableEntryFlags::writable() | mem::mmu::PageTableEntryFlags::dirty() | mem::mmu::PageTableEntryFlags::accessed(),
             0);
@@ -183,5 +183,5 @@ pub fn load_elf(interface: &mut fs::interface::FilesystemInterface, path: &str) 
     Ok(Process::from_components(
         elf_header.e_entry as usize, 
         table as *mut mem::mmu::PageTable, 
-        4, 0x2000_0000))
+        4, 0x2_0000_0000))
 }

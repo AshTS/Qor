@@ -6,8 +6,8 @@ use crate::*;
 pub struct ProcessData
 {
     pub stack_size: usize, // Stack size in pages
-    pub mem_ptr: *mut u8,
-    pub mem_size: usize, // Size of the memory allocated in pages,
+    pub mem: Vec<(*mut u8, usize)>,
+    pub next_heap: usize,
     pub descriptors: BTreeMap<usize, Box<dyn super::descriptor::FileDescriptor>>,
     pub children: Vec<u16>,
     pub parent_pid: u16,
@@ -18,7 +18,7 @@ impl ProcessData
 {
     /// Initialize a fresh process data
     /// Safety: The mem_ptr must be valid or zero
-    pub unsafe fn new(stack_size: usize, mem_ptr: usize, mem_size: usize) -> Self
+    pub unsafe fn new(stack_size: usize) -> Self
     {
         let mut descriptors: BTreeMap<usize, Box<dyn super::descriptor::FileDescriptor>> = BTreeMap::new();
 
@@ -29,8 +29,8 @@ impl ProcessData
         Self
         {
             stack_size,
-            mem_ptr: mem_ptr as *mut u8,
-            mem_size,
+            mem: Vec::new(),
+            next_heap: 0x4_0000_0000,
             descriptors,
             children: Vec::new(),
             parent_pid: 0,

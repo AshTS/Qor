@@ -86,7 +86,7 @@ impl Process
                 pid: next_pid(),
                 root: page_table,
                 state: ProcessState::Running,
-                data: unsafe { ProcessData::new(stack_size, 0, 0) },
+                data: unsafe { ProcessData::new(stack_size) },
                 fs_interface: None,
             };
 
@@ -282,6 +282,43 @@ impl Process
     {
         &self.data.children
     }
+
+    /// Map a region of memory with the given permissions
+    pub fn map(&mut self, length: usize, perm: mem::mmu::PageTableEntryFlags) -> usize
+    {
+        // Allocate the memory
+        let ptr = mem::kpzalloc(length / mem::PAGE_SIZE, "mmap").unwrap();
+
+        let user_addr = self.data.next_heap;
+
+        // Map the memory
+        for i in 0..(length / mem::PAGE_SIZE)
+        {
+            unsafe { self.root.as_mut().unwrap() }.map(self.data.next_heap, ptr + i * mem::PAGE_SIZE, perm, 0);
+            self.data.next_heap += mem::PAGE_SIZE;
+        }
+
+        user_addr
+    }
+
+    /// Unmap a region of memory
+    pub fn unmap(&mut self, addr: usize, length: usize) -> usize
+    {
+        // Convert the user address to a physical address
+        // TODO: Free physical memory here aswell
+        // let phys_addr = self.map_mem(addr).unwrap();
+
+        // Unmap the memory
+        for i in 0..(length / mem::PAGE_SIZE)
+        {
+            unsafe { self.root.as_mut().unwrap() }.unmap(addr + i * mem::PAGE_SIZE, 0);
+        }
+
+        self.map_mem(addr).unwrap();
+
+        0
+    }
+
 }
 
 impl core::ops::Drop for Process
@@ -300,9 +337,13 @@ impl core::ops::Drop for Process
         unsafe { self.root.as_mut() }.unwrap().drop_table();
 
         // Drop the memory allocated to the process
-        if !self.data.mem_ptr.is_null()
+        for (ptr, length) in &self.data.mem
         {
-            mem::kpfree(self.data.mem_ptr as usize, self.data.mem_size).unwrap();
+            if !ptr.is_null()
+            {
+                mem::kpfree(*ptr as usize, *length).unwrap();
+            }
         }
+        
     }
 }

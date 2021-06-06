@@ -10,6 +10,8 @@ mod execve;
 mod exit;
 mod fork;
 mod getcwd;
+mod mmap;
+mod munmap;
 mod open;
 mod read;
 mod wait;
@@ -39,6 +41,16 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         3 =>
         {
             close::syscall_close(proc, arg0)
+        },
+        // mmap Syscall
+        9 =>
+        {
+            mmap::syscall_mmap(proc, arg0, arg1, arg2, arg3, arg4, arg5)
+        },
+        // munmap Syscall
+        11 =>
+        {
+            munmap::syscall_munmap(proc, arg0, arg1)
         },
         // Fork Syscall
         57 =>

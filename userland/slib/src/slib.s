@@ -21,6 +21,12 @@ syscall:
     ecall
     ret
 
+.globl read
+read:
+    li a7, 0
+    ecall
+    ret
+
 .globl write
 write:
     li a7, 1
@@ -39,9 +45,15 @@ close:
     ecall
     ret
 
-.globl read
-read:
-    li a7, 0
+.globl mmap
+mmap:
+    li a7, 9
+    ecall
+    ret
+
+.globl munmap
+munmap:
+    li a7, 11
     ecall
     ret
 
