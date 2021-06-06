@@ -45,6 +45,9 @@ int printf(const char* data, ...)
     // Flag for if the next character is to be a format specifier
     bool next_format_specifier = false;
 
+    // Last character (for two byte format specifiers)
+    char last_char = 0;
+
     // Loop over every character in the input stream
     char c = 1;
     while (c)
@@ -57,8 +60,11 @@ int printf(const char* data, ...)
             if (c == '%')
             {
                 next_format_specifier = true;
+                last_char = c;
                 continue;
             }
+
+            last_char = c;
         }
         else
         {
@@ -83,8 +89,14 @@ int printf(const char* data, ...)
                     printf_helper(buffer, &index, '0' + (i / counter) % 10);
                     counter /= 10;
                 }
+
+                next_format_specifier = false;
             }
-            if (c == 'l')
+            else if (c == 'l')
+            {
+                next_format_specifier = true;
+            }
+            else if (c == 'd' && last_char == 'l')
             {
                 long i = va_arg(args, long);
 
@@ -105,8 +117,10 @@ int printf(const char* data, ...)
                     printf_helper(buffer, &index, '0' + (i / counter) % 10);
                     counter /= 10;
                 }
+
+                next_format_specifier = false;
             }
-            if (c == 'p')
+            else if (c == 'p')
             {
                 unsigned long i = va_arg(args, unsigned long);
 
@@ -134,6 +148,7 @@ int printf(const char* data, ...)
                     
                     counter /= 16;
                 }
+                next_format_specifier = false;
             }
             else if (c == 's')
             {
@@ -143,14 +158,16 @@ int printf(const char* data, ...)
                 {
                     printf_helper(buffer, &index, *(s++));
                 }
+                next_format_specifier = false;
             }
             else if (c == 'c')
             {
                 int c = va_arg(args, int);
 
                 printf_helper(buffer, &index, (char)c);
+                next_format_specifier = false;
             }
-            next_format_specifier = false;
+            last_char = c;
             continue;
         }
         
