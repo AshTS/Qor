@@ -106,11 +106,16 @@ void load_file(char* name, InterpreterState* state)
     printf("Loaded program from %s\n", name);
 }
 
-int main()
+int main(int argc, char** argv)
 {
     printf("QORBasic\n");
 
     InterpreterState* state = construct_interpreter();
+
+    if (argc > 1)
+    {
+        load_file(argv[1], state);
+    }
 
     // Input Buffer
     char input_buffer[256];
