@@ -21,6 +21,8 @@ int main(int argc, char** argv)
         close(fd);
     }   
 
+    printf("\n");
+
     return 0;
 }
 
