@@ -3,9 +3,74 @@ use crate::*;
 use alloc::format;
 
 /// Execve Syscall
-pub fn syscall_execve(proc: &mut super::Process, path_ptr: usize) -> usize
+pub fn syscall_execve(proc: &mut super::Process, path_ptr: usize, argv_ptr: usize, envp_ptr: usize) -> usize
 {
     let path_ptr = proc.map_mem(path_ptr).unwrap() as *mut u8;
+    let argv_ptr = proc.map_mem(argv_ptr).unwrap() as *mut usize;
+    let envp_ptr = proc.map_mem(envp_ptr).unwrap() as *mut usize;
+
+    // Convert argv_ptr to a vector of &[u8]
+    let mut argv_vecs = Vec::new();
+
+    for i in 0..
+    {
+        // Get the pointer at the given value
+        let ptr = unsafe { argv_ptr.add(i).read() };   
+        if ptr == 0 { break };
+
+        // Convert the pointer to a physical address
+        let ptr = proc.map_mem(ptr).unwrap() as *mut u8;
+
+        let mut current_vec = Vec::new();
+
+        for j in 0..
+        {
+            let v = unsafe { ptr.add(j).read() };
+            current_vec.push(v);
+            if v == 0 { break };
+        }
+
+        argv_vecs.push(current_vec);
+    }
+
+    let mut argv_vals = Vec::with_capacity(argv_vecs.len());
+
+    for v in &argv_vecs
+    {
+        argv_vals.push(v.as_slice());
+    }
+
+    
+    // Convert envp_ptr to a vector of &[u8]
+    let mut envp_vecs = Vec::new();
+
+    for i in 0..
+    {
+        // Get the pointer at the given value
+        let ptr = unsafe { envp_ptr.add(i).read() };   
+        if ptr == 0 { break };
+
+        // Convert the pointer to a physical address
+        let ptr = proc.map_mem(ptr).unwrap() as *mut u8;
+
+        let mut current_vec = Vec::new();
+
+        for j in 0..
+        {
+            let v = unsafe { ptr.add(j).read() };
+            current_vec.push(v);
+            if v == 0 { break };
+        }
+
+        envp_vecs.push(current_vec);
+    }
+
+    let mut envp_vals = Vec::with_capacity(envp_vecs.len());
+
+    for v in &envp_vecs
+    {
+        envp_vals.push(v.as_slice());
+    }
 
     // Ensure the filesystem has been initialized
     proc.ensure_fs();
@@ -35,6 +100,9 @@ pub fn syscall_execve(proc: &mut super::Process, path_ptr: usize) -> usize
     // if true
     {
         new_proc.connect_to_term();
+
+        new_proc.set_arguments(argv_vals.as_slice(), envp_vals.as_slice());
+
         process::scheduler::replace_process(proc.pid, new_proc);
         
         let schedule = process::scheduler::schedule_next();

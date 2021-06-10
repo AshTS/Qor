@@ -96,6 +96,86 @@ impl Process
         temp_result
     }
 
+    /// Set the command line and environment arguments
+    pub fn set_arguments(&mut self, args: &[&[u8]], envp: &[&[u8]])
+    {
+        // Set argc
+        self.frame.regs[10] = args.len();
+        
+        let mut arg_addrs = Vec::with_capacity(args.len());
+        let mut envp_addrs = Vec::with_capacity(envp.len());
+
+        // Write the arguments
+        for s in args
+        {
+            arg_addrs.push(self.push_buffer(s));
+        }
+
+        // Write the argument array
+        let mut ptr = self.push(0usize);
+        for v in arg_addrs.iter().rev()
+        {
+            ptr = self.push(*v);
+        }
+
+        // Set argv
+        self.frame.regs[11] = ptr;
+
+        // Write the environment variables
+        for s in envp
+        {
+            envp_addrs.push(self.push_buffer(s));
+        }
+
+        // Write envp
+        let mut ptr = self.push(0usize);
+        for v in envp_addrs.iter().rev()
+        {
+            ptr = self.push(*v);
+        }
+
+        // Set envp
+        self.frame.regs[12] = ptr;
+    }
+
+    /// Push a buffer
+    pub fn push_buffer(&mut self, data: &[u8]) -> usize
+    {
+        // Move the stack pointer down
+        self.frame.regs[2] -= data.len();
+
+        // Get the physical location of where the buffer must go
+        let true_ptr = self.map_mem(self.frame.regs[2]).unwrap() as *mut u8;
+
+        // Write to the buffer
+        for (i, v) in data.iter().enumerate()
+        {
+            unsafe { true_ptr.add(i).write(*v) };
+        }
+
+        // Return the virtual address of the buffer
+        self.frame.regs[2]
+    }
+
+    /// Push data to the stack
+    pub fn push<T>(&mut self, data: T) -> usize
+    {
+        // Move the stack pointer down
+        self.frame.regs[2] -= core::mem::size_of::<T>();
+
+        // Set the proper alignment
+        let align = core::mem::align_of::<T>();
+        self.frame.regs[2] &= !(align - 1);
+
+        // Get the physical location of where the buffer must go
+        let true_ptr = self.map_mem(self.frame.regs[2]).unwrap() as *mut T;
+
+        unsafe { true_ptr.write(data) };
+
+        // Return the virtual address of the buffer
+        self.frame.regs[2]
+    }
+
     /// Map memory based on its page table
     pub fn map_mem(&self, addr: usize) -> Result<usize, TranslationError>
     {

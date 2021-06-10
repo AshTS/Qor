@@ -17,7 +17,7 @@ extern unsigned int open(const char* name, int mode);
 extern unsigned int close(int fd);
 extern unsigned int read(int fd, void* buffer, int size);
 extern unsigned int fork();
-extern unsigned int execve(const char* path);
+extern unsigned int execve(const char* path, const char** argv, const char** envp);
 extern unsigned int wait(int* wstatus);
 extern unsigned int getcwd(void* buffer, int size);
 extern void* mmap(void* start, int length, int prot, int flags, int fd, int off);

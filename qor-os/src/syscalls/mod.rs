@@ -60,7 +60,7 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         // Execve Syscall
         59 =>
         {
-            execve::syscall_execve(proc, arg0)
+            execve::syscall_execve(proc, arg0, arg1, arg2)
         },
         // Exit Syscall
         60 =>

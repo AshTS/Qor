@@ -1,18 +1,12 @@
 #include "printf.h"
 #include "syscalls.h"
 
-int main()
+int main(int argc, char** argv)
 {
-    printf("Stdin Test Program\n");
+    printf("Argc: %i\n", argc);
 
-    printf("Enter Some Text: ");
-
-    char buffer[64];
-    buffer[63] = 0;
-
-    while (read(0, buffer, 63) == 0) {}
-
-    printf("Got Text: `%s`\n", buffer);
-
-
+    for (int i = 0; i < argc; i++)
+    {
+        printf("`%s`\n", argv[i]);
+    }
 }
