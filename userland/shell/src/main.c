@@ -4,6 +4,12 @@
 
 int main()
 {
+    char* envp[1];
+    envp[0] = 0;
+
+    char* argv[64];
+    argv[0] = 0;
+
     while (1)
     {
         printf("$ ");
@@ -27,7 +33,22 @@ int main()
 
         if (fork() == 0)
         {
-            execve(buffer);
+            int buffer_index = 0;
+            int argv_index = 0;
+            argv[0] = buffer;
+
+            while (buffer[buffer_index] != 0)
+            {
+                if (buffer[buffer_index] == ' ')
+                {
+                    buffer[buffer_index] = 0;
+                    argv_index++;
+                    argv[argv_index] = &buffer[buffer_index + 1];
+                }
+                buffer_index++;
+            }
+
+            execve(argv[0], argv, envp);
 
             printf("Unable to open file `%s`\n", buffer);
 
