@@ -5,8 +5,5 @@ Minix3 File System
     Creating new files
     Creating new directories
     Writing to files
-Arguments to Processes
-    Setting up the stack
-    Add support to the shell
 Syscalls
     nanosleep
