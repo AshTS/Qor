@@ -126,8 +126,23 @@ impl FileDescriptor for UARTIn
 
 /// Filesystem Inode File Descriptor
 #[derive(Debug, Clone)]
-pub struct InodeFileDescriptor(pub usize);
+pub struct InodeFileDescriptor
+{
+    fd: usize,
+    index: usize
+}
 
+impl InodeFileDescriptor
+{
+    pub fn new(fd: usize) -> Self
+    {
+        Self
+        {
+            fd,
+            index: 0
+        }
+    }
+}
 
 impl FileDescriptor for InodeFileDescriptor
 {
@@ -143,6 +158,10 @@ impl FileDescriptor for InodeFileDescriptor
 
     fn read(&mut self, fs: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
-        fs.read_file(self.0, buffer, count)
+        let r = fs.read_file_start(self.fd, buffer, count, self.index);
+        
+        self.index += r;
+
+        r
     }
 }

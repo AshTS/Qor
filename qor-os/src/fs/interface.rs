@@ -110,7 +110,7 @@ impl FilesystemInterface
     }
 
     /// Read from a possibly nested zone
-    fn read_zone(&mut self, zone: usize, level: usize, buffer: *mut u8, index: &mut usize, remaining: &mut usize)
+    fn read_zone(&mut self, zone: usize, level: usize, buffer: *mut u8, index: &mut usize, remaining: &mut usize, offset: &mut usize)
     {
         // If no bytes are left to be read, terminate
         if *remaining == 0
@@ -127,6 +127,12 @@ impl FilesystemInterface
             // Read byte by byte
             for v in data.iter()
             {
+                if *offset > 0
+                {
+                    *offset -= 1;
+                    continue;
+                }
+                
                 unsafe { buffer.add(*index).write(*v) };
 
                 *index += 1;
@@ -154,7 +160,7 @@ impl FilesystemInterface
                 }
 
                 // Otherwise, use it as the zone to go to the next level down
-                self.read_zone(*v as usize, level - 1, buffer, index, remaining);
+                self.read_zone(*v as usize, level - 1, buffer, index, remaining, offset);
 
                 // If we are done reading the file, break
                 if *remaining == 0
@@ -170,11 +176,12 @@ impl FilesystemInterface
     {
         let mut remaining = size;
         let mut index = 0;
+        let mut offset = 0;
 
         for (i, zone) in inode.zones.iter().enumerate()
         {
             if *zone == 0 {continue; }
-            self.read_zone(*zone as usize, i.max(6) - 6, buffer, &mut index, &mut remaining);
+            self.read_zone(*zone as usize, i.max(6) - 6, buffer, &mut index, &mut remaining, &mut offset);
         }
 
         index
@@ -186,16 +193,38 @@ impl FilesystemInterface
         kdebugln!(Filesystem, "Reading file at {}", inode);
         let mut remaining = size;
         let mut index = 0;
+        let mut offset = 0;
 
         let inode = self.get_inode(inode);
 
         for (i, zone) in inode.zones.iter().enumerate()
         {
             if *zone == 0 {continue; }
-            self.read_zone(*zone as usize, i.max(6) - 6, buffer, &mut index, &mut remaining);
+            self.read_zone(*zone as usize, i.max(6) - 6, buffer, &mut index, &mut remaining, &mut offset);
         }
 
         index
+    }
+
+    /// Read the data from an inode starting at the given index
+    pub fn read_file_start(&mut self, inode: usize, buffer: *mut u8, size: usize, start: usize) -> usize
+    {
+        kdebugln!(Filesystem, "Reading file at {}", inode);
+        let mut remaining = size;
+        let mut index = start;
+        let mut offset = start;
+
+        let buffer = (buffer as usize - start) as *mut u8;
+
+        let inode = self.get_inode(inode);
+
+        for (i, zone) in inode.zones.iter().enumerate()
+        {
+            if *zone == 0 {continue; }
+            self.read_zone(*zone as usize, i.max(6) - 6, buffer, &mut index, &mut remaining, &mut offset);
+        }
+
+        index - start
     }
 
     /// Get an inode number by path

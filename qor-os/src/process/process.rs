@@ -237,7 +237,7 @@ impl Process
             i += 1;
         }
 
-        self.data.descriptors.insert(i, Box::new(super::descriptor::InodeFileDescriptor(inode)));
+        self.data.descriptors.insert(i, Box::new(super::descriptor::InodeFileDescriptor::new(inode)));
 
         Ok(i) 
     }
