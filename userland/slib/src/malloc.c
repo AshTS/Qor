@@ -1,20 +1,21 @@
 #include "malloc.h"
 #include "printf.h"
 #include "syscalls.h"
+#include "stdbool.h"
 
 #define PAGESIZE 4096
-#define INITIAL_HEAP 4096
+#define INITIAL_HEAP PAGESIZE * 4
 
 #ifdef DEBUG
-    #define DEBUG_PRINT(...) printf(__VA_ARGS__)
+#define DEBUG_PRINT(...) printf(__VA_ARGS__)
 #else
-    #define DEBUG_PRINT(...)
+#define DEBUG_PRINT(...)
 #endif
 
-static void* heap_start = 0;
+static void *heap_start = 0;
 static int heap_size = 0;
 
-static void* heap_table = 0;
+static void *heap_table = 0;
 static int heap_table_size = 0;
 
 #define CHUNK_VALID 4
@@ -22,18 +23,18 @@ static int heap_table_size = 0;
 
 typedef struct MallocChunk
 {
-    void* ptr;
+    void *ptr;
     unsigned long size;
-    struct MallocChunk* next;
+    struct MallocChunk *next;
     char flags;
 } MallocChunk;
 
-// Get the next available chunk in the 
-MallocChunk* next_chunk()
+// Get the next available chunk in the
+MallocChunk *next_chunk()
 {
-    MallocChunk* walk = (MallocChunk*)heap_table;
+    MallocChunk *walk = (MallocChunk *)heap_table;
 
-    while ((void*)walk - heap_table < heap_table_size)
+    while ((void *)walk - heap_table < heap_table_size)
     {
         if ((walk->flags & CHUNK_VALID) == 0)
         {
@@ -47,7 +48,43 @@ MallocChunk* next_chunk()
     return 0;
 }
 
-void* malloc(unsigned int size)
+/*
+bool is_connected(MallocChunk* check)
+{
+    MallocChunk* walk = (MallocChunk*)heap_table;
+
+    while (walk != 0)
+    {
+        if (check == walk)
+        {
+            return true;
+        }
+
+        walk = walk -> next;
+    }
+
+    return false;
+}
+
+void check_table()
+{
+    MallocChunk* walk = (MallocChunk*)heap_table;
+
+    while ((void*)walk - heap_table < heap_table_size)
+    {
+        if ((walk->flags & CHUNK_VALID))
+        {
+            if (!is_connected(walk))
+            {
+                printf("Disconnected Valid Chunk: %p\n", walk);
+            }
+        }
+
+        walk++;
+    }
+}*/
+
+void *malloc(unsigned int size)
 {
     DEBUG_PRINT("malloc(%i) => ", size);
     if (heap_start == 0)
@@ -55,20 +92,19 @@ void* malloc(unsigned int size)
         heap_start = mmap(0, INITIAL_HEAP, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
         heap_size = INITIAL_HEAP;
 
-        heap_table = mmap(0, PAGESIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
-        heap_table_size = PAGESIZE;
+        heap_table = mmap(0, PAGESIZE * 2, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
+        heap_table_size = PAGESIZE * 2;
 
-        MallocChunk* walk = (MallocChunk*)heap_table;
+        MallocChunk *walk = (MallocChunk *)heap_table;
 
         walk->ptr = heap_start;
         walk->size = heap_size;
         walk->flags = CHUNK_FREE | CHUNK_VALID;
         walk->next = 0;
 
-
         walk++;
 
-        while ((void*)walk - heap_table < heap_table_size)
+        while ((void *)walk - heap_table < heap_table_size)
         {
             walk->flags = 0;
 
@@ -76,10 +112,10 @@ void* malloc(unsigned int size)
         }
     }
 
-    MallocChunk* walk = (MallocChunk*)heap_table;
-    void* result = 0;
+    MallocChunk *walk = (MallocChunk *)heap_table;
+    void *result = 0;
 
-    while (walk != 0 && (void*)walk - heap_table < heap_table_size)
+    while (walk != 0 && (void *)walk - heap_table < heap_table_size)
     {
         if ((walk->flags & CHUNK_VALID) == 0)
         {
@@ -93,10 +129,10 @@ void* malloc(unsigned int size)
             {
                 result = walk->ptr;
                 walk->flags ^= CHUNK_FREE;
-                
+
                 if (walk->size != size)
                 {
-                    MallocChunk* next = next_chunk();
+                    MallocChunk *next = next_chunk();
 
                     next->flags = CHUNK_FREE | CHUNK_VALID;
                     next->size = walk->size - size;
@@ -118,14 +154,13 @@ void* malloc(unsigned int size)
     return result;
 }
 
-void flush_helper(unsigned int* count, MallocChunk** first)
+void flush_helper(unsigned int *count, MallocChunk **first)
 {
     if (*count > 0)
     {
         unsigned long add_size = 0;
 
-        MallocChunk* size_walk = *first;
-
+        MallocChunk *size_walk = *first;
 
         if (size_walk->next != 0)
         {
@@ -133,33 +168,37 @@ void flush_helper(unsigned int* count, MallocChunk** first)
             {
                 size_walk = size_walk->next;
                 add_size += size_walk->size;
+                size_walk->flags &= !CHUNK_VALID;
 
-                if(size_walk->next == 0) { break; }
+                if (size_walk->next == 0)
+                {
+                    break;
+                }
             }
 
             (*first)->size += add_size;
             (*first)->next = size_walk->next;
         }
     }
-    
+
     *first = 0;
     *count = 0;
 }
 
-void free(void* ptr)
+void free(void *ptr)
 {
     DEBUG_PRINT("free(%p)\n", ptr);
 
-    MallocChunk* walk = (MallocChunk*)heap_table;
-    MallocChunk* first = 0;
+    MallocChunk *walk = (MallocChunk *)heap_table;
+    MallocChunk *first = 0;
     unsigned int count = 0;
     unsigned int expected_next = 0;
 
-    while (walk != 0 && (void*)walk - heap_table < heap_table_size)
+    while (walk != 0 && (void *)walk - heap_table < heap_table_size)
     {
         if ((walk->flags & CHUNK_VALID) == 0)
         {
-            printf("Malloc Hit an Invalid Chunk\n");
+            printf("Free Hit an Invalid Chunk\n");
             exit(-1);
         }
 
@@ -194,7 +233,7 @@ void free(void* ptr)
         {
             flush_helper(&count, &first);
         }
-        
+
         walk = walk->next;
     }
 
@@ -210,11 +249,11 @@ void dump()
         return;
     }
 
-    MallocChunk* walk = (MallocChunk*)heap_table;
+    MallocChunk *walk = (MallocChunk *)heap_table;
 
-    while (walk != 0 && (void*)walk - heap_table < heap_table_size)
+    while (walk != 0 && (void *)walk - heap_table < heap_table_size)
     {
-        
+
         if ((walk->flags & CHUNK_VALID) == 0)
         {
             printf("Invalid Chunk\n");
@@ -234,10 +273,24 @@ void dump()
 
         walk = walk->next;
     }
+
+    int free = 0;
+    walk = (MallocChunk *)heap_table;
+
+    while ((void *)walk - heap_table < heap_table_size)
+    {
+        if ((walk->flags & CHUNK_VALID) == 0)
+        {
+            free++;
+        }
+
+        walk++;
+    }
+
+    printf("Free: %i\n", free);
 }
 #else
 void dump()
 {
-    
 }
 #endif
