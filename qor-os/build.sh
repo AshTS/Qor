@@ -3,7 +3,7 @@ if not test -d ../userland/bin
   mkdir ../userland/bin
 end
 
-set programs slib shell prog hello libc-test pwd basic
+set programs slib shell prog hello libc-test pwd basic cat
 
 cd ../userland
 
