@@ -1,0 +1,10 @@
+10 print "Primes"
+20 A = 2
+30 print A
+40 A = A + 1
+50 if A > 100 then goto 500
+60 M = 2
+70 if A - (A / M) * M == 0 then goto 40
+80 M = M + 1
+90 if M >= A then goto 30
+100 goto 70
