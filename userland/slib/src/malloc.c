@@ -4,7 +4,7 @@
 #include "stdbool.h"
 
 #define PAGESIZE 4096
-#define INITIAL_HEAP PAGESIZE * 4
+#define INITIAL_HEAP PAGESIZE * 32
 
 #ifdef DEBUG
 #define DEBUG_PRINT(...) printf(__VA_ARGS__)
@@ -92,8 +92,8 @@ void *malloc(unsigned int size)
         heap_start = mmap(0, INITIAL_HEAP, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
         heap_size = INITIAL_HEAP;
 
-        heap_table = mmap(0, PAGESIZE * 2, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
-        heap_table_size = PAGESIZE * 2;
+        heap_table = mmap(0, PAGESIZE * 8, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
+        heap_table_size = PAGESIZE * 8;
 
         MallocChunk *walk = (MallocChunk *)heap_table;
 
