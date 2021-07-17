@@ -7,3 +7,6 @@ Minix3 File System
     Writing to files
 Syscalls
     nanosleep
+Processes
+    Add ability to allow process to throw a fatal exception, clean up
+    Add segmentation fault display
