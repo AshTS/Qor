@@ -2,6 +2,8 @@
 #include "syscalls.h"
 #include "string.h"
 
+void display_tag();
+
 int main()
 {
     char* envp[1];
@@ -12,7 +14,7 @@ int main()
 
     while (1)
     {
-        printf("$ ");
+        display_tag();
 
         char buffer[64];
         while (1)
@@ -61,4 +63,14 @@ int main()
     }
 
     printf("Exiting Shell...\n");
+}
+
+void display_tag()
+{
+    char buffer[64];
+
+    int pos = getcwd(buffer, 63);
+    buffer[pos] = 0;
+
+    printf("%s$> ", buffer);
 }
