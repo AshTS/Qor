@@ -399,6 +399,14 @@ impl Process
         0
     }
 
+    /// Report a fatal fault in the process
+    pub fn report_fault(&mut self, fault_msg: &str)
+    {
+        kerrorln!("Process PID {} Encountered a Fatal Fault: ", self.pid);
+        kerrorln!("   {}", fault_msg);
+
+        self.kill(1);
+    }
 }
 
 impl core::ops::Drop for Process

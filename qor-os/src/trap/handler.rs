@@ -3,10 +3,23 @@ use crate::*;
 use super::InterruptContext;
 use super::InterruptType;
 
+use alloc::format;
+
 /// Dump on error
 pub fn dump_on_error()
 {
     kerrorln!("Error Dump:");
+}
+
+/// Switch to the next process
+pub fn switch_process()
+{
+    let schedule = process::scheduler::schedule_next();
+
+    // Prepare the timer for the next tick
+    unsafe { drivers::TIMER_DRIVER.trigger() }
+
+    process::scheduler::schedule_jump(schedule);
 }
 
 /// Interrupt Handler
@@ -55,17 +68,25 @@ pub fn interrupt_handler(interrupt_context: InterruptContext) -> usize
         },
         InterruptType::MachineTimerInterrupt =>
         {
-            let schedule = process::scheduler::schedule_next();
-            // Prepare the timer for the next tick
-            unsafe { drivers::TIMER_DRIVER.trigger() }
-
-            process::scheduler::schedule_jump(schedule);
+            switch_process();
         },
         default =>
         {
-            kerrorln!("{}", interrupt_context);
-            dump_on_error();
-            panic!("Unhandled Trap: {:?}", default);
+            // If the trap occured during a process, report it as a fatal fault
+            if let Some(proc) = process::scheduler::current_process()
+            {
+                proc.report_fault(&format!("{:?}", default));
+
+                switch_process();
+            }
+
+            // Otherwise, cause a kernel panic
+            else
+            {
+                kerrorln!("{}", interrupt_context);
+                dump_on_error();
+                panic!("Unhandled Trap: {:?}", default);
+            }
         }
     }
 

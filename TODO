@@ -8,5 +8,4 @@ Minix3 File System
 Syscalls
     nanosleep
 Processes
-    Add ability to allow process to throw a fatal exception, clean up
     Add segmentation fault display
