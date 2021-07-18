@@ -1,4 +1,5 @@
 use crate::*;
+use crate::fs::structures::DirEntry;
 
 use alloc::format;
 
@@ -406,6 +407,30 @@ impl Process
         kerrorln!("   {}", fault_msg);
 
         self.kill(1);
+    }
+
+    /// Get directory entries for the given file descriptor
+    pub fn get_dir_entries(&mut self, fd: usize) -> Option<Vec<DirEntry>>
+    {
+        let inode = if let Some(desc) = self.data.descriptors.get_mut(&fd)
+        {
+            if let Some(inode) = desc.get_inode()
+            {
+                inode
+            }
+            else
+            {
+                return None;
+            }
+        }
+        else
+        {
+            return None;
+        };
+
+        self.ensure_fs();
+
+        Some(self.fs_interface.as_mut().unwrap().get_dir_entries(inode))
     }
 }
 

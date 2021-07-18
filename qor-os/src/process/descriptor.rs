@@ -14,6 +14,12 @@ pub trait FileDescriptor
 
     /// Read from the descriptor
     fn read(&mut self, fs: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize;
+
+    /// Get the inode of the entry
+    fn get_inode(&mut self) -> Option<usize>
+    {
+        None
+    }
 }
 
 // ========== Utility File Descriptors ==========
@@ -128,7 +134,7 @@ impl FileDescriptor for UARTIn
 #[derive(Debug, Clone)]
 pub struct InodeFileDescriptor
 {
-    fd: usize,
+    pub fd: usize,
     index: usize
 }
 
@@ -163,5 +169,11 @@ impl FileDescriptor for InodeFileDescriptor
         self.index += r;
 
         r
+    }
+
+    /// Get the inode of the entry
+    fn get_inode(&mut self) -> Option<usize>
+    {
+        Some(self.fd)
     }
 }

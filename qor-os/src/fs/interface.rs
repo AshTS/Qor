@@ -256,7 +256,7 @@ impl FilesystemInterface
     }
 
     /// Get the directory entries for the given inode number
-    fn get_dir_entries(&mut self, inode: usize) -> Vec<DirEntry>
+    pub fn get_dir_entries(&mut self, inode: usize) -> Vec<DirEntry>
     {
         let inode = self.get_inode(inode);
 

@@ -10,6 +10,7 @@ mod execve;
 mod exit;
 mod fork;
 mod getcwd;
+mod getdents;
 mod mmap;
 mod munmap;
 mod open;
@@ -73,6 +74,11 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         {
             wait::syscall_wait(proc, arg0);
             0
+        },
+        // Getdents Syscall
+        78 =>
+        {
+            getdents::syscall_getdents(proc, arg0, arg1, arg2)
         },
         // Getcwd Syscall
         79 =>
