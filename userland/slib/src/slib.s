@@ -81,6 +81,12 @@ wait:
     ecall
     ret
 
+.globl getdents
+getdents:
+    li a7, 78
+    ecall
+    ret
+
 .globl getcwd
 getcwd:
     li a7, 79
