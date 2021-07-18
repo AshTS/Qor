@@ -45,7 +45,7 @@ pub struct Process
     pub root: *mut PageTable,
     pub state: ProcessState,
     pub data: ProcessData,
-    pub fs_interface: Option<Box<fs::interface::FilesystemInterface>>
+    pub fs_interface: Option<Box<fs::vfs::FilesystemInterface>>
 } 
 
 impl Process
@@ -201,9 +201,11 @@ impl Process
     /// Initialize the file system
     pub fn init_fs(&mut self)
     {
-        let mut fsi = Box::new(fs::interface::FilesystemInterface::new(0));
+        unimplemented!()
+        /*
+        let mut fsi = Box::new(fs::vfs::FilesystemInterface::new(0));
         fsi.init_fs();
-        self.fs_interface = Some(fsi);
+        self.fs_interface = Some(fsi);*/
     }
 
     /// Ensure file system
@@ -216,7 +218,7 @@ impl Process
     }
 
     /// Open a file by path
-    pub fn open(&mut self, path: &str, _mode: usize) -> Result<usize, fs::interface::FilesystemError>
+    pub fn open(&mut self, path: &str, _mode: usize) -> Result<usize, fs::structures::FilesystemError>
     {
         self.ensure_fs();
 

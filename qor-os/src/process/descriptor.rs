@@ -10,10 +10,10 @@ pub trait FileDescriptor
     fn close(&mut self);
 
     /// Write to the descriptor
-    fn write(&mut self, fs: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize;
+    fn write(&mut self, fs: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize;
 
     /// Read from the descriptor
-    fn read(&mut self, fs: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize;
+    fn read(&mut self, fs: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize;
 
     /// Get the inode of the entry
     fn get_inode(&mut self) -> Option<usize>
@@ -32,12 +32,12 @@ impl FileDescriptor for NullDescriptor
 {
     fn close(&mut self) {}
 
-    fn write(&mut self, _: &mut fs::interface::FilesystemInterface, _: *mut u8, count: usize) -> usize
+    fn write(&mut self, _: &mut fs::vfs::FilesystemInterface, _: *mut u8, count: usize) -> usize
     {
         count
     }
 
-    fn read(&mut self, _: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
+    fn read(&mut self, _: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
         for _ in 0..count
         {
@@ -56,7 +56,7 @@ impl FileDescriptor for UARTOut
 {
     fn close(&mut self) {}
 
-    fn write(&mut self, _: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
+    fn write(&mut self, _: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
         for i in 0..count
         {
@@ -66,7 +66,7 @@ impl FileDescriptor for UARTOut
         count
     }
 
-    fn read(&mut self, _: &mut fs::interface::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
+    fn read(&mut self, _: &mut fs::vfs::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
     {
         0
     }
@@ -80,7 +80,7 @@ impl FileDescriptor for UARTError
 {
     fn close(&mut self) {}
     
-    fn write(&mut self, _: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
+    fn write(&mut self, _: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
         for i in 0..count
         {
@@ -90,7 +90,7 @@ impl FileDescriptor for UARTError
         count
     }
 
-    fn read(&mut self, _: &mut fs::interface::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
+    fn read(&mut self, _: &mut fs::vfs::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
     {
         0
     }
@@ -104,12 +104,12 @@ impl FileDescriptor for UARTIn
 {
     fn close(&mut self) {}
     
-    fn write(&mut self, _: &mut fs::interface::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
+    fn write(&mut self, _: &mut fs::vfs::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
     {
         0
     }
 
-    fn read(&mut self, _: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
+    fn read(&mut self, _: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
         let mut i = 0;
 
@@ -157,12 +157,12 @@ impl FileDescriptor for InodeFileDescriptor
         
     }
 
-    fn write(&mut self, _fs: &mut fs::interface::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
+    fn write(&mut self, _fs: &mut fs::vfs::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
     {
         unimplemented!()
     }
 
-    fn read(&mut self, fs: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
+    fn read(&mut self, fs: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
         // let r = fs.read_file_start(self.fd, buffer, count, self.index);
         

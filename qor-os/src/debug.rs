@@ -37,7 +37,7 @@ pub const ELF: bool = false;
 pub const ELF: bool = false;
 
 #[cfg(not(test))]
-pub const FILESYSTEM: bool = false;
+pub const FILESYSTEM: bool = true;
 #[cfg(test)]
 pub const FILESYSTEM: bool = false;
 

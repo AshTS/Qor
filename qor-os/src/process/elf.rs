@@ -10,7 +10,7 @@ use super::process::Process;
 #[derive(Debug, Clone)]
 pub enum ElfLoadError
 {
-    ReadError(fs::interface::FilesystemError),
+    ReadError(fs::structures::FilesystemError),
     NotAnELF,
     BadFormat(String)
 }
@@ -70,7 +70,7 @@ pub struct Segment
 
 
 /// Load a file from a file interface and convert it to a process
-pub fn load_elf(interface: &mut fs::interface::FilesystemInterface, path: &str) -> Result<Process, ElfLoadError>
+pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: &str) -> Result<Process, ElfLoadError>
 {
     kdebugln!(Elf, "Loading ELF File `{}`", path);
 

@@ -93,6 +93,22 @@ fn kmain()
     // Initialize the virtio interrtupts
     drivers::virtio::init_virtio_interrupts();
     kdebugln!(Initialization, "VirtIO Interrupts Initialized");
+
+    kprintln!("Start Filesystem Testing");
+
+    let mut vfs = unsafe { Box::new(fs::vfs::FilesystemInterface::new()) };
+    let mut child = fs::ramdisk::RamDiskFilesystem::new();
+
+    use fs::fstrait::Filesystem;
+
+    vfs.init();
+    child.init();
+
+    vfs.mount_fs("/", Box::new(child)).unwrap();
+
+    vfs.index().unwrap();
+
+    kprintln!("{:?}", vfs.index);
     
     /*
     let mut interface = fs::interface::FilesystemInterface::new(0);
