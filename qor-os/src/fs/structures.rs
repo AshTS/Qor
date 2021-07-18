@@ -11,7 +11,8 @@ pub enum FilesystemError
     UnableToFindDiskMount(usize),
     FilesystemNotMounted,
     INodeIsADirectory,
-    BadINode
+    BadINode,
+    FileNotFound(String)
 }
 
 /// Generic Filesystem Result Type
@@ -19,7 +20,7 @@ pub type FilesystemResult<T> = Result<T, FilesystemError>;
 
 
 /// Filesystem Index
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct FilesystemIndex
 {
     pub mount_id: usize,

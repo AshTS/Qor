@@ -95,13 +95,27 @@ impl Filesystem for RamDiskFilesystem
     /// Convert a path to an inode
     fn path_to_inode(&mut self, path: &str) -> FilesystemResult<FilesystemIndex>
     {
-        todo!()
+        if let Some(vfs) = &mut self.vfs
+        {
+            vfs.path_to_inode(path)
+        }
+        else
+        {
+            Err(FilesystemError::FilesystemNotMounted)
+        }
     }
 
     /// Convert an inode to a path
-    fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<String>
+    fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<&str>
     {
-        todo!()
+        if let Some(vfs) = &mut self.vfs
+        {
+            vfs.inode_to_path(inode)
+        }
+        else
+        {
+            Err(FilesystemError::FilesystemNotMounted)
+        }
     }
 
     /// Get the directory entries for the given inode

@@ -12,7 +12,7 @@ pub struct FilesystemInterface
     mounts: Vec<Option<Box<dyn Filesystem>>>,
     root: Option<usize>,
     pub index: BTreeMap<String, FilesystemIndex>,
-    indexed: Vec<FilesystemIndex>
+    indexed: BTreeMap<FilesystemIndex, String>
 }
 
 impl FilesystemInterface
@@ -26,7 +26,7 @@ impl FilesystemInterface
             mounts: Vec::new(),
             root: None,
             index: BTreeMap::new(),
-            indexed: Vec::new()
+            indexed: BTreeMap::new()
         }
     }
 
@@ -117,7 +117,7 @@ impl FilesystemInterface
     /// Index the filesystem from the starting path and starting inode
     pub fn index_from(&mut self, path: &str, inode: FilesystemIndex) -> FilesystemResult<()>
     {
-        if self.indexed.contains(&inode)
+        if self.indexed.contains_key(&inode)
         {
             return Ok(());
         }
@@ -127,7 +127,7 @@ impl FilesystemInterface
         {
             self.index.insert(path.to_string(), inode);
         }
-        self.indexed.push(inode);
+        self.indexed.insert(inode, path.to_string());
 
         // Get the directory entries (if this is a directory)
         match self.get_dir_entries(inode)
@@ -218,13 +218,32 @@ impl Filesystem for FilesystemInterface
     /// Convert a path to an inode
     fn path_to_inode(&mut self, path: &str) -> FilesystemResult<FilesystemIndex>
     {
-        todo!()
+        // If we have the path in the index, just use that
+        if let Some(index) = self.index.get(path)
+        {
+            Ok(*index)
+        }
+
+        // TODO: Otherwise, we will walk the filesystem, indexing as we go
+        // For now, just pretend if it wasn't indexed, it doesn't exist
+        else
+        {
+            Err(FilesystemError::FileNotFound(path.to_string()))
+        }
     }
 
     /// Convert an inode to a path
-    fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<String>
+    fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<&str>
     {
-        todo!()
+        // If we have the inode in the index, just use that
+        if let Some(path) = self.indexed.get(&inode)
+        {
+            Ok(path)
+        }
+        else
+        {
+            todo!()
+        }
     }
 
     /// Get the directory entries for the given inode

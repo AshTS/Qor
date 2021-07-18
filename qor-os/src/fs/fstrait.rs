@@ -23,7 +23,7 @@ pub trait Filesystem
     fn path_to_inode(&mut self, path: &str) -> FilesystemResult<FilesystemIndex>;
 
     /// Convert an inode to a path
-    fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<String>;
+    fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<&str>;
 
     /// Get the directory entries for the given inode
     fn get_dir_entries(&mut self, inode: FilesystemIndex) -> FilesystemResult<Vec<DirectoryEntry>>;
