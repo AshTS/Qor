@@ -2,4 +2,3 @@
 
 // Modules
 pub mod interface;
-pub mod structures;

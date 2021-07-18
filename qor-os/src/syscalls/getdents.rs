@@ -42,6 +42,8 @@ pub fn syscall_getdents(proc: &mut super::Process, fd: usize, buffer_ptr: usize,
     {
         for entry in entries
         {
+            unimplemented!()
+            /*
             let length = 8 + 8 + 2 + entry.name.len() + 1;
             if amount_written + length >= size
             {
@@ -60,7 +62,7 @@ pub fn syscall_getdents(proc: &mut super::Process, fd: usize, buffer_ptr: usize,
 
             let size = write_dir_entry(buffer_ptr + amount_written, entry.inode as usize, amount_written, &name);
 
-            amount_written += size;
+            amount_written += size;*/
         }
 
         amount_written

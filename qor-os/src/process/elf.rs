@@ -74,6 +74,10 @@ pub fn load_elf(interface: &mut fs::interface::FilesystemInterface, path: &str) 
 {
     kdebugln!(Elf, "Loading ELF File `{}`", path);
 
+    unimplemented!()
+
+    /*
+
     // Open the file
     let file_data = interface.read_to_buffer(path).map_err(|e| ElfLoadError::ReadError(e))?;
 
@@ -187,5 +191,5 @@ pub fn load_elf(interface: &mut fs::interface::FilesystemInterface, path: &str) 
     Ok(Process::from_components(
         elf_header.e_entry as usize, 
         table as *mut mem::mmu::PageTable, 
-        4, 0x2_0000_0000))
+        4, 0x2_0000_0000))*/
 }

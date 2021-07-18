@@ -1,7 +1,8 @@
 use crate::*;
-use crate::fs::structures::DirEntry;
 
 use alloc::format;
+
+type DirEntry = usize;
 
 use super::data::ProcessData;
 
@@ -201,7 +202,7 @@ impl Process
     pub fn init_fs(&mut self)
     {
         let mut fsi = Box::new(fs::interface::FilesystemInterface::new(0));
-        fsi.initialize().unwrap();
+        fsi.init_fs();
         self.fs_interface = Some(fsi);
     }
 
@@ -218,6 +219,10 @@ impl Process
     pub fn open(&mut self, path: &str, _mode: usize) -> Result<usize, fs::interface::FilesystemError>
     {
         self.ensure_fs();
+
+        unimplemented!()
+
+        /*
         
         
         let inode = 
@@ -240,7 +245,7 @@ impl Process
 
         self.data.descriptors.insert(i, Box::new(super::descriptor::InodeFileDescriptor::new(inode)));
 
-        Ok(i) 
+        Ok(i) */
     }
 
     /// Read from a file descriptor
@@ -430,7 +435,9 @@ impl Process
 
         self.ensure_fs();
 
-        Some(self.fs_interface.as_mut().unwrap().get_dir_entries(inode))
+        unimplemented!()
+
+        // Some(self.fs_interface.as_mut().unwrap().get_dir_entries(inode))
     }
 }
 

@@ -164,11 +164,13 @@ impl FileDescriptor for InodeFileDescriptor
 
     fn read(&mut self, fs: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
-        let r = fs.read_file_start(self.fd, buffer, count, self.index);
+        // let r = fs.read_file_start(self.fd, buffer, count, self.index);
         
-        self.index += r;
+        // self.index += r;
 
-        r
+        // r
+
+        usize::MAX
     }
 
     /// Get the inode of the entry

@@ -94,14 +94,14 @@ fn kmain()
     drivers::virtio::init_virtio_interrupts();
     kdebugln!(Initialization, "VirtIO Interrupts Initialized");
     
-    
+    /*
     let mut interface = fs::interface::FilesystemInterface::new(0);
     interface.initialize().unwrap();
 
     let mut elf_proc = process::elf::load_elf(&mut interface, "/bin/shell").unwrap();
     process::scheduler::get_init_process_mut().unwrap().register_child(elf_proc.pid);
     elf_proc.connect_to_term();
-    process::scheduler::add_process(elf_proc);
+    process::scheduler::add_process(elf_proc);*/
 
     // Start the timer
     drivers::init_timer_driver(1000);
