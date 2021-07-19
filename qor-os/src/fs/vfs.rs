@@ -138,7 +138,7 @@ impl FilesystemInterface
 
                 for entry in entries
                 {
-                    self.index_from(&format!("{}{}", path, entry.name), entry.index)?;
+                    self.index_from(&format!("{}/{}", path, entry.name), entry.index)?;
                 }
 
                 Ok(())

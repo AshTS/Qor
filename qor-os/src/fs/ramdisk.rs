@@ -45,7 +45,11 @@ impl Filesystem for RamDiskFilesystem
         {
             self.inodes.push(RamDiskInode::Null);
 
-            let directory = RamDiskInode::Directory(String::from("/"), Vec::new());
+            let directory = RamDiskInode::Directory(String::from(""), Vec::new());
+
+            self.inodes.push(directory);
+
+            let directory = RamDiskInode::Directory(String::from("dir"), Vec::new());
 
             self.inodes.push(directory);
 
@@ -53,10 +57,21 @@ impl Filesystem for RamDiskFilesystem
         
             self.inodes.push(file);
 
-            self.inodes[1] = RamDiskInode::Directory(String::from("/"), vec![
-                (String::from("file"), FilesystemIndex{inode: 2, mount_id: 0}),
+            let file = RamDiskInode::File(String::from("file2"), vec!['H' as u8, 'e' as u8, 'l' as u8, 'l' as u8, 'o' as u8]);
+        
+            self.inodes.push(file);
+
+            self.inodes[1] = RamDiskInode::Directory(String::from(""), vec![
+                (String::from("file"), FilesystemIndex{inode: 3, mount_id: 0}),
                 (String::from("."), FilesystemIndex{inode: 1, mount_id: 0}),
-                (String::from(".."), FilesystemIndex{inode: 1, mount_id: 0})
+                (String::from(".."), FilesystemIndex{inode: 1, mount_id: 0}),
+                (String::from("dir"), FilesystemIndex{inode: 2, mount_id: 0})
+                ]);
+
+            self.inodes[2] = RamDiskInode::Directory(String::from("dir"), vec![
+                (String::from("."), FilesystemIndex{inode: 2, mount_id: 0}),
+                (String::from(".."), FilesystemIndex{inode: 2, mount_id: 0}),
+                (String::from("file2"), FilesystemIndex{inode: 4, mount_id: 0})
                 ]);
         }
     }
