@@ -111,6 +111,7 @@ fn kmain()
     let index = vfs.path_to_inode("/dir/").unwrap();
 
     vfs.create_file(index, String::from("new_file")).unwrap();
+    vfs.create_directory(index, String::from("new_dir")).unwrap();
 
     vfs.index().unwrap();
 

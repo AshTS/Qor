@@ -227,12 +227,78 @@ impl Filesystem for RamDiskFilesystem
     /// Create a directory in the directory at the given inode
     fn create_directory(&mut self, inode: FilesystemIndex, name: String) -> FilesystemResult<FilesystemIndex>
     {
-        todo!()
+        if Some(inode.mount_id) == self.mount_id
+        {
+            let next_id = self.inodes.len();
+            let index = FilesystemIndex{ mount_id: self.mount_id.unwrap(), inode: next_id };
+
+            let new_dir = RamDiskInode::Directory(name.clone(), vec![
+                (String::from("."), index),
+                (String::from(".."), inode)
+            ]);
+
+            self.inodes.push(new_dir);
+
+                
+            if let Some(inode) = self.inodes.iter_mut().nth(inode.inode)
+            {
+                if let RamDiskInode::Directory(_, children) = inode
+                {
+                    children.push((name, index));
+
+                    Ok(index)
+                }
+                else
+                {
+                    Err(FilesystemError::INodeIsNotADirectory)
+                }
+            }
+            else
+            {
+                Err(FilesystemError::BadINode)
+            }
+        }
+        else
+        {
+            if let Some(vfs) = &mut self.vfs
+            {
+                (*vfs).create_file(inode, name)
+            }
+            else
+            {
+                Err(FilesystemError::FilesystemNotMounted)
+            }
+        }
     }
 
-    /// Remove an inode at the given index
-    fn remove_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<()>
+    /// Remove an inode at the given index from the given directory
+    fn remove_inode(&mut self, inode: FilesystemIndex, directory: FilesystemIndex) -> FilesystemResult<()>
     {
-        todo!()
+        if Some(inode.mount_id) == self.mount_id
+        {
+            if let Some(val) = self.inodes.get_mut(inode.inode)
+            {
+                *val = RamDiskInode::Null;
+
+                // TODO: Remove the reference from the directory
+
+                Ok(())
+            }
+            else
+            {
+                Err(FilesystemError::BadINode)
+            }
+        }
+        else
+        {
+            if let Some(vfs) = &mut self.vfs
+            {
+                (*vfs).remove_inode(inode, directory)
+            }
+            else
+            {
+                Err(FilesystemError::FilesystemNotMounted)
+            }
+        }
     }
 }

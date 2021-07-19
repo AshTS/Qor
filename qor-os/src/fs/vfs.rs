@@ -289,12 +289,12 @@ impl Filesystem for FilesystemInterface
         }
     }
 
-    /// Remove an inode at the given index
-    fn remove_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<()>
+    /// Remove an inode at the given index from the given directory
+    fn remove_inode(&mut self, inode: FilesystemIndex, directory: FilesystemIndex) -> FilesystemResult<()>
     {
         if let Some(fs) = self.get_fs_mount(inode.mount_id)
         {
-            fs.remove_inode(inode)
+            fs.remove_inode(inode, directory)
         }
         else
         {

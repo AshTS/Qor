@@ -34,6 +34,6 @@ pub trait Filesystem
     /// Create a directory in the directory at the given inode
     fn create_directory(&mut self, inode: FilesystemIndex, name: String) -> FilesystemResult<FilesystemIndex>;
 
-    /// Remove an inode at the given index
-    fn remove_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<()>;
+    /// Remove an inode at the given index from the given directory
+    fn remove_inode(&mut self, inode: FilesystemIndex, directory: FilesystemIndex) -> FilesystemResult<()>;
 }
