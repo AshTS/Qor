@@ -159,7 +159,7 @@ impl Filesystem for RamDiskFilesystem
                 }
                 else
                 {
-                    Err(FilesystemError::INodeIsADirectory)
+                    Err(FilesystemError::INodeIsNotADirectory)
                 }
             }
             else
@@ -178,5 +178,61 @@ impl Filesystem for RamDiskFilesystem
                 Err(FilesystemError::FilesystemNotMounted)
             }
         }
+    }
+
+    /// Create a file in the directory at the given inode
+    fn create_file(&mut self, inode: FilesystemIndex, name: String) -> FilesystemResult<FilesystemIndex>
+    {
+        if Some(inode.mount_id) == self.mount_id
+        {
+            let new_file = RamDiskInode::File(name.clone(), Vec::new());
+            let next_id = self.inodes.len();
+
+            self.inodes.push(new_file);
+
+                
+            if let Some(inode) = self.inodes.iter_mut().nth(inode.inode)
+            {
+                if let RamDiskInode::Directory(_, children) = inode
+                {
+                    let index = FilesystemIndex{ mount_id: self.mount_id.unwrap(), inode: next_id };
+
+                    children.push((name, index));
+
+                    Ok(index)
+                }
+                else
+                {
+                    Err(FilesystemError::INodeIsNotADirectory)
+                }
+            }
+            else
+            {
+                Err(FilesystemError::BadINode)
+            }
+        }
+        else
+        {
+            if let Some(vfs) = &mut self.vfs
+            {
+                (*vfs).create_file(inode, name)
+            }
+            else
+            {
+                Err(FilesystemError::FilesystemNotMounted)
+            }
+        }
+    }
+
+    /// Create a directory in the directory at the given inode
+    fn create_directory(&mut self, inode: FilesystemIndex, name: String) -> FilesystemResult<FilesystemIndex>
+    {
+        todo!()
+    }
+
+    /// Remove an inode at the given index
+    fn remove_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<()>
+    {
+        todo!()
     }
 }

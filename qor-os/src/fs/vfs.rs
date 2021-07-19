@@ -143,7 +143,7 @@ impl FilesystemInterface
 
                 Ok(())
             },
-            Err(FilesystemError::INodeIsADirectory) => Ok(()),
+            Err(FilesystemError::INodeIsNotADirectory) => Ok(()),
             Err(e) => Err(e)
         }
     }
@@ -151,6 +151,10 @@ impl FilesystemInterface
     /// Index the full filesystem
     pub fn index(&mut self) -> FilesystemResult<()>
     {
+        // Clear the previous index
+        self.index = BTreeMap::new();
+        self.indexed = BTreeMap::new();
+
         let root = self.get_root_index()?;
         self.index_from("", root)
     }
@@ -252,6 +256,45 @@ impl Filesystem for FilesystemInterface
         if let Some(fs) = self.get_fs_mount(inode.mount_id)
         {
             fs.get_dir_entries(inode)
+        }
+        else
+        {
+            Err(FilesystemError::UnableToFindDiskMount(inode.mount_id))
+        }
+    }
+
+    /// Create a file in the directory at the given inode
+    fn create_file(&mut self, inode: FilesystemIndex, name: String) -> FilesystemResult<FilesystemIndex>
+    {
+        if let Some(fs) = self.get_fs_mount(inode.mount_id)
+        {
+            fs.create_file(inode, name)
+        }
+        else
+        {
+            Err(FilesystemError::UnableToFindDiskMount(inode.mount_id))
+        }
+    }
+
+    /// Create a directory in the directory at the given inode
+    fn create_directory(&mut self, inode: FilesystemIndex, name: String) -> FilesystemResult<FilesystemIndex>
+    {
+        if let Some(fs) = self.get_fs_mount(inode.mount_id)
+        {
+            fs.create_directory(inode, name)
+        }
+        else
+        {
+            Err(FilesystemError::UnableToFindDiskMount(inode.mount_id))
+        }
+    }
+
+    /// Remove an inode at the given index
+    fn remove_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<()>
+    {
+        if let Some(fs) = self.get_fs_mount(inode.mount_id)
+        {
+            fs.remove_inode(inode)
         }
         else
         {

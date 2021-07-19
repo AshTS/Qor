@@ -108,6 +108,17 @@ fn kmain()
 
     vfs.index().unwrap();
 
+    let index = vfs.path_to_inode("/dir/").unwrap();
+
+    vfs.create_file(index, String::from("new_file")).unwrap();
+
+    vfs.index().unwrap();
+
+    for ent in vfs.get_dir_entries(index).unwrap()
+    {
+        kprintln!("{:?}", ent);
+    }
+
     kprintln!("{:?}", vfs.index);
     
     /*

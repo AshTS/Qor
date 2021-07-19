@@ -10,7 +10,7 @@ pub enum FilesystemError
     FilesystemUninitialized,
     UnableToFindDiskMount(usize),
     FilesystemNotMounted,
-    INodeIsADirectory,
+    INodeIsNotADirectory,
     BadINode,
     FileNotFound(String)
 }

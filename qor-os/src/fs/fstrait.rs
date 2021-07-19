@@ -27,4 +27,13 @@ pub trait Filesystem
 
     /// Get the directory entries for the given inode
     fn get_dir_entries(&mut self, inode: FilesystemIndex) -> FilesystemResult<Vec<DirectoryEntry>>;
+
+    /// Create a file in the directory at the given inode
+    fn create_file(&mut self, inode: FilesystemIndex, name: String) -> FilesystemResult<FilesystemIndex>;
+
+    /// Create a directory in the directory at the given inode
+    fn create_directory(&mut self, inode: FilesystemIndex, name: String) -> FilesystemResult<FilesystemIndex>;
+
+    /// Remove an inode at the given index
+    fn remove_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<()>;
 }
