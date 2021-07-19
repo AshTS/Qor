@@ -7,6 +7,8 @@ use super::structures::*;
 
 use alloc::vec;
 
+// TODO: Add a disk cache to avoid repeated reads
+
 /// Minix3 Filesystem Driver
 pub struct Minix3Filesystem
 {
@@ -280,6 +282,29 @@ impl Filesystem for Minix3Filesystem
     fn remove_inode(&mut self, inode: FilesystemIndex, directory: FilesystemIndex) -> FilesystemResult<()>
     {
         todo!()
+    }
+
+    /// Read the data stored in an inode
+    fn read_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<Vec<u8>>
+    {
+        if Some(inode.mount_id) == self.mount_id
+        {
+            let inode = self.get_inode(inode.inode)?;
+            Ok(self.read_inode(inode))
+        }
+        else
+        {
+            if let Some(vfs) = &mut self.vfs
+            {
+                vfs.read_inode(inode)
+            }
+            else
+            {
+                Err(FilesystemError::FilesystemNotMounted)
+            }
+        }
+        
+        
     }
 }
 

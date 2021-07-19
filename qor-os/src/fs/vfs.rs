@@ -313,4 +313,19 @@ impl Filesystem for FilesystemInterface
             Err(FilesystemError::UnableToFindDiskMount(inode.mount_id))
         }
     }
+
+    /// Read the data stored in an inode
+    fn read_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<Vec<u8>>
+    {
+        kdebugln!(Filesystem, "Read inode {:?}", inode);
+
+        if let Some(fs) = self.get_fs_mount(inode.mount_id)
+        {
+            fs.read_inode(inode)
+        }
+        else
+        {
+            Err(FilesystemError::UnableToFindDiskMount(inode.mount_id))
+        }
+    }
 }

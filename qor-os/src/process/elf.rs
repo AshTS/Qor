@@ -2,6 +2,8 @@
 
 use crate::*;
 
+use fs::fstrait::Filesystem;
+
 use alloc::vec::Vec;
 
 use super::process::Process;
@@ -74,12 +76,9 @@ pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: &str) -> Res
 {
     kdebugln!(Elf, "Loading ELF File `{}`", path);
 
-    unimplemented!()
-
-    /*
-
     // Open the file
-    let file_data = interface.read_to_buffer(path).map_err(|e| ElfLoadError::ReadError(e))?;
+    let index = interface.path_to_inode(path).map_err(|e| ElfLoadError::ReadError(e))?;
+    let file_data = interface.read_inode(index).map_err(|e| ElfLoadError::ReadError(e))?;
 
     // Verify it is an elf file
     if file_data[0..4] != [0x7F, 'E' as u8, 'L' as u8, 'F' as u8]
@@ -191,5 +190,5 @@ pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: &str) -> Res
     Ok(Process::from_components(
         elf_header.e_entry as usize, 
         table as *mut mem::mmu::PageTable, 
-        4, 0x2_0000_0000))*/
+        4, 0x2_0000_0000))
 }

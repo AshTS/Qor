@@ -36,4 +36,7 @@ pub trait Filesystem
 
     /// Remove an inode at the given index from the given directory
     fn remove_inode(&mut self, inode: FilesystemIndex, directory: FilesystemIndex) -> FilesystemResult<()>;
+
+    /// Read the data stored in an inode
+    fn read_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<Vec<u8>>;
 }

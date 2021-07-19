@@ -101,26 +101,17 @@ fn kmain()
 
     use fs::fstrait::Filesystem;
 
-    vfs.init();
-    disk0.init();
+    vfs.init().unwrap();
+    disk0.init().unwrap();
 
     vfs.mount_fs("/", Box::new(disk0)).unwrap();
 
     vfs.index().unwrap();
 
-    for key in vfs.index.keys()
-    {
-        kprintln!("{}", key);
-    }
-    
-    /*
-    let mut interface = fs::interface::FilesystemInterface::new(0);
-    interface.initialize().unwrap();
-
-    let mut elf_proc = process::elf::load_elf(&mut interface, "/bin/shell").unwrap();
+    let mut elf_proc = process::elf::load_elf(&mut vfs, "/bin/shell").unwrap();
     process::scheduler::get_init_process_mut().unwrap().register_child(elf_proc.pid);
     elf_proc.connect_to_term();
-    process::scheduler::add_process(elf_proc);*/
+    process::scheduler::add_process(elf_proc);
 
     // Start the timer
     drivers::init_timer_driver(1000);
