@@ -9,3 +9,4 @@ Syscalls
     nanosleep
 Processes
     Add segmentation fault display
+    Allow programs to be haulted
