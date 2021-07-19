@@ -5,6 +5,7 @@
 #![feature(const_option)]               // Allow constant unwraps
 #![feature(custom_test_frameworks)]     // Allow cargo test
 #![feature(global_asm)]                 // For assembly file compilation
+#![feature(option_insert)]              // For VFS singleton pattern
 #![feature(panic_info_message)]         // For panic messages
 
 // Allow dead code for partial implementations

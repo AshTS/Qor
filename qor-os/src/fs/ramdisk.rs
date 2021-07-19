@@ -305,7 +305,7 @@ impl Filesystem for RamDiskFilesystem
     }
 
     /// Read the data stored in an inode
-    fn read_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<Vec<u8>>
+    fn read_inode(&mut self, _inode: FilesystemIndex) -> FilesystemResult<Vec<u8>>
     {
         todo!()
     }

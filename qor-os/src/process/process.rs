@@ -1,7 +1,5 @@
 use crate::*;
 
-use alloc::format;
-
 type DirEntry = usize;
 
 use super::data::ProcessData;
@@ -45,7 +43,7 @@ pub struct Process
     pub root: *mut PageTable,
     pub state: ProcessState,
     pub data: ProcessData,
-    pub fs_interface: Option<Box<fs::vfs::FilesystemInterface>>
+    pub fs_interface: Option<&'static mut fs::vfs::FilesystemInterface>
 } 
 
 impl Process
@@ -201,11 +199,7 @@ impl Process
     /// Initialize the file system
     pub fn init_fs(&mut self)
     {
-        unimplemented!()
-        /*
-        let mut fsi = Box::new(fs::vfs::FilesystemInterface::new(0));
-        fsi.init_fs();
-        self.fs_interface = Some(fsi);*/
+        self.fs_interface = crate::fs::vfs::get_vfs_reference();
     }
 
     /// Ensure file system

@@ -5,6 +5,16 @@ use super::structures::*;
 
 use alloc::collections::BTreeMap;
 use alloc::format;
+
+static VFS_INTERFACE: core::sync::atomic::AtomicPtr<FilesystemInterface> = core::sync::atomic::AtomicPtr::new(0 as *mut FilesystemInterface);
+
+/// Get a reference to the vfs interface
+pub fn get_vfs_reference() -> Option<&'static mut FilesystemInterface>
+{
+    let ptr = VFS_INTERFACE.load(core::sync::atomic::Ordering::SeqCst);
+
+    unsafe { ptr.as_mut() }
+}
  
 /// Virtual Filesystem Interface
 pub struct FilesystemInterface
@@ -18,16 +28,26 @@ pub struct FilesystemInterface
 impl FilesystemInterface
 {
     /// Create a new Filesystem Interface
-    /// Safety: This must live for the lifetime of the system
-    pub unsafe fn new() -> Self
+    pub fn new() -> &'static mut Self
     {
-        Self
+        if !get_vfs_reference().is_none()
+        {
+            panic!("Cannot initialize multiple Virtual Filesystem Interfaces");
+        }
+
+        let singleton = Box::new(Self
         {
             mounts: Vec::new(),
             root: None,
             index: BTreeMap::new(),
             indexed: BTreeMap::new()
-        }
+        });
+
+        let reference = Box::leak(singleton);
+
+        VFS_INTERFACE.store(reference as *mut FilesystemInterface, core::sync::atomic::Ordering::SeqCst);
+
+        unsafe { (reference as *mut FilesystemInterface).as_mut().unwrap() } 
     }
 
     /// Mount a filesystem to the vfs

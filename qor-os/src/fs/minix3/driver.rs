@@ -207,13 +207,27 @@ impl Filesystem for Minix3Filesystem
     /// Convert a path to an inode
     fn path_to_inode(&mut self, path: &str) -> FilesystemResult<FilesystemIndex>
     {
-        todo!()
+        if let Some(vfs) = &mut self.vfs
+        {
+            vfs.path_to_inode(path)
+        }
+        else
+        {
+            Err(FilesystemError::FilesystemNotMounted)
+        }
     }
 
     /// Convert an inode to a path
     fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<&str>
     {
-        todo!()
+        if let Some(vfs) = &mut self.vfs
+        {
+            vfs.inode_to_path(inode)
+        }
+        else
+        {
+            Err(FilesystemError::FilesystemNotMounted)
+        }
     }
 
     /// Get the directory entries for the given inode
@@ -267,19 +281,19 @@ impl Filesystem for Minix3Filesystem
     }
 
     /// Create a file in the directory at the given inode
-    fn create_file(&mut self, inode: FilesystemIndex, name: alloc::string::String) -> FilesystemResult<FilesystemIndex>
+    fn create_file(&mut self, _inode: FilesystemIndex, _name: alloc::string::String) -> FilesystemResult<FilesystemIndex>
     {
         todo!()
     }
 
     /// Create a directory in the directory at the given inode
-    fn create_directory(&mut self, inode: FilesystemIndex, name: alloc::string::String) -> FilesystemResult<FilesystemIndex>
+    fn create_directory(&mut self, _inode: FilesystemIndex, _name: alloc::string::String) -> FilesystemResult<FilesystemIndex>
     {
         todo!()
     }
 
     /// Remove an inode at the given index from the given directory
-    fn remove_inode(&mut self, inode: FilesystemIndex, directory: FilesystemIndex) -> FilesystemResult<()>
+    fn remove_inode(&mut self, _inode: FilesystemIndex, _directory: FilesystemIndex) -> FilesystemResult<()>
     {
         todo!()
     }
