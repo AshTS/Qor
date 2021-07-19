@@ -38,7 +38,7 @@ impl RamDiskFilesystem
 impl Filesystem for RamDiskFilesystem
 {
     /// Initialize the filesystem on the current disk
-    fn init(&mut self)
+    fn init(&mut self) -> FilesystemResult<()>
     {
         // Add the null inode
         if self.inodes.len() < 1
@@ -74,6 +74,8 @@ impl Filesystem for RamDiskFilesystem
                 (String::from("file2"), FilesystemIndex{inode: 4, mount_id: 0})
                 ]);
         }
+
+        Ok(())
     }
 
     /// Sync the filesystem with the current disk

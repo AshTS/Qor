@@ -8,7 +8,7 @@ use super::structures::*;
 pub trait Filesystem
 {
     /// Initialize the filesystem on the current disk
-    fn init(&mut self);
+    fn init(&mut self) -> FilesystemResult<()>;
 
     /// Sync the filesystem with the current disk
     fn sync(&mut self) -> FilesystemResult<()>;

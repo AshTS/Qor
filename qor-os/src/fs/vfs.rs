@@ -184,10 +184,12 @@ impl FilesystemInterface
 impl Filesystem for FilesystemInterface
 {
     /// Initialize the filesystem on the current disk
-    fn init(&mut self)
+    fn init(&mut self) -> FilesystemResult<()>
     {
         kdebugln!(Filesystem, "Initialize Virtual Filesystem");
         // Nothing to do here, the virtual file system doesn't need any initialization
+
+        Ok(())
     }
 
     /// Sync the filesystem with the current disk
@@ -225,6 +227,7 @@ impl Filesystem for FilesystemInterface
         // If we have the path in the index, just use that
         if let Some(index) = self.index.get(path)
         {
+            kdebugln!(Filesystem, "Map path `{}` to inode -> {:?}", path, index);
             Ok(*index)
         }
 
@@ -232,6 +235,7 @@ impl Filesystem for FilesystemInterface
         // For now, just pretend if it wasn't indexed, it doesn't exist
         else
         {
+            kdebugln!(Filesystem, "Map path `{}` to inode -> File Not Found", path);
             Err(FilesystemError::FileNotFound(path.to_string()))
         }
     }
@@ -242,6 +246,7 @@ impl Filesystem for FilesystemInterface
         // If we have the inode in the index, just use that
         if let Some(path) = self.indexed.get(&inode)
         {
+            kdebugln!(Filesystem, "Map inode {:?} to path -> `{}`", inode, path);
             Ok(path)
         }
         else
@@ -253,6 +258,7 @@ impl Filesystem for FilesystemInterface
     /// Get the directory entries for the given inode
     fn get_dir_entries(&mut self, inode: FilesystemIndex) -> FilesystemResult<Vec<DirectoryEntry>>
     {
+        kdebugln!(Filesystem, "List Directory Entries at {:?}", inode);
         if let Some(fs) = self.get_fs_mount(inode.mount_id)
         {
             fs.get_dir_entries(inode)
@@ -266,6 +272,8 @@ impl Filesystem for FilesystemInterface
     /// Create a file in the directory at the given inode
     fn create_file(&mut self, inode: FilesystemIndex, name: String) -> FilesystemResult<FilesystemIndex>
     {
+        kdebugln!(Filesystem, "Create file `{}` at {:?}", name, inode);
+
         if let Some(fs) = self.get_fs_mount(inode.mount_id)
         {
             fs.create_file(inode, name)
@@ -279,6 +287,8 @@ impl Filesystem for FilesystemInterface
     /// Create a directory in the directory at the given inode
     fn create_directory(&mut self, inode: FilesystemIndex, name: String) -> FilesystemResult<FilesystemIndex>
     {
+        kdebugln!(Filesystem, "Create directory `{}` at {:?}", name, inode);
+
         if let Some(fs) = self.get_fs_mount(inode.mount_id)
         {
             fs.create_directory(inode, name)
@@ -292,6 +302,8 @@ impl Filesystem for FilesystemInterface
     /// Remove an inode at the given index from the given directory
     fn remove_inode(&mut self, inode: FilesystemIndex, directory: FilesystemIndex) -> FilesystemResult<()>
     {
+        kdebugln!(Filesystem, "Remove inode {:?} in directory {:?}", inode, directory);
+
         if let Some(fs) = self.get_fs_mount(inode.mount_id)
         {
             fs.remove_inode(inode, directory)

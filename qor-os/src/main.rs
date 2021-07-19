@@ -97,30 +97,21 @@ fn kmain()
     kprintln!("Start Filesystem Testing");
 
     let mut vfs = unsafe { Box::new(fs::vfs::FilesystemInterface::new()) };
-    let mut child = fs::ramdisk::RamDiskFilesystem::new();
+    let mut disk0 = fs::minix3::Minix3Filesystem::new(0);
 
     use fs::fstrait::Filesystem;
 
     vfs.init();
-    child.init();
+    disk0.init();
 
-    vfs.mount_fs("/", Box::new(child)).unwrap();
-
-    vfs.index().unwrap();
-
-    let index = vfs.path_to_inode("/dir/").unwrap();
-
-    vfs.create_file(index, String::from("new_file")).unwrap();
-    vfs.create_directory(index, String::from("new_dir")).unwrap();
+    vfs.mount_fs("/", Box::new(disk0)).unwrap();
 
     vfs.index().unwrap();
 
-    for ent in vfs.get_dir_entries(index).unwrap()
+    for key in vfs.index.keys()
     {
-        kprintln!("{:?}", ent);
+        kprintln!("{}", key);
     }
-
-    kprintln!("{:?}", vfs.index);
     
     /*
     let mut interface = fs::interface::FilesystemInterface::new(0);

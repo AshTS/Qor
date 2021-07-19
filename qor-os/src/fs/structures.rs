@@ -12,7 +12,8 @@ pub enum FilesystemError
     FilesystemNotMounted,
     INodeIsNotADirectory,
     BadINode,
-    FileNotFound(String)
+    BadFilesystemFormat,
+    FileNotFound(String),
 }
 
 /// Generic Filesystem Result Type
