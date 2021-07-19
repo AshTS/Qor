@@ -1,5 +1,7 @@
 use crate::*;
 
+use fs::structures::FilesystemIndex;
+
 /// Stdin buffer
 pub static mut STDIN_BUFFER: utils::ByteRingBuffer = utils::ByteRingBuffer::new();
 
@@ -16,7 +18,7 @@ pub trait FileDescriptor
     fn read(&mut self, fs: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize;
 
     /// Get the inode of the entry
-    fn get_inode(&mut self) -> Option<usize>
+    fn get_inode(&mut self) -> Option<FilesystemIndex>
     {
         None
     }
@@ -134,17 +136,17 @@ impl FileDescriptor for UARTIn
 #[derive(Debug, Clone)]
 pub struct InodeFileDescriptor
 {
-    pub fd: usize,
+    pub inode: FilesystemIndex,
     index: usize
 }
 
 impl InodeFileDescriptor
 {
-    pub fn new(fd: usize) -> Self
+    pub fn new(inode: FilesystemIndex) -> Self
     {
         Self
         {
-            fd,
+            inode,
             index: 0
         }
     }
@@ -174,8 +176,8 @@ impl FileDescriptor for InodeFileDescriptor
     }
 
     /// Get the inode of the entry
-    fn get_inode(&mut self) -> Option<usize>
+    fn get_inode(&mut self) -> Option<FilesystemIndex>
     {
-        Some(self.fd)
+        Some(self.inode)
     }
 }

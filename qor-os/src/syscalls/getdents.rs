@@ -1,7 +1,3 @@
-use core::usize;
-
-use crate::*;
-
 /// Write a directory entry at the given pointer, returning the number of bytes written
 fn write_dir_entry(mut ptr: usize, inode: usize, offset: usize, name: &str) -> usize
 {
@@ -42,27 +38,15 @@ pub fn syscall_getdents(proc: &mut super::Process, fd: usize, buffer_ptr: usize,
     {
         for entry in entries
         {
-            unimplemented!()
-            /*
             let length = 8 + 8 + 2 + entry.name.len() + 1;
             if amount_written + length >= size
             {
                 break;
             }
 
-            let mut name = String::new();
+            let size = write_dir_entry(buffer_ptr + amount_written, entry.index.inode as usize, amount_written, &entry.name);
 
-            for v in &entry.name
-            {
-                if *v != 0
-                {
-                    name.push(*v as char);
-                }
-            }
-
-            let size = write_dir_entry(buffer_ptr + amount_written, entry.inode as usize, amount_written, &name);
-
-            amount_written += size;*/
+            amount_written += size;
         }
 
         amount_written

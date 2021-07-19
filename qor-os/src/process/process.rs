@@ -1,6 +1,7 @@
 use crate::*;
+use crate::fs::fstrait::Filesystem;
 
-type DirEntry = usize;
+use fs::structures::DirectoryEntry;
 
 use super::data::ProcessData;
 
@@ -8,6 +9,8 @@ use mem::mmu::PageTable;
 use mem::mmu::TranslationError;
 
 use trap::TrapFrame;
+
+use alloc::format;
 
 // Global PID counter
 static mut NEXT_PID: u16 = 0;
@@ -216,20 +219,16 @@ impl Process
     {
         self.ensure_fs();
 
-        unimplemented!()
-
-        /*
-        
         
         let inode = 
             if path.starts_with("/")
             {
-                self.fs_interface.as_mut().unwrap().get_inode_by_path(path)?
+                self.fs_interface.as_mut().unwrap().path_to_inode(path)?
             }
             else
             {
                 let combined = format!("{}{}", self.data.cwd, path);
-                self.fs_interface.as_mut().unwrap().get_inode_by_path(&combined)?
+                self.fs_interface.as_mut().unwrap().path_to_inode(&combined)?
             };
 
         let mut i = 3;
@@ -241,7 +240,7 @@ impl Process
 
         self.data.descriptors.insert(i, Box::new(super::descriptor::InodeFileDescriptor::new(inode)));
 
-        Ok(i) */
+        Ok(i)
     }
 
     /// Read from a file descriptor
@@ -411,7 +410,7 @@ impl Process
     }
 
     /// Get directory entries for the given file descriptor
-    pub fn get_dir_entries(&mut self, fd: usize) -> Option<Vec<DirEntry>>
+    pub fn get_dir_entries(&mut self, fd: usize) -> Option<Vec<DirectoryEntry>>
     {
         let inode = if let Some(desc) = self.data.descriptors.get_mut(&fd)
         {
@@ -431,9 +430,7 @@ impl Process
 
         self.ensure_fs();
 
-        unimplemented!()
-
-        // Some(self.fs_interface.as_mut().unwrap().get_dir_entries(inode))
+        Some(self.fs_interface.as_mut().unwrap().get_dir_entries(inode).unwrap())
     }
 }
 
