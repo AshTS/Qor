@@ -38,6 +38,11 @@ pub fn syscall_chdir(proc: &mut super::Process, path_ptr: usize) -> usize
                 proc.data.cwd = path.to_string();
             }
 
+            if !proc.data.cwd.ends_with("/")
+            {
+                proc.data.cwd += "/";
+            }
+
             0
         }
         else

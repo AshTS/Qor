@@ -310,6 +310,8 @@ impl Process
         temp.frame.regs[10] = 0;
 
         temp.connect_to_term();
+        
+        temp.data.cwd = self.data.cwd.clone();
 
         self.register_child(temp.pid);
 
