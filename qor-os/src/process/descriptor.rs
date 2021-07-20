@@ -1,5 +1,7 @@
 use crate::*;
 
+use fs::fstrait::Filesystem;
+
 use fs::structures::FilesystemIndex;
 
 /// Stdin buffer
@@ -137,7 +139,8 @@ impl FileDescriptor for UARTIn
 pub struct InodeFileDescriptor
 {
     pub inode: FilesystemIndex,
-    index: usize
+    index: usize,
+    data: Vec<u8>
 }
 
 impl InodeFileDescriptor
@@ -147,7 +150,8 @@ impl InodeFileDescriptor
         Self
         {
             inode,
-            index: 0
+            index: 0,
+            data: Vec::new()
         }
     }
 }
@@ -164,15 +168,37 @@ impl FileDescriptor for InodeFileDescriptor
         unimplemented!()
     }
 
+    // TODO: This read implementation is beyond inefficent
     fn read(&mut self, fs: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
-        // let r = fs.read_file_start(self.fd, buffer, count, self.index);
-        
-        // self.index += r;
+        if self.data.len() == 0
+        {
+            if let Ok(data) = fs.read_inode(self.inode)
+            {
+                self.data = data;
+            }
+            else
+            {
+                return usize::MAX;
+            }
+        }
 
-        // r
+        let mut written = 0;
 
-        usize::MAX
+        while self.index < self.data.len()
+        {
+            unsafe { buffer.add(self.index).write(self.data[self.index]) };
+
+            written += 1;
+            self.index += 1;
+
+            if written == count
+            {
+                break;
+            }
+        }
+
+        written
     }
 
     /// Get the inode of the entry

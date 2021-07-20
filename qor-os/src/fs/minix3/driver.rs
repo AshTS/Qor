@@ -130,7 +130,7 @@ impl Minix3Filesystem
     }
 
     /// Read the data from an inode
-    fn read_inode(&mut self, inode: Minix3Inode) -> Vec<u8>
+    fn read_from_inode(&mut self, inode: Minix3Inode) -> Vec<u8>
     {
         let mut remaining = inode.size as usize;
         let mut buffer = vec![0u8; remaining];
@@ -242,7 +242,7 @@ impl Filesystem for Minix3Filesystem
                 return Err(FilesystemError::INodeIsNotADirectory);
             }
 
-            let data = self.read_inode(inode_data);
+            let data = self.read_from_inode(inode_data);
             let dir_entries = unsafe { core::mem::transmute::<&[u8], &[Minix3DirEntry]>(data.as_slice()) };
 
             let mut result = Vec::new();
@@ -304,7 +304,7 @@ impl Filesystem for Minix3Filesystem
         if Some(inode.mount_id) == self.mount_id
         {
             let inode = self.get_inode(inode.inode)?;
-            Ok(self.read_inode(inode))
+            Ok(self.read_from_inode(inode))
         }
         else
         {
