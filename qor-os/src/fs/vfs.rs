@@ -251,12 +251,59 @@ impl Filesystem for FilesystemInterface
             Ok(*index)
         }
 
-        // TODO: Otherwise, we will walk the filesystem, indexing as we go
-        // For now, just pretend if it wasn't indexed, it doesn't exist
+        // Otherwise, we will walk the filesystem
         else
         {
-            kdebugln!(Filesystem, "Map path `{}` to inode -> File Not Found", path);
-            Err(FilesystemError::FileNotFound(path.to_string()))
+            // Walking ending index
+            let mut walking_end_index = path.len() - 1;
+
+            // Continue until we either hit an empty string or a 
+            let mut index = loop
+            {
+                if walking_end_index == 0
+                {
+                    break self.get_root_index()?;
+                }
+
+                if let Some(index) = self.index.get(&path[0..walking_end_index])
+                {
+                    break *index;
+                }
+
+                walking_end_index -= 1;
+
+                // Walk backwards until the last character is a '/' or we run out of string
+                while walking_end_index > 0 && path.chars().nth(walking_end_index - 1) != Some('/')
+                {
+                    walking_end_index -= 1;
+                }
+            };
+
+            if path.chars().nth(walking_end_index) == Some('/')
+            {
+                walking_end_index += 1;
+            }
+
+            for name in path[walking_end_index..].split("/")
+            {
+                let mut found = false;
+                for entry in self.get_dir_entries(index)?
+                {
+                    if entry.name == name
+                    {
+                        found = true;
+                        index = entry.index;
+                    }
+                }
+
+                if !found
+                {
+                    kdebugln!(Filesystem, "Map path `{}` to inode -> File Not Found", path);
+                    return Err(FilesystemError::FileNotFound(path.to_string()));
+                }
+            }
+
+            Ok(index)
         }
     }
 
