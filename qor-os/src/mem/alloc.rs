@@ -447,7 +447,7 @@ impl AllocationHeader
                         }
 
                         // Return the properly padded pointer
-                        kdebugln!(ByteMemoryAllocation, " -> 0x{:x}", ptr as usize);
+                        kdebugln!(ByteMemoryAllocation, " -> 0x{:x} - 0x{:x}", ptr as usize, ptr as usize + layout.size());
 
                         // Sentinel Write
                         if SENTINEL
@@ -595,7 +595,7 @@ pub fn init_kernel_global_allocator(page_count: usize)
     kdebugln!(ByteMemoryAllocation, "Initialize the Kernel Global Allocator with {} KBs", page_count * super::PAGE_SIZE / 1024);
 
     // Insert a new allocation header
-    KERNEL_HEAP_POINTER.store(AllocationHeader::new(page_count, 2).unwrap(), core::sync::atomic::Ordering::SeqCst);
+    KERNEL_HEAP_POINTER.store(AllocationHeader::new(page_count, 16).unwrap(), core::sync::atomic::Ordering::SeqCst);
 }
 
 /// Structure to hold the kernel heap allocator

@@ -172,7 +172,7 @@ impl ProcessManager
                     if let Some(stopped) = stopped_pid
                     {
                         self.get_process_by_pid_mut(step_pid).unwrap().remove_child(stopped);
-                        self.get_process_by_pid_mut(step_pid).unwrap().frame.regs[10] = stopped as usize;
+                        unsafe { self.get_process_by_pid_mut(step_pid).unwrap().frame.as_mut().unwrap() }.regs[10] = stopped as usize;
                         self.get_process_by_pid_mut(step_pid).unwrap().state = ProcessState::Running;
                         break;
                     }
@@ -213,7 +213,9 @@ impl ProcessManager
     {
         if let Some(proc) = self.processes.get(&pid)
         {
-            (&proc.frame as *const trap::TrapFrame as usize, proc.program_counter, (8 << 60) | ((pid as usize) << 44) | (proc.root as usize >> 12))
+            let trap_frame = proc.frame as usize;
+
+            (trap_frame, proc.program_counter, (8 << 60) | ((pid as usize) << 44) | (proc.root as usize >> 12))
         }
         else
         {

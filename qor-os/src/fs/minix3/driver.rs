@@ -7,15 +7,14 @@ use super::structures::*;
 
 use alloc::vec;
 
-// TODO: Add a disk cache to avoid repeated reads
-
 /// Minix3 Filesystem Driver
 pub struct Minix3Filesystem
 {
     block_driver: crate::drivers::block::BlockDeviceDriver,
     mount_id: Option<usize>,
     vfs: Option<&'static mut crate::fs::vfs::FilesystemInterface>,
-    superblock: Option<Minix3SuperBlock>
+    superblock: Option<Minix3SuperBlock>,
+    cache: Vec<(usize, [u8; 1024])>
 }
 
 impl Minix3Filesystem
@@ -28,18 +27,34 @@ impl Minix3Filesystem
             block_driver: crate::drivers::block::get_driver_by_index(driver_id),
             mount_id: None,
             vfs: None,
-            superblock: None
+            superblock: None,
+            cache: Vec::new()
         }
     }
 
     /// Read a block as a buffer
-    fn read_block_to_buffer(&self, index: usize) -> Box<[u8; 1024]>
+    fn read_block_to_buffer(&mut self, index: usize) -> [u8; 1024]
     {
+        
+        for (idx, data) in &self.cache
+        {
+            if index == *idx
+            {
+                return *data;
+            }
+        }
+
         let mut buffer = Box::new([0; 1024]);
 
-        self.block_driver.sync_read(buffer.as_mut() as *mut [u8; 1024] as *mut u8, 1024, index as u64 * 1024);
+        let ptr = &mut *buffer as *mut [u8; 1024] as *mut u8;
 
-        buffer
+        self.block_driver.sync_read(ptr, 1024, index as u64 * 1024);
+
+
+        self.cache.push((index, *buffer));
+
+
+        *buffer
     }
 
     /// Read an inode
@@ -56,7 +71,7 @@ impl Minix3Filesystem
             let mut buffer = self.read_block_to_buffer(block_index);
 
             // Read the inode out of the buffer
-            let inode = unsafe { (buffer.as_mut() as *mut [u8; 1024] as *mut Minix3Inode).add((inode_number - 1) % 16).read() };
+            let inode = unsafe { (&mut buffer as *mut [u8; 1024] as *mut Minix3Inode).add((inode_number - 1) % 16).read() };
 
             // The buffer is freed implicitly after the return
             Ok(inode)
@@ -106,7 +121,7 @@ impl Minix3Filesystem
         {
             // Read the block to a buffer
             kdebugln!(Filesystem, "Reading zone {}, lvl {}", zone, level);
-            let data = unsafe { core::mem::transmute::<Box<[u8; 1024]>, Box<[u32; 256]>>(self.read_block_to_buffer(zone)) };
+            let data = unsafe { core::mem::transmute::<[u8; 1024], [u32; 256]>(self.read_block_to_buffer(zone)) };
 
             // Read byte by byte
             for v in data.iter()
@@ -243,6 +258,7 @@ impl Filesystem for Minix3Filesystem
             }
 
             let data = self.read_from_inode(inode_data);
+
             let dir_entries = unsafe { core::mem::transmute::<&[u8], &[Minix3DirEntry]>(data.as_slice()) };
 
             let mut result = Vec::new();

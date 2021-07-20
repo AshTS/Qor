@@ -39,7 +39,7 @@ pub enum ProcessState
 #[repr(C)]
 pub struct Process
 {
-    pub frame: TrapFrame,
+    pub frame: *mut TrapFrame,
     pub stack: *mut u8,
     pub program_counter: usize,
     pub pid: u16,
@@ -79,11 +79,14 @@ impl Process
     /// Create a new process from components
     pub fn from_components(entry_point: usize, page_table: *mut PageTable, stack_size: usize, stack_ptr: usize) -> Self
     {
+        let frame = mem::kpalloc(1, "Trap Frame").unwrap() as *mut TrapFrame;
+        unsafe { frame.write(TrapFrame::new(4)) }
+
         // Create the process
-        let mut temp_result = 
+        let temp_result = 
             Process
             {
-                frame: TrapFrame::new(4),
+                frame,
                 stack: stack_ptr as *mut u8,
                 program_counter: entry_point,
                 pid: next_pid(),
@@ -94,7 +97,7 @@ impl Process
             };
 
         // Update the stack pointer
-        temp_result.frame.regs[2] = stack_ptr + stack_size * mem::PAGE_SIZE;
+        unsafe { temp_result.frame.as_mut().unwrap() }.regs[2] = stack_ptr + stack_size * mem::PAGE_SIZE;
 
         temp_result
     }
@@ -103,7 +106,7 @@ impl Process
     pub fn set_arguments(&mut self, args: &[&[u8]], envp: &[&[u8]])
     {
         // Set argc
-        self.frame.regs[10] = args.len();
+        unsafe { self.frame.as_mut().unwrap() }.regs[10] = args.len();
         
         let mut arg_addrs = Vec::with_capacity(args.len());
         let mut envp_addrs = Vec::with_capacity(envp.len());
@@ -122,7 +125,7 @@ impl Process
         }
 
         // Set argv
-        self.frame.regs[11] = ptr;
+        unsafe { self.frame.as_mut().unwrap() }.regs[11] = ptr;
 
         // Write the environment variables
         for s in envp
@@ -138,17 +141,17 @@ impl Process
         }
 
         // Set envp
-        self.frame.regs[12] = ptr;
+        unsafe { self.frame.as_mut().unwrap() }.regs[12] = ptr;
     }
 
     /// Push a buffer
     pub fn push_buffer(&mut self, data: &[u8]) -> usize
     {
         // Move the stack pointer down
-        self.frame.regs[2] -= data.len();
+        unsafe { self.frame.as_mut().unwrap() }.regs[2] -= data.len();
 
         // Get the physical location of where the buffer must go
-        let true_ptr = self.map_mem(self.frame.regs[2]).unwrap() as *mut u8;
+        let true_ptr = self.map_mem(unsafe { self.frame.as_mut().unwrap() }.regs[2]).unwrap() as *mut u8;
 
         // Write to the buffer
         for (i, v) in data.iter().enumerate()
@@ -157,26 +160,26 @@ impl Process
         }
 
         // Return the virtual address of the buffer
-        self.frame.regs[2]
+        unsafe { self.frame.as_mut().unwrap() }.regs[2]
     }
 
     /// Push data to the stack
     pub fn push<T>(&mut self, data: T) -> usize
     {
         // Move the stack pointer down
-        self.frame.regs[2] -= core::mem::size_of::<T>();
+        unsafe { self.frame.as_mut().unwrap() }.regs[2] -= core::mem::size_of::<T>();
 
         // Set the proper alignment
         let align = core::mem::align_of::<T>();
-        self.frame.regs[2] &= !(align - 1);
+        unsafe { self.frame.as_mut().unwrap() }.regs[2] &= !(align - 1);
 
         // Get the physical location of where the buffer must go
-        let true_ptr = self.map_mem(self.frame.regs[2]).unwrap() as *mut T;
+        let true_ptr = self.map_mem(unsafe { self.frame.as_mut().unwrap() }.regs[2]).unwrap() as *mut T;
 
         unsafe { true_ptr.write(data) };
 
         // Return the virtual address of the buffer
-        self.frame.regs[2]
+        unsafe { self.frame.as_mut().unwrap() }.regs[2]
     }
 
     /// Map memory based on its page table
@@ -306,8 +309,12 @@ impl Process
 
         let mut temp = Self::from_components(self.program_counter + 4, unsafe { self.root.as_mut().unwrap().duplicate_map() }, stack_size, self.stack as usize);
 
-        temp.frame = self.frame.clone();
-        temp.frame.regs[10] = 0;
+        let new_frame = mem::kpalloc(1, "Trap Frame").unwrap() as *mut TrapFrame;
+
+        unsafe { new_frame.write(self.frame.read()) }
+
+        temp.frame = new_frame;
+        unsafe { temp.frame.as_mut().unwrap() }.regs[10] = 0;
 
         temp.connect_to_term();
         
@@ -464,5 +471,7 @@ impl core::ops::Drop for Process
             }
         }
         
+        // Drop the trap frame
+        mem::kpfree(self.frame as usize, 1).unwrap();
     }
 }
