@@ -92,3 +92,9 @@ getcwd:
     li a7, 79
     ecall
     ret
+
+.globl chdir
+chdir:
+    li a7, 80
+    ecall
+    ret

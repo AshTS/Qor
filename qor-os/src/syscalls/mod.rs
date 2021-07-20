@@ -5,6 +5,7 @@ use crate::*;
 use process::process::Process;
 
 // Modules
+mod chdir;
 mod close;
 mod execve;
 mod exit;
@@ -84,6 +85,11 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         79 =>
         {
             getcwd::syscall_getcwd(proc, arg0, arg1)
+        },
+        // Chdir Syscall
+        80 =>
+        {
+            chdir::syscall_chdir(proc, arg0)
         },
         default =>
         {

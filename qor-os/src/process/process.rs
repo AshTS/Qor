@@ -219,17 +219,8 @@ impl Process
     {
         self.ensure_fs();
 
-        
-        let inode = 
-            if path.starts_with("/")
-            {
-                self.fs_interface.as_mut().unwrap().path_to_inode(path)?
-            }
-            else
-            {
-                let combined = format!("{}{}", self.data.cwd, path);
-                self.fs_interface.as_mut().unwrap().path_to_inode(&combined)?
-            };
+        let expanded_path = self.expand_path(path);
+        let inode = self.fs_interface.as_mut().unwrap().path_to_inode(&expanded_path)?;
 
         let mut i = 3;
 
@@ -431,6 +422,19 @@ impl Process
         self.ensure_fs();
 
         Some(self.fs_interface.as_mut().unwrap().get_dir_entries(inode).unwrap())
+    }
+
+    /// Expand a path from the process
+    pub fn expand_path(&self, path: &str) -> String
+    {
+        if path.starts_with("/")
+        {
+            path.to_string()
+        }
+        else
+        {
+            format!("{}{}", self.data.cwd, path)
+        }
     }
 }
 
