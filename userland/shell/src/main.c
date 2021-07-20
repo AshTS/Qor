@@ -28,6 +28,36 @@ int main()
             break;
         }
 
+        if (buffer[0] == 'c' && buffer[1] == 'd')
+        {
+            char path_buffer[32];
+
+            int i = 2;
+
+            while (buffer[i] == ' ')
+            {
+                i ++;
+            }
+
+            int j = 0;
+
+            while (buffer[i] != '\0')
+            {
+                path_buffer[j] = buffer[i];
+                i++;
+                j++;
+            }
+
+            path_buffer[j] = '\0';
+
+            if (chdir(path_buffer) == -1)
+            {
+                printf("Unable to switch to `%s`\n", path_buffer);
+            }
+
+            continue;
+        }
+
         if (strcmp("quit", buffer) == 0)
         {
             break;
