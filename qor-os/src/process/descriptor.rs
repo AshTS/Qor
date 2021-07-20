@@ -1,5 +1,9 @@
 use crate::*;
 
+use fs::fstrait::Filesystem;
+
+use fs::structures::FilesystemIndex;
+
 /// Stdin buffer
 pub static mut STDIN_BUFFER: utils::ByteRingBuffer = utils::ByteRingBuffer::new();
 
@@ -10,13 +14,13 @@ pub trait FileDescriptor
     fn close(&mut self);
 
     /// Write to the descriptor
-    fn write(&mut self, fs: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize;
+    fn write(&mut self, fs: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize;
 
     /// Read from the descriptor
-    fn read(&mut self, fs: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize;
+    fn read(&mut self, fs: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize;
 
     /// Get the inode of the entry
-    fn get_inode(&mut self) -> Option<usize>
+    fn get_inode(&mut self) -> Option<FilesystemIndex>
     {
         None
     }
@@ -32,12 +36,12 @@ impl FileDescriptor for NullDescriptor
 {
     fn close(&mut self) {}
 
-    fn write(&mut self, _: &mut fs::interface::FilesystemInterface, _: *mut u8, count: usize) -> usize
+    fn write(&mut self, _: &mut fs::vfs::FilesystemInterface, _: *mut u8, count: usize) -> usize
     {
         count
     }
 
-    fn read(&mut self, _: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
+    fn read(&mut self, _: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
         for _ in 0..count
         {
@@ -56,7 +60,7 @@ impl FileDescriptor for UARTOut
 {
     fn close(&mut self) {}
 
-    fn write(&mut self, _: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
+    fn write(&mut self, _: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
         for i in 0..count
         {
@@ -66,7 +70,7 @@ impl FileDescriptor for UARTOut
         count
     }
 
-    fn read(&mut self, _: &mut fs::interface::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
+    fn read(&mut self, _: &mut fs::vfs::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
     {
         0
     }
@@ -80,7 +84,7 @@ impl FileDescriptor for UARTError
 {
     fn close(&mut self) {}
     
-    fn write(&mut self, _: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
+    fn write(&mut self, _: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
         for i in 0..count
         {
@@ -90,7 +94,7 @@ impl FileDescriptor for UARTError
         count
     }
 
-    fn read(&mut self, _: &mut fs::interface::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
+    fn read(&mut self, _: &mut fs::vfs::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
     {
         0
     }
@@ -104,12 +108,12 @@ impl FileDescriptor for UARTIn
 {
     fn close(&mut self) {}
     
-    fn write(&mut self, _: &mut fs::interface::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
+    fn write(&mut self, _: &mut fs::vfs::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
     {
         0
     }
 
-    fn read(&mut self, _: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
+    fn read(&mut self, _: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
         let mut i = 0;
 
@@ -134,18 +138,20 @@ impl FileDescriptor for UARTIn
 #[derive(Debug, Clone)]
 pub struct InodeFileDescriptor
 {
-    pub fd: usize,
-    index: usize
+    pub inode: FilesystemIndex,
+    index: usize,
+    data: Vec<u8>
 }
 
 impl InodeFileDescriptor
 {
-    pub fn new(fd: usize) -> Self
+    pub fn new(inode: FilesystemIndex) -> Self
     {
         Self
         {
-            fd,
-            index: 0
+            inode,
+            index: 0,
+            data: Vec::new()
         }
     }
 }
@@ -157,23 +163,47 @@ impl FileDescriptor for InodeFileDescriptor
         
     }
 
-    fn write(&mut self, _fs: &mut fs::interface::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
+    fn write(&mut self, _fs: &mut fs::vfs::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
     {
         unimplemented!()
     }
 
-    fn read(&mut self, fs: &mut fs::interface::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
+    // TODO: This read implementation is beyond inefficent
+    fn read(&mut self, fs: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
-        let r = fs.read_file_start(self.fd, buffer, count, self.index);
-        
-        self.index += r;
+        if self.data.len() == 0
+        {
+            if let Ok(data) = fs.read_inode(self.inode)
+            {
+                self.data = data;
+            }
+            else
+            {
+                return usize::MAX;
+            }
+        }
 
-        r
+        let mut written = 0;
+
+        while self.index < self.data.len()
+        {
+            unsafe { buffer.add(self.index).write(self.data[self.index]) };
+
+            written += 1;
+            self.index += 1;
+
+            if written == count
+            {
+                break;
+            }
+        }
+
+        written
     }
 
     /// Get the inode of the entry
-    fn get_inode(&mut self) -> Option<usize>
+    fn get_inode(&mut self) -> Option<FilesystemIndex>
     {
-        Some(self.fd)
+        Some(self.inode)
     }
 }

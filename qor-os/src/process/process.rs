@@ -1,7 +1,7 @@
 use crate::*;
-use crate::fs::structures::DirEntry;
+use crate::fs::fstrait::Filesystem;
 
-use alloc::format;
+use fs::structures::DirectoryEntry;
 
 use super::data::ProcessData;
 
@@ -9,6 +9,8 @@ use mem::mmu::PageTable;
 use mem::mmu::TranslationError;
 
 use trap::TrapFrame;
+
+use alloc::format;
 
 // Global PID counter
 static mut NEXT_PID: u16 = 0;
@@ -44,7 +46,7 @@ pub struct Process
     pub root: *mut PageTable,
     pub state: ProcessState,
     pub data: ProcessData,
-    pub fs_interface: Option<Box<fs::interface::FilesystemInterface>>
+    pub fs_interface: Option<&'static mut fs::vfs::FilesystemInterface>
 } 
 
 impl Process
@@ -200,9 +202,7 @@ impl Process
     /// Initialize the file system
     pub fn init_fs(&mut self)
     {
-        let mut fsi = Box::new(fs::interface::FilesystemInterface::new(0));
-        fsi.initialize().unwrap();
-        self.fs_interface = Some(fsi);
+        self.fs_interface = crate::fs::vfs::get_vfs_reference();
     }
 
     /// Ensure file system
@@ -215,20 +215,20 @@ impl Process
     }
 
     /// Open a file by path
-    pub fn open(&mut self, path: &str, _mode: usize) -> Result<usize, fs::interface::FilesystemError>
+    pub fn open(&mut self, path: &str, _mode: usize) -> Result<usize, fs::structures::FilesystemError>
     {
         self.ensure_fs();
-        
+
         
         let inode = 
             if path.starts_with("/")
             {
-                self.fs_interface.as_mut().unwrap().get_inode_by_path(path)?
+                self.fs_interface.as_mut().unwrap().path_to_inode(path)?
             }
             else
             {
                 let combined = format!("{}{}", self.data.cwd, path);
-                self.fs_interface.as_mut().unwrap().get_inode_by_path(&combined)?
+                self.fs_interface.as_mut().unwrap().path_to_inode(&combined)?
             };
 
         let mut i = 3;
@@ -240,7 +240,7 @@ impl Process
 
         self.data.descriptors.insert(i, Box::new(super::descriptor::InodeFileDescriptor::new(inode)));
 
-        Ok(i) 
+        Ok(i)
     }
 
     /// Read from a file descriptor
@@ -410,7 +410,7 @@ impl Process
     }
 
     /// Get directory entries for the given file descriptor
-    pub fn get_dir_entries(&mut self, fd: usize) -> Option<Vec<DirEntry>>
+    pub fn get_dir_entries(&mut self, fd: usize) -> Option<Vec<DirectoryEntry>>
     {
         let inode = if let Some(desc) = self.data.descriptors.get_mut(&fd)
         {
@@ -430,7 +430,7 @@ impl Process
 
         self.ensure_fs();
 
-        Some(self.fs_interface.as_mut().unwrap().get_dir_entries(inode))
+        Some(self.fs_interface.as_mut().unwrap().get_dir_entries(inode).unwrap())
     }
 }
 

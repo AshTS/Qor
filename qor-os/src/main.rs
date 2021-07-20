@@ -93,12 +93,22 @@ fn kmain()
     // Initialize the virtio interrtupts
     drivers::virtio::init_virtio_interrupts();
     kdebugln!(Initialization, "VirtIO Interrupts Initialized");
-    
-    
-    let mut interface = fs::interface::FilesystemInterface::new(0);
-    interface.initialize().unwrap();
 
-    let mut elf_proc = process::elf::load_elf(&mut interface, "/bin/shell").unwrap();
+    kprintln!("Start Filesystem Testing");
+
+    let mut vfs = fs::vfs::FilesystemInterface::new();
+    let mut disk0 = fs::minix3::Minix3Filesystem::new(0);
+
+    use fs::fstrait::Filesystem;
+
+    vfs.init().unwrap();
+    disk0.init().unwrap();
+
+    vfs.mount_fs("/", Box::new(disk0)).unwrap();
+
+    vfs.index().unwrap();
+
+    let mut elf_proc = process::elf::load_elf(&mut vfs, "/bin/shell").unwrap();
     process::scheduler::get_init_process_mut().unwrap().register_child(elf_proc.pid);
     elf_proc.connect_to_term();
     process::scheduler::add_process(elf_proc);

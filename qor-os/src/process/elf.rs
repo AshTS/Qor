@@ -2,6 +2,8 @@
 
 use crate::*;
 
+use fs::fstrait::Filesystem;
+
 use alloc::vec::Vec;
 
 use super::process::Process;
@@ -10,7 +12,7 @@ use super::process::Process;
 #[derive(Debug, Clone)]
 pub enum ElfLoadError
 {
-    ReadError(fs::interface::FilesystemError),
+    ReadError(fs::structures::FilesystemError),
     NotAnELF,
     BadFormat(String)
 }
@@ -70,12 +72,13 @@ pub struct Segment
 
 
 /// Load a file from a file interface and convert it to a process
-pub fn load_elf(interface: &mut fs::interface::FilesystemInterface, path: &str) -> Result<Process, ElfLoadError>
+pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: &str) -> Result<Process, ElfLoadError>
 {
     kdebugln!(Elf, "Loading ELF File `{}`", path);
 
     // Open the file
-    let file_data = interface.read_to_buffer(path).map_err(|e| ElfLoadError::ReadError(e))?;
+    let index = interface.path_to_inode(path).map_err(|e| ElfLoadError::ReadError(e))?;
+    let file_data = interface.read_inode(index).map_err(|e| ElfLoadError::ReadError(e))?;
 
     // Verify it is an elf file
     if file_data[0..4] != [0x7F, 'E' as u8, 'L' as u8, 'F' as u8]
