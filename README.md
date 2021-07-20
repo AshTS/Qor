@@ -14,9 +14,23 @@ Basic kernel written in Rust for RISC-V, following the tutorial by Stephen Marz 
 9. Run `rustup target add riscv64gc-unknown-none-elf` to install the proper target
 10. Run `cargo component add rust-src` to allow the core library to be built
 
+### First Time Execution
+
+Before the first execution, the hard disk must be created using:
+
+```
+fallocate -l 32M hdd.dsk
+sudo losetup /dev/loop11 hdd.dsk
+sudo mkfs.minix -3 /dev/loop11
+sudo losetup -d /dev/loop11
+```
+
+The userland programs must also be built before the first execution, to do so run `./build.sh` in the `qor-os` directory.
+
 ## Usage
 
 To start the kernel, run `cargo run --release` in the `qor-os` directory.
+
 
 ## License from Tutorial
 
