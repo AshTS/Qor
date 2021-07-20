@@ -2,6 +2,8 @@
 #include "syscalls.h"
 #include "string.h"
 
+char* PATH = "/bin/";
+
 void display_tag();
 
 int main()
@@ -82,7 +84,33 @@ int main()
 
             execve(argv[0], argv, envp);
 
-            printf("Unable to open file `%s`\n", buffer);
+            if (argv[0][0] != '/')
+            {
+                char next_buffer[128];
+
+                int i = 0;
+
+                while (PATH[i] != 0)
+                {
+                    next_buffer[i] = PATH[i];
+                    i++;
+                }
+
+                int j = 0;
+
+                while (argv[0][j] != 0)
+                {
+                    next_buffer[i] = argv[0][j];
+                    i++;
+                    j++;
+                }
+
+                next_buffer[i] = 0;
+
+                execve(next_buffer, argv, envp);
+            }
+
+            printf("Unable to locate executable `%s`\n", buffer);
 
             return -1;
         }
