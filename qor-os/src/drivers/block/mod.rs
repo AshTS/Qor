@@ -363,7 +363,6 @@ impl BlockDeviceDriver
     pub fn sync_read(&self, buffer: *mut u8, size: u32, offset: u64)
     {
         unsafe { Self::sync(read(self.0, buffer, size, offset).unwrap()) };
-        unsafe { Self::sync(read(self.0, buffer, size, offset).unwrap()) };
     }
 
     pub fn sync_write(&self, buffer: *mut u8, size: u32, offset: u64)
