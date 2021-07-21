@@ -272,6 +272,262 @@ impl Minix3Filesystem
 
         buffer
     }
+
+    /// Add a directory entry at the given inode
+    fn add_directory_entry_raw(&mut self, inode: usize, entry: Minix3DirEntry) -> FilesystemResult<()>
+    {
+        // TODO: Make this able to edit the full zone list
+
+        // Get a mutable reference to the inode
+        let inode = self.get_mut_inode(inode)?;
+
+        // Get the original size
+        let orig_entry_count = inode.size / 64;
+
+        // Increment the size
+        inode.size += 64;
+
+        // Get the zone
+        let zone = inode.zones[0];
+
+        let buffer = unsafe { core::mem::transmute::<&mut[u8; 1024], &mut[Minix3DirEntry; 16]>(self.get_mut_buffer(zone as usize)?) };
+
+        buffer[orig_entry_count as usize] = entry;
+
+        Ok(())
+    }
+
+    /// Add a directory entry from the inode and name to the given inode
+    fn add_directory_entry(&mut self, dest: usize, inode: usize, name: &str) -> FilesystemResult<()>
+    {
+        let mut ent = Minix3DirEntry
+        {
+            inode: inode as u32,
+            name: [0; 60],
+        };
+
+        for (i, c) in name.chars().enumerate()
+        {
+            ent.name[i] = c as u8;
+        }
+
+        self.add_directory_entry_raw(dest, ent)
+    }
+
+    /// Get the next available free inode
+    fn next_free_inode(&mut self) -> FilesystemResult<usize>
+    {
+        if let Some(superblock) = self.superblock
+        {
+            let mut i = 1;
+
+            let num_blocks = superblock.imap_blocks;
+
+            for b in 0..num_blocks
+            {
+                let buffer = self.read_block_to_buffer(2 + b as usize);
+
+                for v in &buffer
+                {
+                    if *v == 0xFF
+                    {
+                        i += 8;
+                        continue;
+                    }
+
+                    let mut walker = 0x80;
+
+                    while walker > 0
+                    {
+                        if *v & walker == 0
+                        {
+                            kprintln!("Next Inode: {}", i);
+
+                            return Ok(i);
+                        }
+
+                        i += 1;
+                        walker >>= 1;
+                    }
+                }
+            }
+
+            Err(FilesystemError::OutOfSpace)
+        }
+        else
+        {
+            Err(FilesystemError::FilesystemUninitialized)
+        }
+    }
+
+    /// Claim an inode
+    fn claim_inode(&mut self, mut inode: usize) -> FilesystemResult<()>
+    {
+        inode -= 1;
+
+        let block = 2 + inode / (8 * 1024);
+        let byte = (inode / 8) % 1024;
+        let bit = inode % 8;
+
+        let buffer = self.get_mut_buffer(block)?;
+
+        buffer[byte] |= 0x80 >> bit;
+
+        Ok(())
+    }
+
+    /// Free an inode
+    fn free_inode(&mut self, mut inode: usize) -> FilesystemResult<()>
+    {
+        inode -= 1;
+
+        let block = 2 + inode / (8 * 1024);
+        let byte = (inode / 8) % 1024;
+        let bit = inode % 8;
+
+        let buffer = self.get_mut_buffer(block)?;
+
+        buffer[byte] &= !(0x80 >> bit);
+
+        Ok(())
+    }
+
+    /// Get the next available free inode
+    fn next_free_zone(&mut self) -> FilesystemResult<usize>
+    {
+        if let Some(superblock) = self.superblock
+        {
+            let mut i = 0;
+
+            let num_blocks = superblock.zmap_blocks;
+
+            for b in 0..num_blocks
+            {
+                let buffer = self.read_block_to_buffer(2 + b as usize + superblock.imap_blocks as usize);
+
+                for v in &buffer
+                {
+                    if *v == 0xFF
+                    {
+                        i += 8;
+                        continue;
+                    }
+
+                    let mut walker = 0x80;
+
+                    while walker > 0
+                    {
+                        if *v & walker == 0
+                        {
+                            kprintln!("Next Zone: {}", i);
+
+                            return Ok(i);
+                        }
+
+                        i += 1;
+                        walker >>= 1;
+                    }
+                }
+            }
+
+            Err(FilesystemError::OutOfSpace)
+        }
+        else
+        {
+            Err(FilesystemError::FilesystemUninitialized)
+        }
+    }
+
+    /// Claim a zone
+    fn claim_zone(&mut self, zone: usize) -> FilesystemResult<()>
+    {
+        if let Some(superblock) = self.superblock
+        {
+            let block = 2 + superblock.imap_blocks as usize + zone / (8 * 1024);
+            let byte = (zone / 8) % 1024;
+            let bit = zone % 8;
+
+            let buffer = self.get_mut_buffer(block)?;
+
+            buffer[byte] |= 0x80 >> bit;
+
+            Ok(())
+        }
+        else
+        {
+            Err(FilesystemError::FilesystemUninitialized)
+        }
+    }
+
+    /// Free a zone
+    fn free_zone(&mut self, zone: usize) -> FilesystemResult<()>
+    {
+        if let Some(superblock) = self.superblock
+        {
+            let block = 2 + superblock.imap_blocks as usize + zone / (8 * 1024);
+            let byte = (zone / 8) % 1024;
+            let bit = zone % 8;
+
+            let buffer = self.get_mut_buffer(block)?;
+
+            buffer[byte] &= !(0x80 >> bit);
+
+            Ok(())
+        }
+        else
+        {
+            Err(FilesystemError::FilesystemUninitialized)
+        }
+    }
+
+    /// Allocate a file
+    fn allocate_file(&mut self, data: String, mode: u16) -> FilesystemResult<usize>
+    {
+        // TODO: Allow files bigger than 1024 bytes
+
+        let next_inode = self.next_free_inode()?;
+        self.claim_inode(next_inode)?;
+
+        let next_zone = self.next_free_zone()?;
+        self.claim_zone(next_zone)?;
+
+        let inode = self.get_mut_inode(next_inode)?;
+
+        *inode = Minix3Inode
+        {
+            mode,
+            nlinks: 1,
+            uid: 0,
+            gid: 0,
+            size: data.len() as u32,
+            atime: 0,
+            mtime: 0,
+            ctime: 0,
+            zones: [next_zone as u32, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        };
+
+        let buffer = self.get_mut_buffer(next_zone)?;
+
+        for (i, v) in data.chars().enumerate()
+        {
+            buffer[i] = v as u8;
+        }
+
+        Ok(next_inode)
+    }
+
+    /// Allocate a new directory
+    fn new_directory(&mut self, dest: usize, name: String) -> FilesystemResult<usize>
+    {
+        let inode = self.allocate_file(String::new(), 0x4000 | 0o777)?;
+
+        self.add_directory_entry(inode, inode, ".")?;
+        self.add_directory_entry(inode, dest, "..")?;
+
+        self.add_directory_entry(dest, inode, &name)?;
+
+        Ok(inode)
+    }
 }
 
 impl Filesystem for Minix3Filesystem
@@ -302,7 +558,7 @@ impl Filesystem for Minix3Filesystem
     /// Sync the filesystem with the current disk
     fn sync(&mut self) -> FilesystemResult<()>
     {
-        todo!()
+        Ok(())
     }
 
     /// Set the mount_id of the filesystem
@@ -418,15 +674,49 @@ impl Filesystem for Minix3Filesystem
     }
 
     /// Create a file in the directory at the given inode
-    fn create_file(&mut self, _inode: FilesystemIndex, _name: alloc::string::String) -> FilesystemResult<FilesystemIndex>
+    fn create_file(&mut self, inode: FilesystemIndex, name: alloc::string::String) -> FilesystemResult<FilesystemIndex>
     {
-        todo!()
+        if Some(inode.mount_id) == self.mount_id
+        {
+            let file_inode = self.allocate_file(String::new(), 0o777)?;
+
+            self.add_directory_entry(inode.inode, file_inode, &name)?;
+
+            Ok(FilesystemIndex { mount_id: inode.mount_id, inode: file_inode } )
+        }
+        else
+        {
+            if let Some(vfs) = &mut self.vfs
+            {
+                vfs.create_file(inode, name)
+            }
+            else
+            {
+                Err(FilesystemError::FilesystemNotMounted)
+            }
+        }
     }
 
     /// Create a directory in the directory at the given inode
-    fn create_directory(&mut self, _inode: FilesystemIndex, _name: alloc::string::String) -> FilesystemResult<FilesystemIndex>
+    fn create_directory(&mut self, inode: FilesystemIndex, name: alloc::string::String) -> FilesystemResult<FilesystemIndex>
     {
-        todo!()
+        if Some(inode.mount_id) == self.mount_id
+        {
+            let dir_inode = self.new_directory(inode.inode, name)?;
+
+            Ok(FilesystemIndex { mount_id: inode.mount_id, inode: dir_inode } )
+        }
+        else
+        {
+            if let Some(vfs) = &mut self.vfs
+            {
+                vfs.create_directory(inode, name)
+            }
+            else
+            {
+                Err(FilesystemError::FilesystemNotMounted)
+            }
+        }
     }
 
     /// Remove an inode at the given index from the given directory

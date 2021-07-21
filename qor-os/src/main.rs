@@ -105,11 +105,14 @@ fn kmain()
     vfs.init().unwrap();
     disk0.init().unwrap();
     virt0.init().unwrap();
-    
+
     vfs.mount_fs("/", Box::new(disk0)).unwrap();
     vfs.mount_fs("/mnt", Box::new(virt0)).unwrap();
 
-    // vfs.sync().unwrap();
+    let root = vfs.get_root_index().unwrap();
+
+    let dir = vfs.create_directory(root, String::from("new_dir")).unwrap();
+    vfs.create_file(dir, String::from("file_name")).unwrap();
 
     vfs.index().unwrap();
 
