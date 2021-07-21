@@ -12,6 +12,7 @@ mod exit;
 mod fork;
 mod getcwd;
 mod getdents;
+mod mkdir;
 mod mmap;
 mod munmap;
 mod open;
@@ -90,6 +91,11 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         80 =>
         {
             chdir::syscall_chdir(proc, arg0)
+        },
+        // Mkdir Syscall
+        83 =>
+        {
+            mkdir::syscall_mkdir(proc, arg0, arg1)
         },
         default =>
         {
