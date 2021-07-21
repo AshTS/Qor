@@ -43,6 +43,8 @@ impl Filesystem for RamDiskFilesystem
         // Add the null inode
         if self.inodes.len() < 1
         {
+            let id = 1;
+
             self.inodes.push(RamDiskInode::Null);
 
             let directory = RamDiskInode::Directory(String::from(""), Vec::new());
@@ -57,21 +59,21 @@ impl Filesystem for RamDiskFilesystem
         
             self.inodes.push(file);
 
-            let file = RamDiskInode::File(String::from("file2"), vec!['H' as u8, 'e' as u8, 'l' as u8, 'l' as u8, 'o' as u8]);
+            let file = RamDiskInode::File(String::from("file2"), vec!['H' as u8, 'e' as u8, 'y' as u8, '!' as u8]);
         
             self.inodes.push(file);
 
             self.inodes[1] = RamDiskInode::Directory(String::from(""), vec![
-                (String::from("file"), FilesystemIndex{inode: 3, mount_id: 0}),
-                (String::from("."), FilesystemIndex{inode: 1, mount_id: 0}),
-                (String::from(".."), FilesystemIndex{inode: 1, mount_id: 0}),
-                (String::from("dir"), FilesystemIndex{inode: 2, mount_id: 0})
+                (String::from("file"), FilesystemIndex{inode: 3, mount_id: id}),
+                (String::from("."), FilesystemIndex{inode: 1, mount_id: id}),
+                (String::from(".."), FilesystemIndex{inode: 1, mount_id: id}),
+                (String::from("dir"), FilesystemIndex{inode: 2, mount_id: id})
                 ]);
 
             self.inodes[2] = RamDiskInode::Directory(String::from("dir"), vec![
-                (String::from("."), FilesystemIndex{inode: 2, mount_id: 0}),
-                (String::from(".."), FilesystemIndex{inode: 2, mount_id: 0}),
-                (String::from("file2"), FilesystemIndex{inode: 4, mount_id: 0})
+                (String::from("."), FilesystemIndex{inode: 2, mount_id: id}),
+                (String::from(".."), FilesystemIndex{inode: 1, mount_id: id}),
+                (String::from("file2"), FilesystemIndex{inode: 4, mount_id: id})
                 ]);
         }
 
@@ -305,7 +307,34 @@ impl Filesystem for RamDiskFilesystem
     }
 
     /// Read the data stored in an inode
-    fn read_inode(&mut self, _inode: FilesystemIndex) -> FilesystemResult<Vec<u8>>
+    fn read_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<Vec<u8>>
+    {
+        if Some(inode.mount_id) == self.mount_id
+        {
+            if let RamDiskInode::File(_, data) = &self.inodes[inode.inode]
+            {
+                Ok(data.clone())
+            }
+            else
+            {
+                Err(FilesystemError::BadINode)
+            }
+        }
+        else
+        {
+            if let Some(vfs) = &mut self.vfs
+            {
+                vfs.read_inode(inode)
+            }
+            else
+            {
+                Err(FilesystemError::FilesystemNotMounted)
+            }
+        }
+    }
+
+    /// Mount a filesystem at the given inode
+    fn mount_fs_at(&mut self, _inode: FilesystemIndex, _root: FilesystemIndex, _name: String) -> FilesystemResult<()>
     {
         todo!()
     }

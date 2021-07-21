@@ -59,6 +59,8 @@ impl FilesystemInterface
         let id = self.mounts.len();
         fs.set_mount_id(id, unsafe { (self as *mut FilesystemInterface).as_mut().unwrap() });
 
+        let root = fs.get_root_index()?;
+
         // Add the mount
         self.mounts.push(Some(fs));
 
@@ -71,7 +73,24 @@ impl FilesystemInterface
         }
         else
         {
-            Err(FilesystemError::MissingRootMount)
+            if self.root.is_none()
+            {
+                Err(FilesystemError::MissingRootMount)
+            }
+            else
+            {
+                if let Some((last, elements)) = path.split("/").collect::<Vec<&str>>().split_last()
+                {
+                    let path_start = elements.join("/") + "/";
+
+                    let inode = self.path_to_inode(&path_start)?;
+                    self.mount_fs_at(inode, root, last.to_string())
+                }
+                else
+                {
+                    Err(FilesystemError::FileNotFound(path.to_string()))
+                }
+            }
         }
     }
 
@@ -284,6 +303,11 @@ impl Filesystem for FilesystemInterface
                 walking_end_index += 1;
             }
 
+            if walking_end_index == path.len()
+            {
+                return Ok(index);
+            }
+
             for name in path[walking_end_index..].split("/")
             {
                 let mut found = false;
@@ -389,6 +413,21 @@ impl Filesystem for FilesystemInterface
         if let Some(fs) = self.get_fs_mount(inode.mount_id)
         {
             fs.read_inode(inode)
+        }
+        else
+        {
+            Err(FilesystemError::UnableToFindDiskMount(inode.mount_id))
+        }
+    }
+
+    /// Mount a filesystem at the given inode
+    fn mount_fs_at(&mut self, inode: FilesystemIndex, root: FilesystemIndex, name: String) -> FilesystemResult<()>
+    {
+        kdebugln!(Filesystem, "Mount fs starting at {:?} at inode {:?}", root, inode);
+
+        if let Some(fs) = self.get_fs_mount(inode.mount_id)
+        {
+            fs.mount_fs_at(inode, root, name)
         }
         else
         {

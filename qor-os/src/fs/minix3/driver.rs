@@ -14,7 +14,9 @@ pub struct Minix3Filesystem
     mount_id: Option<usize>,
     vfs: Option<&'static mut crate::fs::vfs::FilesystemInterface>,
     superblock: Option<Minix3SuperBlock>,
-    cache: Vec<(usize, [u8; 1024])>
+    cache: Vec<(usize, [u8; 1024])>,
+    rewritten: Vec<(usize, [u8; 1024])>,
+    mount_inodes: Vec<(FilesystemIndex, FilesystemIndex, String)>
 }
 
 impl Minix3Filesystem
@@ -28,13 +30,22 @@ impl Minix3Filesystem
             mount_id: None,
             vfs: None,
             superblock: None,
-            cache: Vec::new()
+            cache: Vec::new(),
+            rewritten: Vec::new(),
+            mount_inodes: Vec::new(),
         }
     }
 
     /// Read a block as a buffer
     fn read_block_to_buffer(&mut self, index: usize) -> [u8; 1024]
     {
+        for (idx, data) in &self.rewritten
+        {
+            if index == *idx
+            {
+                return *data;
+            }
+        }
         
         for (idx, data) in &self.cache
         {
@@ -50,11 +61,66 @@ impl Minix3Filesystem
 
         self.block_driver.sync_read(ptr, 1024, index as u64 * 1024);
 
-
         self.cache.push((index, *buffer));
 
-
         *buffer
+    }
+
+    /// Edit the contents of a block
+    fn edit_block(&mut self, index: usize, new_data: [u8; 1024]) -> FilesystemResult<()>
+    {
+        for (idx, data) in &mut self.rewritten
+        {
+            if index == *idx
+            {
+                *data = new_data;
+                return Ok(())
+            }
+        }
+
+        self.rewritten.push((index, new_data));
+
+        Ok(())
+    }
+
+    /// Edit the contents at a specific region in the block
+    fn edit_block_region(&mut self, index: usize, start: usize, new_data: &[u8]) -> FilesystemResult<usize>
+    {
+        let mut i = start;
+
+        let mut rewritten_index = 0;
+
+        for (idx, data) in &mut self.rewritten
+        {
+            if index == *idx
+            {
+                for v in new_data
+                {
+                    data[i] = *v;
+                    i += 1;
+
+                    if i == 1024 { break; }
+                }
+
+                return Ok(rewritten_index)
+            }
+
+            rewritten_index += 1;
+        }
+
+        let mut prev_data = self.read_block_to_buffer(index);
+
+        for v in new_data
+        {
+            prev_data[i] = *v;
+            i += 1;
+
+            if i == 1024 { break; }
+        }
+
+        self.rewritten.push((index, prev_data));
+
+        Ok(self.rewritten.len() - 1)
     }
 
     /// Read an inode
@@ -74,6 +140,52 @@ impl Minix3Filesystem
             let inode = unsafe { (&mut buffer as *mut [u8; 1024] as *mut Minix3Inode).add((inode_number - 1) % 16).read() };
 
             // The buffer is freed implicitly after the return
+            Ok(inode)
+        }
+        else
+        {
+            Err(FilesystemError::FilesystemUninitialized)
+        }
+    }
+
+    /// Get a mutable buffer into editable memory
+    fn get_mut_buffer(&mut self, block: usize) -> FilesystemResult<&mut [u8; 1024]>
+    {
+        let mut rewritten_index = 0;
+
+        for (idx, _) in &mut self.rewritten
+        {
+            if block == *idx
+            {
+                break;
+            }
+
+            rewritten_index += 1;
+        }
+
+        if rewritten_index == self.rewritten.len()
+        {
+            let buffer =  self.read_block_to_buffer(block);
+            self.rewritten.push((block, buffer));
+        }
+
+        Ok(&mut self.rewritten[rewritten_index].1)
+    }
+
+    /// Edit an inode
+    fn get_mut_inode(&mut self, inode_number: usize) -> FilesystemResult<&mut Minix3Inode>
+    {
+        if let Some(superblock) = self.superblock
+        {
+            // Conver the inode number to a block index
+            let block_index = (inode_number - 1) / 16 + 2 + superblock.imap_blocks as usize + superblock.zmap_blocks as usize;
+
+            // Get a reference to that memory
+            let buffer_ref = self.get_mut_buffer(block_index)?;
+
+            // Get the reference to the specific inode
+            let inode = unsafe { (buffer_ref as *mut [u8; 1024] as *mut Minix3Inode).add((inode_number - 1) % 16).as_mut().unwrap() };
+
             Ok(inode)
         }
         else
@@ -281,6 +393,15 @@ impl Filesystem for Minix3Filesystem
                 result.push(DirectoryEntry{ index: FilesystemIndex{ mount_id: inode.mount_id, inode: entry.inode as usize }, name: name, entry_type: DirectoryEntryType::Unknown });
             }
 
+            // Add any mounted filesystems
+            for (place, root, name) in &self.mount_inodes
+            {
+                if *place == inode
+                {
+                    result.push(DirectoryEntry{ index: *root, name: name.clone(), entry_type: DirectoryEntryType::Directory });
+                }
+            }
+
             Ok(result)
         }
         else
@@ -333,8 +454,14 @@ impl Filesystem for Minix3Filesystem
                 Err(FilesystemError::FilesystemNotMounted)
             }
         }
-        
-        
+    }
+
+    /// Mount a filesystem at the given inode
+    fn mount_fs_at(&mut self, inode: FilesystemIndex, root: FilesystemIndex, name: String) -> FilesystemResult<()>
+    {
+        self.mount_inodes.push((inode, root, name));
+
+        Ok(())
     }
 }
 

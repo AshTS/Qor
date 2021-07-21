@@ -98,13 +98,18 @@ fn kmain()
 
     let mut vfs = fs::vfs::FilesystemInterface::new();
     let mut disk0 = fs::minix3::Minix3Filesystem::new(0);
+    let mut virt0 = fs::ramdisk::RamDiskFilesystem::new();
 
     use fs::fstrait::Filesystem;
 
     vfs.init().unwrap();
     disk0.init().unwrap();
-
+    virt0.init().unwrap();
+    
     vfs.mount_fs("/", Box::new(disk0)).unwrap();
+    vfs.mount_fs("/mnt", Box::new(virt0)).unwrap();
+
+    // vfs.sync().unwrap();
 
     vfs.index().unwrap();
 

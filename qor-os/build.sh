@@ -22,7 +22,8 @@ sudo rm -rf /mnt/*
 sudo cp -r ../userland/bin/ /mnt/bin/
 sudo cp -r ../userland/root/ /mnt/
 
-ls /mnt/bin
+ls -aiS /mnt/bin
+ls -aiS /mnt/root
 
 sudo sync /mnt
 
