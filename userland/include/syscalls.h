@@ -24,5 +24,6 @@ extern void* mmap(void* start, int length, int prot, int flags, int fd, int off)
 extern unsigned int munmap(void* buffer, int size);
 extern unsigned int getdents(int fd, void* dirents, unsigned int count);
 extern unsigned int chdir(const char* path);
+extern unsigned int mkdir(const char* path, unsigned short mode);
 
 #endif // _SYSCALLS_H

@@ -98,3 +98,9 @@ chdir:
     li a7, 80
     ecall
     ret
+
+.globl mkdir
+mkdir:
+    li a7, 83
+    ecall
+    ret
