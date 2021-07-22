@@ -3,10 +3,10 @@
 
 #include <stdbool.h>
 
-#define PRINTF_BUFFER_LEN 5
+#define PRINTF_BUFFER_LEN 64
 
 // Put implementation for printf
-void local_put(const char* data)
+void local_put(const char* data, int fd)
 {
     int count = 0;
     while (*(data + count))
@@ -14,21 +14,21 @@ void local_put(const char* data)
         count++;
     }
 
-    write(1, data, count);
+    write(fd, data, count);
 }
 
 // Helper function for printf
-void printf_helper(char* buffer, unsigned int* index, char c)
+void printf_helper(char* buffer, unsigned int* index, char c, int fd)
 {
     buffer[((*index)++) % (PRINTF_BUFFER_LEN - 1)] = c;
     if (*index % (PRINTF_BUFFER_LEN - 1) == 0 || c == 0)
     {
-        local_put(buffer);
+        local_put(buffer, fd);
     }
 }
 
-// Printf
-int printf(const char* data, ...)
+// File Printf
+int fprintf(int fd, const char* data, ...)
 {
     va_list args;
     va_start(args, data);
@@ -75,7 +75,7 @@ int printf(const char* data, ...)
                 if (i < 0)
                 {
                     i = -i;
-                    printf_helper(buffer, &index, '-');
+                    printf_helper(buffer, &index, '-', fd);
                 }
 
                 int counter = 1;
@@ -86,7 +86,7 @@ int printf(const char* data, ...)
 
                 while (counter >= 1)
                 {
-                    printf_helper(buffer, &index, '0' + (i / counter) % 10);
+                    printf_helper(buffer, &index, '0' + (i / counter) % 10, fd);
                     counter /= 10;
                 }
 
@@ -103,7 +103,7 @@ int printf(const char* data, ...)
                 if (i < 0)
                 {
                     i = -i;
-                    printf_helper(buffer, &index, '-');
+                    printf_helper(buffer, &index, '-', fd);
                 }
 
                 long counter = 1;
@@ -114,7 +114,7 @@ int printf(const char* data, ...)
 
                 while (counter >= 1)
                 {
-                    printf_helper(buffer, &index, '0' + (i / counter) % 10);
+                    printf_helper(buffer, &index, '0' + (i / counter) % 10, fd);
                     counter /= 10;
                 }
 
@@ -124,8 +124,8 @@ int printf(const char* data, ...)
             {
                 unsigned long i = va_arg(args, unsigned long);
 
-                printf_helper(buffer, &index, '0');
-                printf_helper(buffer, &index, 'x');
+                printf_helper(buffer, &index, '0', fd);
+                printf_helper(buffer, &index, 'x', fd);
 
                 unsigned long counter = 1;
                 while (counter <= i / 16)
@@ -139,11 +139,11 @@ int printf(const char* data, ...)
 
                     if (digit < 10)
                     {
-                        printf_helper(buffer, &index, '0' + digit);
+                        printf_helper(buffer, &index, '0' + digit, fd);
                     }
                     else
                     {
-                        printf_helper(buffer, &index, 'A' + (digit - 10));
+                        printf_helper(buffer, &index, 'A' + (digit - 10), fd);
                     }
                     
                     counter /= 16;
@@ -156,7 +156,7 @@ int printf(const char* data, ...)
 
                 while (*s)
                 {
-                    printf_helper(buffer, &index, *(s++));
+                    printf_helper(buffer, &index, *(s++), fd);
                 }
                 next_format_specifier = false;
             }
@@ -164,7 +164,7 @@ int printf(const char* data, ...)
             {
                 int c = va_arg(args, int);
 
-                printf_helper(buffer, &index, (char)c);
+                printf_helper(buffer, &index, (char)c, fd);
                 next_format_specifier = false;
             }
             last_char = c;
@@ -173,7 +173,7 @@ int printf(const char* data, ...)
         
 
         // Add to the buffer and possibly refresh the buffer
-        printf_helper(buffer, &index, c);
+        printf_helper(buffer, &index, c, fd);
     }
 
     return index;

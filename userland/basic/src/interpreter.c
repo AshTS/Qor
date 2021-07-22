@@ -128,16 +128,15 @@ void drop_interpreter(InterpreterState* state)
     free(state);
 }
 
-void list(InterpreterState* state)
+void list(int fd, InterpreterState* state)
 {
-    printf("List:\n");
     for (int i = 0; i < state->line_count; i++)
     {
         Token** line = state->lines[i];
 
         if (line != 0)
         {
-            printf("%i\t", i);
+            fprintf(fd, "%i\t", i);
 
             while (*line != 0)
             {
@@ -145,21 +144,21 @@ void list(InterpreterState* state)
 
                 if (token->type == NUMBER_LITERAL)
                 {
-                    printf("%i ", token->data.number);
+                    fprintf(fd, "%i ", token->data.number);
                 }
                 else if (token->type == STRING_LITERAL)
                 {
-                    printf("\"%s\" ", token->data.text);
+                    fprintf(fd, "\"%s\" ", token->data.text);
                 }
                 else
                 {
-                    printf("%s ", token->data.text);
+                    fprintf(fd, "%s ", token->data.text);
                 }
 
                 line++;
             }
 
-            printf("\n");
+            fprintf(fd, "\n");
         }
     }
 }
@@ -688,7 +687,8 @@ bool interpret(InterpreterState* state, Token** line)
     // Check for commands (like list)
     if (check_token(*line, IDENTIFIER, "list"))
     {
-        list(state);
+        printf("List:\n");
+        list(1, state);
         return true;
     }
     else if (check_token(*line, IDENTIFIER, "run"))

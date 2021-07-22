@@ -48,7 +48,7 @@ bool interpret(InterpreterState*, Token** line);
 
 void clear_interpreter(InterpreterState* state);
 void run(InterpreterState* state);
-void list(InterpreterState* state);
+void list(int fd, InterpreterState* state);
 
 
 #endif // INTERPRETER_H

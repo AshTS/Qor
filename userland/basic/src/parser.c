@@ -85,7 +85,7 @@ void drop_token(Token* token)
 Token* parse_next_token(char** text)
 {
     // Step past any white space
-    while (**text == ' ')
+    while (**text == ' ' || **text == '\t')
     {
         (*text)++;
     }

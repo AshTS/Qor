@@ -37,6 +37,8 @@ void load_file(char* name, InterpreterState* state)
     close(file);
     input_buffer[size] = 0;
 
+    printf("%s\n", input_buffer);
+
     int index = 0;
     int line_start = 0;
 
@@ -106,6 +108,22 @@ void load_file(char* name, InterpreterState* state)
     printf("Loaded program from %s\n", name);
 }
 
+void write_file(char* name, InterpreterState* state)
+{
+    int file = open(name, O_WRONLY | O_TRUNC | O_CREAT);
+
+    if (file < 0)
+    {
+        printf("Unable to open file `%s`\n", name);
+        return;
+    }
+
+    list(file, state);
+
+
+    close(file);
+}
+
 int main(int argc, char** argv)
 {
     printf("QORBasic\n");
@@ -139,6 +157,17 @@ int main(int argc, char** argv)
             input_buffer[4] == ' ')
         {
             load_file(&input_buffer[5], state);
+            continue;
+        }
+
+        if (input_buffer[0] == 's' &&
+            input_buffer[1] == 't' &&
+            input_buffer[2] == 'o' &&
+            input_buffer[3] == 'r' &&
+            input_buffer[4] == 'e' &&
+            input_buffer[5] == ' ')
+        {
+            write_file(&input_buffer[6], state);
             continue;
         }
 
