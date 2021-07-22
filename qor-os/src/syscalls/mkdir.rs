@@ -3,7 +3,7 @@ use crate::*;
 use fs::fstrait::Filesystem;
 
 /// mkdir Syscall
-pub fn syscall_mkdir(proc: &mut super::Process, path_ptr: usize, mode: usize) -> usize
+pub fn syscall_mkdir(proc: &mut super::Process, path_ptr: usize, _mode: usize) -> usize
 {
     let path_ptr = proc.map_mem(path_ptr).unwrap() as *mut u8;
     let mut path = String::new();
