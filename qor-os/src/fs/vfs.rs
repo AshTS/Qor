@@ -334,16 +334,22 @@ impl Filesystem for FilesystemInterface
     /// Convert an inode to a path
     fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<&str>
     {
+        if !self.indexed.contains_key(&inode)
+        {
+            self.index()?;
+        }
+
         // If we have the inode in the index, just use that
         if let Some(path) = self.indexed.get(&inode)
         {
             kdebugln!(Filesystem, "Map inode {:?} to path -> `{}`", inode, path);
-            Ok(path)
+            return Ok(path);
         }
         else
         {
             todo!()
         }
+        
     }
 
     /// Get the directory entries for the given inode
