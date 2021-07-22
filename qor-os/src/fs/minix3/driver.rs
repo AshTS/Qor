@@ -341,8 +341,6 @@ impl Minix3Filesystem
                     {
                         if *v & walker == 0
                         {
-                            kprintln!("Next Inode: {}", i);
-
                             return Ok(i);
                         }
 
@@ -419,8 +417,6 @@ impl Minix3Filesystem
                     {
                         if *v & walker == 0
                         {
-                            kprintln!("Next Zone: {}", i);
-
                             return Ok(i);
                         }
 
