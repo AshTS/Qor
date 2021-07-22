@@ -742,6 +742,34 @@ impl Filesystem for Minix3Filesystem
         }
     }
 
+    /// Write data to an inode
+    fn write_inode(&mut self, inode: FilesystemIndex, data: &[u8]) -> FilesystemResult<()>
+    {
+        if Some(inode.mount_id) == self.mount_id
+        {
+            let inode = self.get_mut_inode(inode.inode)?;
+            
+            inode.size = data.len() as u32;
+
+            let zone = inode.zones[0];
+
+            self.edit_block_region(zone as usize, 0, &data)?;
+
+            Ok(())
+        }
+        else
+        {
+            if let Some(vfs) = &mut self.vfs
+            {
+                vfs.write_inode(inode, data)
+            }
+            else
+            {
+                Err(FilesystemError::FilesystemNotMounted)
+            }
+        }
+    }
+
     /// Mount a filesystem at the given inode
     fn mount_fs_at(&mut self, inode: FilesystemIndex, root: FilesystemIndex, name: String) -> FilesystemResult<()>
     {

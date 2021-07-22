@@ -11,7 +11,7 @@ pub static mut STDIN_BUFFER: utils::ByteRingBuffer = utils::ByteRingBuffer::new(
 pub trait FileDescriptor
 {
     /// Close the file descriptor
-    fn close(&mut self);
+    fn close(&mut self, fs: &mut fs::vfs::FilesystemInterface);
 
     /// Write to the descriptor
     fn write(&mut self, fs: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize;
@@ -34,7 +34,7 @@ pub struct NullDescriptor;
 
 impl FileDescriptor for NullDescriptor
 {
-    fn close(&mut self) {}
+    fn close(&mut self, _: &mut fs::vfs::FilesystemInterface) {}
 
     fn write(&mut self, _: &mut fs::vfs::FilesystemInterface, _: *mut u8, count: usize) -> usize
     {
@@ -58,7 +58,7 @@ pub struct UARTOut;
 
 impl FileDescriptor for UARTOut
 {
-    fn close(&mut self) {}
+    fn close(&mut self, _: &mut fs::vfs::FilesystemInterface) {}
 
     fn write(&mut self, _: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
@@ -82,7 +82,7 @@ pub struct UARTError;
 
 impl FileDescriptor for UARTError
 {
-    fn close(&mut self) {}
+    fn close(&mut self, _: &mut fs::vfs::FilesystemInterface) {}
     
     fn write(&mut self, _: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
@@ -106,7 +106,7 @@ pub struct UARTIn;
 
 impl FileDescriptor for UARTIn
 {
-    fn close(&mut self) {}
+    fn close(&mut self, _: &mut fs::vfs::FilesystemInterface) {}
     
     fn write(&mut self, _: &mut fs::vfs::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
     {
@@ -140,47 +140,80 @@ pub struct InodeFileDescriptor
 {
     pub inode: FilesystemIndex,
     index: usize,
-    data: Vec<u8>
+    data: Vec<u8>,
+    is_write: bool,
+    is_read: bool
 }
+
+// Must be kept in sync with syscalls.h
+const O_RDONLY: usize = 1;
+const O_WRONLY: usize = 2;
+const O_APPEND: usize = 4;
+const O_TRUNC: usize =  8;
+const O_CREAT: usize =  16;
+const O_EXCL: usize =   32;
 
 impl InodeFileDescriptor
 {
-    pub fn new(inode: FilesystemIndex) -> Self
+    pub fn new(fs: &mut fs::vfs::FilesystemInterface, inode: FilesystemIndex, mode: usize) -> Result<Self, ()>
     {
-        Self
+        let mut temp = Self
         {
             inode,
             index: 0,
-            data: Vec::new()
+            data: Vec::new(),
+            is_write: mode & O_WRONLY > 0,
+            is_read: mode & O_RDONLY > 0
+        };
+
+        if (temp.is_read || (mode & O_APPEND) > 0) && (mode & O_TRUNC) == 0
+        {
+            if let Ok(data) = fs.read_inode(temp.inode)
+            {
+                temp.data = data;
+            }
+            else
+            {
+                return Err(());
+            }
         }
+
+        Ok(temp)
     }
 }
 
 impl FileDescriptor for InodeFileDescriptor
 {
-    fn close(&mut self)
+    fn close(&mut self, fs: &mut fs::vfs::FilesystemInterface)
     {
-        
+        if self.is_write
+        {
+            fs.write_inode(self.inode, &self.data).unwrap();
+        }
     }
 
-    fn write(&mut self, _fs: &mut fs::vfs::FilesystemInterface, _buffer: *mut u8, _count: usize) -> usize
+    fn write(&mut self, _fs: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
-        unimplemented!()
+        if !self.is_write
+        {
+            return usize::MAX;
+        }
+
+
+        for i in 0..count
+        {
+            self.data.push(unsafe { buffer.add(i).read() })
+        }
+
+        count
     }
 
     // TODO: This read implementation is beyond inefficent
-    fn read(&mut self, fs: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
+    fn read(&mut self, _fs: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
-        if self.data.len() == 0
+        if !self.is_read
         {
-            if let Ok(data) = fs.read_inode(self.inode)
-            {
-                self.data = data;
-            }
-            else
-            {
-                return usize::MAX;
-            }
+            return usize::MAX;
         }
 
         let mut written = 0;

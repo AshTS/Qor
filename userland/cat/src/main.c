@@ -8,7 +8,7 @@ int main(int argc, char** argv)
 {
     for (int i = 1; i < argc; i++)
     {
-        int fd = open(argv[i], 0);
+        int fd = open(argv[i], O_RDONLY);
         
         if (fd < 0)
         {

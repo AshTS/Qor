@@ -40,6 +40,9 @@ pub trait Filesystem
     /// Read the data stored in an inode
     fn read_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<Vec<u8>>;
 
+    /// Write data to an inode
+    fn write_inode(&mut self, inode: FilesystemIndex, data: &[u8]) -> FilesystemResult<()>;
+
     /// Mount a filesystem at the given inode
     fn mount_fs_at(&mut self, inode: FilesystemIndex, root: FilesystemIndex, name: String) -> FilesystemResult<()>;
 }

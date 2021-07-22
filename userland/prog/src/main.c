@@ -1,12 +1,21 @@
 #include "printf.h"
 #include "syscalls.h"
+#include "string.h"
 
 int main(int argc, char** argv)
 {
-    printf("Argc: %i\n", argc);
+    int fd = open("output.txt", O_WRONLY | O_APPEND | O_CREAT);
 
-    for (int i = 0; i < argc; i++)
+    if (fd == -1)
     {
-        printf("`%s`\n", argv[i]);
+        printf("Unable to open `open.txt`\n");
+        return -1;
     }
+
+    char* data = "Hello from a userspace program!\0";
+    int length = strlen(data);
+
+    write(fd, data, length);
+
+    close(fd);
 }

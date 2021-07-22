@@ -5,7 +5,7 @@ INCLUDE = -isystem ../include
 LINK = ld.lld
 LINKFLAGS =
 
-INCLUDES = ../include/printf.h
+INCLUDES = ../include/printf.h ../include/syscalls.h ../include/string.h
 
 LIB_DIR = ../bin
 OUTPUT_DIR = ../bin

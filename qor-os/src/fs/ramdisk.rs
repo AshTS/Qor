@@ -333,6 +333,12 @@ impl Filesystem for RamDiskFilesystem
         }
     }
 
+    /// Write data to an inode
+    fn write_inode(&mut self, _inode: FilesystemIndex, _data: &[u8]) -> FilesystemResult<()>
+    {
+        todo!()
+    }
+
     /// Mount a filesystem at the given inode
     fn mount_fs_at(&mut self, _inode: FilesystemIndex, _root: FilesystemIndex, _name: String) -> FilesystemResult<()>
     {

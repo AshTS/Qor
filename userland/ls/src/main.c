@@ -26,7 +26,7 @@ int main(int argc, char** argv)
         dir = ".";
     }
 
-    int dir_fd = open(dir, 0);
+    int dir_fd = open(dir, O_RDONLY);
 
     if (dir_fd == -1)
     {

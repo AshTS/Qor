@@ -426,6 +426,21 @@ impl Filesystem for FilesystemInterface
         }
     }
 
+    /// Write data to an inode
+    fn write_inode(&mut self, inode: FilesystemIndex, data: &[u8]) -> FilesystemResult<()>
+    {
+        kdebugln!(Filesystem, "Write data to inode {:?}", inode);
+
+        if let Some(fs) = self.get_fs_mount(inode.mount_id)
+        {
+            fs.write_inode(inode, data)
+        }
+        else
+        {
+            Err(FilesystemError::UnableToFindDiskMount(inode.mount_id))
+        }
+    }
+
     /// Mount a filesystem at the given inode
     fn mount_fs_at(&mut self, inode: FilesystemIndex, root: FilesystemIndex, name: String) -> FilesystemResult<()>
     {

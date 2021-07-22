@@ -22,7 +22,7 @@ int input(char buffer[], int size)
 
 void load_file(char* name, InterpreterState* state)
 {
-    int file = open(name, 0);
+    int file = open(name, O_RDONLY);
 
     if (file < 0)
     {

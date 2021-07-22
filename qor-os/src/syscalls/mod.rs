@@ -38,7 +38,7 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         // Open Syscall
         2 =>
         {
-            open::syscall_open(proc, arg0, arg1)
+            open::syscall_open(proc, arg0, arg1, arg2)
         },
         // Close Syscall
         3 =>

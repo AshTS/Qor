@@ -1,7 +1,7 @@
 use crate::*;
 
 /// Open Syscall
-pub fn syscall_open(proc: &mut super::Process, path_ptr: usize, flags: usize) -> usize
+pub fn syscall_open(proc: &mut super::Process, path_ptr: usize, flags: usize, _create_mode: usize) -> usize
 {
     let path_ptr = proc.map_mem(path_ptr).unwrap() as *mut u8;
     let mut path = String::new();

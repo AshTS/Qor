@@ -25,6 +25,15 @@ fn next_pid() -> u16
     }
 }
 
+// Must be kept in sync with syscalls.h
+const O_RDONLY: usize = 1;
+const O_WRONLY: usize = 2;
+const O_APPEND: usize = 4;
+const O_TRUNC: usize =  8;
+const O_CREAT: usize =  16;
+const O_EXCL: usize =   32;
+
+
 /// Process State Enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProcessState
@@ -218,12 +227,36 @@ impl Process
     }
 
     /// Open a file by path
-    pub fn open(&mut self, path: &str, _mode: usize) -> Result<usize, fs::structures::FilesystemError>
+    pub fn open(&mut self, path: &str, mode: usize) -> Result<usize, fs::structures::FilesystemError>
     {
         self.ensure_fs();
 
         let expanded_path = self.expand_path(path);
-        let inode = self.fs_interface.as_mut().unwrap().path_to_inode(&expanded_path)?;
+
+        let vfs = self.fs_interface.as_mut().unwrap();
+        let inode = 
+            if let Ok(inode_result) = vfs.path_to_inode(&expanded_path)
+            {
+                if (mode & O_EXCL) > 0
+                {
+                    return Ok(usize::MAX);
+                }
+
+                inode_result
+            }
+            else
+            {
+                if (mode & O_CREAT) == 0
+                {
+                    return Ok(usize::MAX);
+                }
+
+                let (path, name) = utils::separate_path_last(&expanded_path);
+
+                let dest_inode = vfs.path_to_inode(&path)?;
+
+                vfs.create_file(dest_inode, name)?
+            };
 
         let mut i = 3;
 
@@ -232,9 +265,15 @@ impl Process
             i += 1;
         }
 
-        self.data.descriptors.insert(i, Box::new(super::descriptor::InodeFileDescriptor::new(inode)));
-
-        Ok(i)
+        if let Ok(fd) = super::descriptor::InodeFileDescriptor::new(vfs, inode, mode)
+        {
+            self.data.descriptors.insert(i, Box::new(fd));
+            Ok(i)
+        }
+        else
+        {
+            Ok(usize::MAX)
+        }
     }
 
     /// Read from a file descriptor
@@ -272,7 +311,7 @@ impl Process
     {
         let v = if let Some(fd) = self.data.descriptors.get_mut(&fd)
         {
-            fd.close();
+            fd.close(self.fs_interface.as_mut().unwrap());
             0
         }
         else

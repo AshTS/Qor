@@ -11,9 +11,17 @@
 
 #define MAP_ANONYMOUS 1
 
+#define O_RDONLY 1
+#define O_WRONLY 2
+#define O_RDWR   3
+#define O_APPEND 4
+#define O_TRUNC  8
+#define O_CREAT  16
+#define O_EXCL   32
+
 extern unsigned int exit(int val);
 extern unsigned int write(int fd, void* buffer, int size);
-extern unsigned int open(const char* name, int mode);
+extern unsigned int open(const char* name, int open_mode);
 extern unsigned int close(int fd);
 extern unsigned int read(int fd, void* buffer, int size);
 extern unsigned int fork();
