@@ -1,3 +1,5 @@
+use libutils::paths::OwnedPath;
+
 use crate::*;
 
 /// Open Syscall
@@ -19,7 +21,10 @@ pub fn syscall_open(proc: &mut super::Process, path_ptr: usize, flags: usize, _c
         i += 1;
     }
 
-    match proc.open(&path, flags)
+    let mut expanded_path = OwnedPath::new(path);
+    expanded_path.canonicalize(&proc.data.cwd);
+
+    match proc.open(&expanded_path, flags)
     {
         Ok(v) => v,
         Err(_) => 0xFFFFFFFFFFFFFFFF

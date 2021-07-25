@@ -5,6 +5,7 @@ use crate::*;
 use fs::fstrait::Filesystem;
 
 use alloc::vec::Vec;
+use libutils::paths::PathBuffer;
 
 use super::process::Process;
 
@@ -72,7 +73,7 @@ pub struct Segment
 
 
 /// Load a file from a file interface and convert it to a process
-pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: &str) -> Result<Process, ElfLoadError>
+pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: PathBuffer) -> Result<Process, ElfLoadError>
 {
     kdebugln!(Elf, "Loading ELF File `{}`", path);
 

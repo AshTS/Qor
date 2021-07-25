@@ -36,9 +36,15 @@ Syntax: `print [{value} ... ]`
 
 ### `run`
 
-Run the currently stored program
+Run the currently stored program.
 
 Syntax: `run`
+
+### `store`
+
+Store the currently stored program to disk.
+
+Syntax: `store {filename}`
 
 ## Variables
 

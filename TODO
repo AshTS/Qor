@@ -1,9 +1,7 @@
 Virtual File System
     Optimize read call in file descriptors
 Minix3 File System
-    Creating new files
-    Creating new directories
-    Writing to files
+    Finalize Writing to files, current implementation maxes out at 1024 bytes
 Syscalls
     nanosleep
 Processes

@@ -6,6 +6,8 @@ use super::structures::*;
 use alloc::collections::BTreeMap;
 use alloc::format;
 
+use libutils::paths::{OwnedPath, PathBuffer};
+
 static VFS_INTERFACE: core::sync::atomic::AtomicPtr<FilesystemInterface> = core::sync::atomic::AtomicPtr::new(0 as *mut FilesystemInterface);
 
 /// Get a reference to the vfs interface
@@ -21,8 +23,8 @@ pub struct FilesystemInterface
 {
     mounts: Vec<Option<Box<dyn Filesystem>>>,
     root: Option<usize>,
-    pub index: BTreeMap<String, FilesystemIndex>,
-    indexed: BTreeMap<FilesystemIndex, String>
+    pub index: BTreeMap<OwnedPath, FilesystemIndex>,
+    indexed: BTreeMap<FilesystemIndex, OwnedPath>
 }
 
 impl FilesystemInterface
@@ -51,7 +53,7 @@ impl FilesystemInterface
     }
 
     /// Mount a filesystem to the vfs
-    pub fn mount_fs(&mut self, path: &str, mut fs: Box<dyn Filesystem>) -> Result<(), FilesystemError>
+    pub fn mount_fs(&mut self, path: PathBuffer, mut fs: Box<dyn Filesystem>) -> Result<(), FilesystemError>
     {
         kdebugln!(Filesystem, "Mounting filesystem to index {} at {}", self.mounts.len(), path);
 
@@ -65,7 +67,7 @@ impl FilesystemInterface
         self.mounts.push(Some(fs));
 
         // Add the mapping to the mount paths
-        if path == "/"
+        if path.as_str() == "/"
         {
             self.root = Some(id);
 
@@ -79,17 +81,10 @@ impl FilesystemInterface
             }
             else
             {
-                if let Some((last, elements)) = path.split("/").collect::<Vec<&str>>().split_last()
-                {
-                    let path_start = elements.join("/") + "/";
+                let (path_start, name) = path.split_last();
 
-                    let inode = self.path_to_inode(&path_start)?;
-                    self.mount_fs_at(inode, root, last.to_string())
-                }
-                else
-                {
-                    Err(FilesystemError::FileNotFound(path.to_string()))
-                }
+                let inode = self.path_to_inode(&path_start)?;
+                self.mount_fs_at(inode, root, name.to_string())
             }
         }
     }
@@ -154,7 +149,7 @@ impl FilesystemInterface
     }
 
     /// Index the filesystem from the starting path and starting inode
-    pub fn index_from(&mut self, path: &str, inode: FilesystemIndex) -> FilesystemResult<()>
+    pub fn index_from(&mut self, path: PathBuffer, inode: FilesystemIndex) -> FilesystemResult<()>
     {
         if self.indexed.contains_key(&inode)
         {
@@ -162,22 +157,22 @@ impl FilesystemInterface
         }
 
         // Add the current path to the index
-        if path.len() > 0
+        if path.as_str().len() > 0
         {
-            self.index.insert(path.to_string(), inode);
+            self.index.insert(path.clone(), inode);
         }
-        self.indexed.insert(inode, path.to_string());
+        self.indexed.insert(inode, path.clone());
 
         // Get the directory entries (if this is a directory)
         match self.get_dir_entries(inode)
         {
             Ok(entries) =>
             {
-                self.index.insert(path.to_string() + "/", inode);
+                self.index.insert(OwnedPath::new(path.as_str().to_string() + "/"), inode);
 
                 for entry in entries
                 {
-                    self.index_from(&format!("{}/{}", path, entry.name), entry.index)?;
+                    self.index_from(&OwnedPath::new(format!("{}/{}", path, entry.name)), entry.index)?;
                 }
 
                 Ok(())
@@ -195,19 +190,19 @@ impl FilesystemInterface
         self.indexed = BTreeMap::new();
 
         let root = self.get_root_index()?;
-        self.index_from("", root)
+        self.index_from(&OwnedPath::new(""), root)
     }
 
     /// Invalidate part of the filesystem index
-    pub fn invalidate_index(&mut self, path: &str) -> FilesystemResult<()>
+    pub fn invalidate_index(&mut self, path: PathBuffer) -> FilesystemResult<()>
     {
         let mut to_remove = Vec::new();
 
         for key in self.index.keys()
         {
-            if key.starts_with(path)
+            if key.as_str().starts_with(path.as_str())
             {
-                to_remove.push(key.to_string());
+                to_remove.push(key.clone());
             }
         }
         
@@ -261,7 +256,7 @@ impl Filesystem for FilesystemInterface
     }
 
     /// Convert a path to an inode
-    fn path_to_inode(&mut self, path: &str) -> FilesystemResult<FilesystemIndex>
+    fn path_to_inode(&mut self, path: PathBuffer) -> FilesystemResult<FilesystemIndex>
     {
         // If we have the path in the index, just use that
         if let Some(index) = self.index.get(path)
@@ -273,42 +268,9 @@ impl Filesystem for FilesystemInterface
         // Otherwise, we will walk the filesystem
         else
         {
-            // Walking ending index
-            let mut walking_end_index = path.len() - 1;
+            let mut index = self.get_root_index()?;
 
-            // Continue until we either hit an empty string or a 
-            let mut index = loop
-            {
-                if walking_end_index == 0
-                {
-                    break self.get_root_index()?;
-                }
-
-                if let Some(index) = self.index.get(&path[0..walking_end_index])
-                {
-                    break *index;
-                }
-
-                walking_end_index -= 1;
-
-                // Walk backwards until the last character is a '/' or we run out of string
-                while walking_end_index > 0 && path.chars().nth(walking_end_index - 1) != Some('/')
-                {
-                    walking_end_index -= 1;
-                }
-            };
-
-            if path.chars().nth(walking_end_index) == Some('/')
-            {
-                walking_end_index += 1;
-            }
-
-            if walking_end_index == path.len()
-            {
-                return Ok(index);
-            }
-
-            for name in path[walking_end_index..].split("/")
+            for name in path.iter()
             {
                 let mut found = false;
                 for entry in self.get_dir_entries(index)?
@@ -332,7 +294,7 @@ impl Filesystem for FilesystemInterface
     }
 
     /// Convert an inode to a path
-    fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<&str>
+    fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<PathBuffer>
     {
         if !self.indexed.contains_key(&inode)
         {

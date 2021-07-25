@@ -7,6 +7,7 @@ use super::structures::*;
 
 use alloc::vec;
 
+use libutils::paths::PathBuffer;
 /// Minix3 Filesystem Driver
 pub struct Minix3Filesystem
 {
@@ -584,7 +585,7 @@ impl Filesystem for Minix3Filesystem
     }
 
     /// Convert a path to an inode
-    fn path_to_inode(&mut self, path: &str) -> FilesystemResult<FilesystemIndex>
+    fn path_to_inode(&mut self, path: PathBuffer) -> FilesystemResult<FilesystemIndex>
     {
         if let Some(vfs) = &mut self.vfs
         {
@@ -597,7 +598,7 @@ impl Filesystem for Minix3Filesystem
     }
 
     /// Convert an inode to a path
-    fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<&str>
+    fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<PathBuffer>
     {
         if let Some(vfs) = &mut self.vfs
         {

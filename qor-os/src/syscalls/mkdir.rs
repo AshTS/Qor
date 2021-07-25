@@ -1,6 +1,7 @@
 use crate::*;
 
 use fs::fstrait::Filesystem;
+use libutils::paths::OwnedPath;
 
 /// mkdir Syscall
 pub fn syscall_mkdir(proc: &mut super::Process, path_ptr: usize, _mode: usize) -> usize
@@ -22,22 +23,19 @@ pub fn syscall_mkdir(proc: &mut super::Process, path_ptr: usize, _mode: usize) -
     }
 
     // Expand the path
-    let expanded = proc.expand_path(&path);
+    let mut expanded = OwnedPath::new(path);
+    expanded.canonicalize(&proc.data.cwd);
 
-    let directories = expanded.split("/").collect::<Vec<&str>>();
 
-    if let Some((end, items)) = directories.split_last()
+    let (dest_path, name) = expanded.split_last();
+
+    let vfs = crate::fs::vfs::get_vfs_reference().unwrap();
+
+    if let Ok(dest_inode) = vfs.path_to_inode(&dest_path)
     {
-        let dest_path = items.join("/") + "/";
-
-        let vfs = crate::fs::vfs::get_vfs_reference().unwrap();
-
-        if let Ok(dest_inode) = vfs.path_to_inode(&dest_path)
+        if let Ok(_) = vfs.create_directory(dest_inode, name.to_string())
         {
-            if let Ok(_) = vfs.create_directory(dest_inode, end.to_string())
-            {
-                return 0;
-            }
+            return 0;
         }
     }
 

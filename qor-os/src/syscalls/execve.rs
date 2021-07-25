@@ -1,6 +1,7 @@
 use crate::*;
 
 use alloc::format;
+use libutils::paths::OwnedPath;
 
 /// Execve Syscall
 pub fn syscall_execve(proc: &mut super::Process, path_ptr: usize, argv_ptr: usize, envp_ptr: usize) -> usize
@@ -96,7 +97,7 @@ pub fn syscall_execve(proc: &mut super::Process, path_ptr: usize, argv_ptr: usiz
     }
      
     // Create a process from an elf file
-    if let Ok(mut new_proc) = process::elf::load_elf(proc.fs_interface.as_mut().unwrap(), &path)
+    if let Ok(mut new_proc) = process::elf::load_elf(proc.fs_interface.as_mut().unwrap(), &OwnedPath::new(path))
     // if true
     {
         new_proc.connect_to_term();
