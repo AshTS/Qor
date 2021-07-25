@@ -7,3 +7,5 @@ Syscalls
 Processes
     Add segmentation fault display
     Allow programs to be haulted
+Utils
+    Add OwnedPath and PathBuf objects for path manipulation
