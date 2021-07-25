@@ -4,6 +4,8 @@ use crate::*;
 
 use super::structures::*;
 
+use libutils::paths::PathBuffer;
+
 /// Generic Filesystem Trait
 pub trait Filesystem
 {
@@ -20,10 +22,10 @@ pub trait Filesystem
     fn get_root_index(&mut self) -> FilesystemResult<FilesystemIndex>;
 
     /// Convert a path to an inode
-    fn path_to_inode(&mut self, path: &str) -> FilesystemResult<FilesystemIndex>;
+    fn path_to_inode(&mut self, path: PathBuffer) -> FilesystemResult<FilesystemIndex>;
 
     /// Convert an inode to a path
-    fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<&str>;
+    fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<PathBuffer>;
 
     /// Get the directory entries for the given inode
     fn get_dir_entries(&mut self, inode: FilesystemIndex) -> FilesystemResult<Vec<DirectoryEntry>>;

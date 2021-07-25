@@ -98,25 +98,18 @@ fn kmain()
 
     let mut vfs = fs::vfs::FilesystemInterface::new();
     let mut disk0 = fs::minix3::Minix3Filesystem::new(0);
-    let mut virt0 = fs::ramdisk::RamDiskFilesystem::new();
 
     use fs::fstrait::Filesystem;
+    use libutils::paths::OwnedPath;
 
     vfs.init().unwrap();
     disk0.init().unwrap();
-    virt0.init().unwrap();
 
-    vfs.mount_fs("/", Box::new(disk0)).unwrap();
-    vfs.mount_fs("/mnt", Box::new(virt0)).unwrap();
-
-    let root = vfs.get_root_index().unwrap();
-
-    let dir = vfs.create_directory(root, String::from("new_dir")).unwrap();
-    vfs.create_file(dir, String::from("file_name")).unwrap();
+    vfs.mount_fs(&OwnedPath::new("/"), Box::new(disk0)).unwrap();
 
     vfs.index().unwrap();
 
-    let mut elf_proc = process::elf::load_elf(&mut vfs, "/bin/shell").unwrap();
+    let mut elf_proc = process::elf::load_elf(&mut vfs, &OwnedPath::new("/bin/shell")).unwrap();
     process::scheduler::get_init_process_mut().unwrap().register_child(elf_proc.pid);
     elf_proc.connect_to_term();
     process::scheduler::add_process(elf_proc);

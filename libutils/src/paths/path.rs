@@ -4,7 +4,7 @@ use core::convert::Into;
 use alloc::{format, prelude::v1::String};
 
 /// Owned Path Object
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct OwnedPath
 {
     path: String
@@ -41,6 +41,21 @@ impl OwnedPath
         }
     }
 
+    /// Canonicalize the path given a CWD
+    pub fn canonicalized(&mut self, cwd: PathBuffer) -> OwnedPath
+    {
+        if !self.path.starts_with("/")
+        {
+            let sep = if cwd.path.ends_with("/") { "" } else { "/" };
+            OwnedPath::new(format!("{}{}{}", cwd, sep, self.path))
+        }
+        else
+        {
+            self.clone()
+        }
+    }
+
+
     /// Get the path to the parent of the given path, and the name of the final
     /// element of the path
     pub fn split_last(&self) -> (OwnedPath, &str)
@@ -70,6 +85,12 @@ impl OwnedPath
     pub fn as_str(&self) -> &str
     {
         &self.path
+    }
+
+    /// Get a mutable reference to the inner string
+    pub fn as_mut_str(&mut self) -> &mut String
+    {
+        &mut self.path
     }
 }
 

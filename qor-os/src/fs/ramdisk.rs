@@ -5,6 +5,8 @@ use super::structures::*;
 
 use alloc::vec;
 
+use libutils::paths::PathBuffer;
+
 /// Ram Disk INode
 pub enum RamDiskInode
 {
@@ -112,7 +114,7 @@ impl Filesystem for RamDiskFilesystem
     }
 
     /// Convert a path to an inode
-    fn path_to_inode(&mut self, path: &str) -> FilesystemResult<FilesystemIndex>
+    fn path_to_inode(&mut self, path: PathBuffer) -> FilesystemResult<FilesystemIndex>
     {
         if let Some(vfs) = &mut self.vfs
         {
@@ -125,7 +127,7 @@ impl Filesystem for RamDiskFilesystem
     }
 
     /// Convert an inode to a path
-    fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<&str>
+    fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<PathBuffer>
     {
         if let Some(vfs) = &mut self.vfs
         {

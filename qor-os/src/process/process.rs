@@ -2,6 +2,7 @@ use crate::*;
 use crate::fs::fstrait::Filesystem;
 
 use fs::structures::DirectoryEntry;
+use libutils::paths::PathBuffer;
 
 use super::data::ProcessData;
 
@@ -9,8 +10,6 @@ use mem::mmu::PageTable;
 use mem::mmu::TranslationError;
 
 use trap::TrapFrame;
-
-use alloc::format;
 
 // Global PID counter
 static mut NEXT_PID: u16 = 0;
@@ -227,15 +226,13 @@ impl Process
     }
 
     /// Open a file by path
-    pub fn open(&mut self, path: &str, mode: usize) -> Result<usize, fs::structures::FilesystemError>
+    pub fn open(&mut self, path: PathBuffer, mode: usize) -> Result<usize, fs::structures::FilesystemError>
     {
         self.ensure_fs();
 
-        let expanded_path = self.expand_path(path);
-
         let vfs = self.fs_interface.as_mut().unwrap();
         let inode = 
-            if let Ok(inode_result) = vfs.path_to_inode(&expanded_path)
+            if let Ok(inode_result) = vfs.path_to_inode(&path)
             {
                 if (mode & O_EXCL) > 0
                 {
@@ -251,11 +248,11 @@ impl Process
                     return Ok(usize::MAX);
                 }
 
-                let (path, name) = utils::separate_path_last(&expanded_path);
+                let (path, name) = path.split_last();
 
                 let dest_inode = vfs.path_to_inode(&path)?;
 
-                vfs.create_file(dest_inode, name)?
+                vfs.create_file(dest_inode, name.to_string())?
             };
 
         let mut i = 3;
@@ -470,19 +467,6 @@ impl Process
         self.ensure_fs();
 
         Some(self.fs_interface.as_mut().unwrap().get_dir_entries(inode).unwrap())
-    }
-
-    /// Expand a path from the process
-    pub fn expand_path(&self, path: &str) -> String
-    {
-        if path.starts_with("/")
-        {
-            path.to_string()
-        }
-        else
-        {
-            format!("{}{}", self.data.cwd, path)
-        }
     }
 }
 

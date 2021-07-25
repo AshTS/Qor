@@ -1,4 +1,5 @@
 use alloc::collections::BTreeMap;
+use libutils::paths::OwnedPath;
 
 use crate::*;
 
@@ -11,7 +12,7 @@ pub struct ProcessData
     pub descriptors: BTreeMap<usize, Box<dyn super::descriptor::FileDescriptor>>,
     pub children: Vec<u16>,
     pub parent_pid: u16,
-    pub cwd: String,
+    pub cwd: OwnedPath,
 }
 
 impl ProcessData
@@ -34,7 +35,7 @@ impl ProcessData
             descriptors,
             children: Vec::new(),
             parent_pid: 0,
-            cwd: String::from("/bin/")
+            cwd: OwnedPath::new("/root/")
         }
     }
 

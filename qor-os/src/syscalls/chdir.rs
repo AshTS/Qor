@@ -1,6 +1,7 @@
 use crate::*;
 
 use fs::fstrait::Filesystem;
+use libutils::paths::OwnedPath;
 
 /// chdir Syscall
 pub fn syscall_chdir(proc: &mut super::Process, path_ptr: usize) -> usize
@@ -21,7 +22,7 @@ pub fn syscall_chdir(proc: &mut super::Process, path_ptr: usize) -> usize
         i += 1;
     }
 
-    let path = proc.expand_path(&path);
+    let path = OwnedPath::new(path).canonicalized(&proc.data.cwd);
     
     proc.ensure_fs();
 
@@ -29,18 +30,18 @@ pub fn syscall_chdir(proc: &mut super::Process, path_ptr: usize) -> usize
     {
         if let Ok(path) = proc.fs_interface.as_mut().unwrap().inode_to_path(inode)
         {
-            if path.len() == 0
+            if path.as_str().len() == 0
             {
-                proc.data.cwd = String::new();
+                proc.data.cwd = OwnedPath::new("/");
             }
             else
             {
-                proc.data.cwd = path.to_string();
+                proc.data.cwd = path.clone();
             }
 
-            if !proc.data.cwd.ends_with("/")
+            if !proc.data.cwd.as_str().ends_with("/")
             {
-                proc.data.cwd += "/";
+                proc.data.cwd.as_mut_str().push('/');
             }
 
             0

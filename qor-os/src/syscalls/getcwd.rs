@@ -4,7 +4,7 @@ pub fn syscall_getcwd(proc: &mut super::Process, buffer_ptr: usize, size: usize)
     let buffer = proc.map_mem(buffer_ptr).unwrap() as *mut u8;
 
     let mut i = 0;
-    for c in proc.data.cwd.as_bytes()
+    for c in proc.data.cwd.as_str().as_bytes()
     {
         if i == size
         {
