@@ -1,5 +1,8 @@
 use core::convert::Into;
 
+#[cfg(not(feature = "std"))]
+use alloc::{format, prelude::v1::String};
+
 /// Owned Path Object
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OwnedPath
