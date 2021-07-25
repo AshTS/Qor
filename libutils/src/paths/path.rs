@@ -27,6 +27,47 @@ impl OwnedPath
             iter_index: None,
         }
     }
+
+    /// Canonicalize the path given a CWD
+    pub fn canonicalize(&mut self, cwd: PathBuffer)
+    {
+        if !self.path.starts_with("/")
+        {
+            let sep = if cwd.path.ends_with("/") { "" } else { "/" };
+            self.path = format!("{}{}{}", cwd, sep, self.path);
+        }
+    }
+
+    /// Get the path to the parent of the given path, and the name of the final
+    /// element of the path
+    pub fn split_last(&self) -> (OwnedPath, &str)
+    {
+        if self.path.len() == 0 || self.path == "/"
+        {
+            return (OwnedPath::new(""), "");
+        }
+
+        // If the path ends with a '/', step back one more character
+        let end_index = self.path.len() - 1 - if self.path.ends_with("/") { 1 } else { 0 };
+
+        // Set the starting index to match
+        let mut start_index = end_index;
+
+        // Walk backwards to either the last '/' or the start of the string
+        while start_index > 1 && self.path.chars().nth(start_index - 1) != Some('/')
+        {
+            start_index -= 1;
+        }
+
+        // Then return the resulting split path
+        (OwnedPath::new(&self.path[..start_index]), &self.path[start_index..=end_index])
+    }
+
+    /// Get a reference to the inner string
+    pub fn as_str(&self) -> &str
+    {
+        &self.path
+    }
 }
 
 impl core::fmt::Display for OwnedPath
@@ -37,7 +78,7 @@ impl core::fmt::Display for OwnedPath
     }
 }
 
-/// Path Buffer Object
+/// Path Buffer Object, aliases a reference to `OwnedPath`
 pub type PathBuffer<'a> = &'a OwnedPath;
 
 /// Path Iterator
