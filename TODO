@@ -7,5 +7,9 @@ Syscalls
 Processes
     Add segmentation fault display
     Allow programs to be haulted
-Utils
-    Add OwnedPath and PathBuf objects for path manipulation
+Kernel
+    Rewrite VirtIO Driver
+    Rewrite Block Driver
+    Add Keyboard Driver
+    Add Mouse Driver
+    Add Graphics Driver
