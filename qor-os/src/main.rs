@@ -87,9 +87,11 @@ fn kmain()
     kdebugln!(Initialization, "Process Manager Initialized");
 
     // Initialize the virtio drivers (including the block device driver)
-    drivers::virtio::probe_virt_io();
+    // drivers::virtio::probe_virt_io();
+    drivers::virtio_new::probe_virtio_address_space();
     kdebugln!(Initialization, "VirtIO Devices Initialized");
 
+    /*
     // Initialize the virtio interrtupts
     drivers::virtio::init_virtio_interrupts();
     kdebugln!(Initialization, "VirtIO Interrupts Initialized");
@@ -116,5 +118,5 @@ fn kmain()
 
     // Start the timer
     drivers::init_timer_driver(1000);
-    kdebugln!(Initialization, "Timer Started");
+    kdebugln!(Initialization, "Timer Started");*/
 }
