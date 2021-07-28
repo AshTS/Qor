@@ -37,7 +37,7 @@ pub enum VirtIODeviceType
     IOMemory = 6,
     GPUDevice = 16,
     InputDevice = 18,
-    Unknown = 0
+    UnknownDevice = 0
 }
 
 /// Helper structure for interacting with a VirtIO device

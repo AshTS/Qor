@@ -86,10 +86,17 @@ fn kmain()
     process::scheduler::init_process_manager();
     kdebugln!(Initialization, "Process Manager Initialized");
 
-    // Initialize the virtio drivers (including the block device driver)
-    // drivers::virtio::probe_virt_io();
+    // Enumerate the virtio drivers
     drivers::virtio_new::probe_virtio_address_space();
+    kdebugln!(Initialization, "VirtIO Devices Enumerated");
+
+    // Enumerate the virtio drivers
+    kdebugln!(Initialization, "Initialize VirtIO Devices");
+    drivers::virtio_new::initialize_virtio_devices();
     kdebugln!(Initialization, "VirtIO Devices Initialized");
+
+    let key_block_driver = drivers::virtio_new::get_block_driver_indexes()[0];
+    kprintln!("Key Block Driver Index: {}", key_block_driver);
 
     /*
     // Initialize the virtio interrtupts
