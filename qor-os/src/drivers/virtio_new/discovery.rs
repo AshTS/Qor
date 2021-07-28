@@ -165,13 +165,13 @@ pub fn initialize_virtio_devices()
             let name = format!("{:?}", dev_type);
             kprint!("  Initializing (Device {}) {:15}.......... ", i, name);
 
-            let driver = get_driver_at_index(i).unwrap();
+            let mut driver = get_driver_at_index(i).unwrap();
 
             match dev_type
             {
                 VirtIODeviceType::BlockDevice => 
                 {
-                    if let Err(e) = driver.init_driver()
+                    if let Err(e) = driver.init_driver(!(1 << 5))
                     {
                         kprintln!("{}ERROR{}: `{}`", FMT_ERROR, FMT_CLEAR, e);
                     }

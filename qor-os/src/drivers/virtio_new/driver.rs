@@ -11,7 +11,8 @@ use VirtIOMmioOffsets as Field;
 pub struct VirtIODeviceDriver
 {
     device_type: VirtIODeviceType,
-    device: VirtIOHelper
+    device: VirtIOHelper,
+    device_status: u32
 }
 
 impl VirtIODeviceDriver
@@ -22,13 +23,106 @@ impl VirtIODeviceDriver
         Self
         {
             device_type,
-            device
+            device,
+            device_status: 0
         }
     }
 
-    /// Initialize the VirtIO device driver
-    pub fn init_driver(&self) -> Result<(), String>
+    /// Finalize device initialization
+    pub fn driver_ok(&mut self)
     {
-        Err(format!("Unimplemented"))
+        self.device_status |= VIRTIO_STATUS_DRIVER_OK;
+        self.device.write_field(Field::Status, self.device_status);
+    }
+
+    /// Fail the device initialization
+    fn fail(&self)
+    {
+        self.device.write_field(Field::Status, VIRTIO_STATUS_FAILED);
+    }
+
+    /// Internal VirtIO device driver initialization, should be called wrapped
+    /// in an error handler which will set the failed bit to notify the device
+    /// of the failure
+    fn wrapped_init(&mut self, accepted_features: u32) -> Result<(), String>
+    {
+        /* From the spec (https://docs.oasis-open.org/virtio/virtio/v1.1/cs01/virtio-v1.1-cs01.html) 3.1.1
+
+            1. Reset the device.
+            2. Set the ACKNOWLEDGE status bit: the guest OS has noticed the
+                device.
+            3. Set the DRIVER status bit: the guest OS knows how to drive the 
+                device.
+            4. Read device feature bits, and write the subset of feature bits 
+                understood by the OS and driver to the device. During this step 
+                the driver MAY read (but MUST NOT write) the device-specific
+                configuration fields to check that it can support the device
+                before accepting it.
+            5. Set the FEATURES_OK status bit. The driver MUST NOT accept new
+                feature bits after this step.
+            6. Re-read device status to ensure the FEATURES_OK bit is still set:
+                otherwise, the device does not support our subset of features
+                and the device is unusable.
+            7. Perform device-specific setup, including discovery of virtqueues
+                for the device, optional per-bus setup, reading and possibly
+                writing the device’s virtio configuration space, and population
+                of virtqueues.
+            8. Set the DRIVER_OK status bit. At this point the device is “live”.
+
+        */
+
+        /*
+            This function will bring us through step 6, after that, it is up to
+            creating the specific driver to handle the remainder of the
+            initialization.
+        */
+
+        // 1. Reset the device.
+        self.device_status = 0;
+        self.device.write_field(Field::Status, self.device_status);
+
+        // 2. Set the ACKNOWLEDGE status bit
+        self.device_status |= VIRTIO_STATUS_ACKNOWLEDGE;
+        self.device.write_field(Field::Status, self.device_status);
+
+        // 3. Set the DRIVER status bit
+        self.device_status |= VIRTIO_STATUS_DRIVER;
+        self.device.write_field(Field::Status, self.device_status);
+
+        // 4. Read device feature bits
+        let features = self.device.read_field(Field::HostFeatures);
+        kprintln!("Features Available: 0b{:32}", features);
+
+        // , and write the subset of feature bits understood by the OS and
+        // driver to the device
+        self.device.write_field(Field::GuestFeatures, features & accepted_features);
+
+        // 5. Set the FEATURES_OK status bit
+        self.device_status |= VIRTIO_STATUS_FEATURES_OK;
+        self.device.write_field(Field::Status, self.device_status);
+
+        // 6. Re-read device status to ensure the FEATURES_OK bit is still set
+        let status = self.device.read_field(Field::Status);
+        if status & VIRTIO_STATUS_FEATURES_OK == 0
+        {
+            return Err(format!("Device Refuse Features"));
+        }
+        
+        Ok(())
+    }
+
+    /// Initialize the VirtIO device driver
+    pub fn init_driver(&mut self, accepted_features: u32) -> Result<(), String>
+    {
+        if let Err(e) = self.wrapped_init(accepted_features)
+        {
+            self.fail();
+
+            Err(e)
+        }
+        else
+        {
+            Ok(())
+        }
     }
 }
