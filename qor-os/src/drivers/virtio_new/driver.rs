@@ -12,7 +12,8 @@ pub struct VirtIODeviceDriver
 {
     device_type: VirtIODeviceType,
     device: VirtIOHelper,
-    device_status: u32
+    device_status: u32,
+    driver_ready: bool
 }
 
 impl VirtIODeviceDriver
@@ -24,7 +25,8 @@ impl VirtIODeviceDriver
         {
             device_type,
             device,
-            device_status: 0
+            device_status: 0,
+            driver_ready: false
         }
     }
 
@@ -33,18 +35,20 @@ impl VirtIODeviceDriver
     {
         self.device_status |= VIRTIO_STATUS_DRIVER_OK;
         self.device.write_field(Field::Status, self.device_status);
+        self.driver_ready = true;
     }
 
     /// Fail the device initialization
-    fn fail(&self)
+    fn fail(&mut self)
     {
         self.device.write_field(Field::Status, VIRTIO_STATUS_FAILED);
+        self.driver_ready = false;
     }
 
     /// Internal VirtIO device driver initialization, should be called wrapped
     /// in an error handler which will set the failed bit to notify the device
     /// of the failure
-    fn wrapped_init(&mut self, accepted_features: u32) -> Result<(), String>
+    fn wrapped_init(&mut self, accepted_features: u32) -> Result<u32, String>
     {
         /* From the spec (https://docs.oasis-open.org/virtio/virtio/v1.1/cs01/virtio-v1.1-cs01.html) 3.1.1
 
@@ -91,7 +95,6 @@ impl VirtIODeviceDriver
 
         // 4. Read device feature bits
         let features = self.device.read_field(Field::HostFeatures);
-        kprintln!("Features Available: 0b{:32}", features);
 
         // , and write the subset of feature bits understood by the OS and
         // driver to the device
@@ -108,21 +111,28 @@ impl VirtIODeviceDriver
             return Err(format!("Device Refuse Features"));
         }
         
-        Ok(())
+        Ok(features & accepted_features)
     }
 
-    /// Initialize the VirtIO device driver
-    pub fn init_driver(&mut self, accepted_features: u32) -> Result<(), String>
+    /// Initialize the VirtIO device driver, returns the features the device
+    /// accepted
+    pub fn init_driver(&mut self, accepted_features: u32) -> Result<u32, String>
     {
-        if let Err(e) = self.wrapped_init(accepted_features)
+        match self.wrapped_init(accepted_features)
         {
-            self.fail();
+            Ok(v) => Ok(v),
+            Err(e) =>
+            {
+                self.fail();
 
-            Err(e)
+                Err(e)
+            }
         }
-        else
-        {
-            Ok(())
-        }
+    }
+
+    /// Get the device type
+    pub fn get_device_type(&self) -> VirtIODeviceType
+    {
+        self.device_type
     }
 }

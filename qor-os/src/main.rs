@@ -25,6 +25,7 @@
 
 // Alloc Prelude
 extern crate alloc;
+use alloc::*;
 use alloc::prelude::v1::*;
 
 // Includes

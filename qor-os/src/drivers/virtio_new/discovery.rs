@@ -158,6 +158,8 @@ const FMT_CLEAR: &'static str = "\x1B[0m";
 /// Initialize the located VirtIO devices
 pub fn initialize_virtio_devices()
 {
+    let mut block_devices = Vec::new();
+
     for (i, dev_type) in unsafe {VIRTIO_DEVICES}.iter().enumerate()
     {
         if let Some(dev_type) = dev_type
@@ -171,13 +173,26 @@ pub fn initialize_virtio_devices()
             {
                 VirtIODeviceType::BlockDevice => 
                 {
-                    if let Err(e) = driver.init_driver(!(1 << 5))
+                    match driver.init_driver(!(1 << 5))
                     {
-                        kprintln!("{}ERROR{}: `{}`", FMT_ERROR, FMT_CLEAR, e);
-                    }
-                    else
-                    {
-                        kprintln!("{}OK{}", FMT_OK, FMT_CLEAR);
+                        Err(e) =>
+                        {
+                            kprintln!("{}ERROR{}: `{}`", FMT_ERROR, FMT_CLEAR, e);
+                        },
+                        Ok(features) =>
+                        {
+                            let mut block_driver = super::drivers::block::BlockDriver::new(driver);
+
+                            if let Err(e) = block_driver.device_specific(features)
+                            {
+                                kprintln!("{}ERROR{}: `{}`", FMT_ERROR, FMT_CLEAR, e);
+                            }
+                            else
+                            {
+                                kprintln!("{}OK{}", FMT_OK, FMT_CLEAR);
+                                block_devices.push(block_driver);
+                            }
+                        }
                     }
                 },
                 VirtIODeviceType::UnknownDevice => 
