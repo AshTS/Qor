@@ -179,6 +179,30 @@ pub fn initialize_virtio_devices()
                         }
                     }
                 },
+                VirtIODeviceType::GPUDevice => 
+                {
+                    match driver.init_driver(!(1 << 5))
+                    {
+                        Err(e) =>
+                        {
+                            kprintln!("{}ERROR{}: `{}`", FMT_ERROR, FMT_CLEAR, e);
+                        },
+                        Ok(features) =>
+                        {
+                            let mut gpu_driver = super::drivers::gpu::GPUDriver::new(driver);
+
+                            if let Err(e) = gpu_driver.device_specific(features)
+                            {
+                                kprintln!("{}ERROR{}: `{}`", FMT_ERROR, FMT_CLEAR, e);
+                            }
+                            else
+                            {
+                                kprintln!("{}OK{}", FMT_OK, FMT_CLEAR);
+                                devices.gpu_devices.push(gpu_driver);
+                            }
+                        }
+                    }
+                },
                 VirtIODeviceType::UnknownDevice => 
                 {
                     kprintln!("{}Unknown Device{}", FMT_WARN, FMT_CLEAR);

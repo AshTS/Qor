@@ -182,7 +182,8 @@ pub struct AuxQueueData
 /// VirtIO Devices Collection
 pub struct DeviceCollection
 {
-    pub block_devices: Vec<super::drivers::block::BlockDriver>
+    pub block_devices: Vec<super::drivers::block::BlockDriver>,
+    pub gpu_devices: Vec<super::drivers::gpu::GPUDriver>
 }
 
 impl DeviceCollection
@@ -192,7 +193,8 @@ impl DeviceCollection
     {
         Self
         {
-            block_devices: Vec::new()
+            block_devices: Vec::new(),
+            gpu_devices: Vec::new()
         }
     }
 }
