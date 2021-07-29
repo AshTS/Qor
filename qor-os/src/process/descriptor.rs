@@ -4,6 +4,14 @@ use fs::fstrait::Filesystem;
 
 use fs::structures::FilesystemIndex;
 
+/// Seek Modes
+pub enum SeekMode
+{
+    SeekSet,
+    SeekCurrent,
+    SeekEnd
+}
+
 /// Stdin buffer
 pub static mut STDIN_BUFFER: utils::ByteRingBuffer = utils::ByteRingBuffer::new();
 
@@ -23,6 +31,12 @@ pub trait FileDescriptor
     fn get_inode(&mut self) -> Option<FilesystemIndex>
     {
         None
+    }
+
+    /// Seek to the given location in the descriptor
+    fn seek(&mut self, offset: usize, _mode: SeekMode) -> usize
+    {
+        offset
     }
 }
 
@@ -202,7 +216,17 @@ impl FileDescriptor for InodeFileDescriptor
 
         for i in 0..count
         {
-            self.data.push(unsafe { buffer.add(i).read() })
+            let value = unsafe { buffer.add(i).read() };
+
+            if self.index < self.data.len()
+            {
+                self.data[self.index] = value;
+            }
+            else
+            {
+                self.data.push(value);
+            }
+
         }
 
         count
@@ -238,6 +262,31 @@ impl FileDescriptor for InodeFileDescriptor
     fn get_inode(&mut self) -> Option<FilesystemIndex>
     {
         Some(self.inode)
+    }
+
+    /// Seek to the given location in the descriptor
+    fn seek(&mut self, offset: usize, mode: SeekMode) -> usize
+    {
+        match mode
+        {
+            SeekMode::SeekSet => 
+            {
+                self.index = offset;
+                self.index
+            },
+            SeekMode::SeekCurrent => 
+            {
+                self.index += offset;
+                self.index
+            },
+            SeekMode::SeekEnd => 
+            {
+                self.index = self.data.len() - 1 + offset;
+                self.data.extend_from_slice(&vec![0; offset]);
+
+                self.index
+            },
+        }
     }
 }
 
