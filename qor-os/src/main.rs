@@ -100,6 +100,12 @@ fn kmain()
     drivers::virtio::init_virtio_interrupts();
     kdebugln!(Initialization, "VirtIO Interrupts Initialized");
 
+    // Test the GPU
+    let driver = drivers::virtio::get_gpu_driver(0).unwrap();
+
+    driver.init();
+    driver.invalidate(0, 0, 640, 480);
+
     let mut vfs = fs::vfs::FilesystemInterface::new();
     let mut disk0 = fs::minix3::Minix3Filesystem::new(0);
 

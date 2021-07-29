@@ -1,3 +1,5 @@
+use crate::*;
+
 mod consts;
 pub use consts::*;
 
@@ -21,6 +23,26 @@ pub fn get_block_driver(index: usize) -> Option<&'static mut drivers::block::Blo
     if let Some(collection) = unsafe { &mut VIRTIO_DEVICE_COLLECTION }
     {
         if let Some(driver) = collection.block_devices.get_mut(index)
+        {
+            Some(driver)
+        }
+        else
+        {
+            None
+        }
+    }
+    else
+    {
+        None
+    }
+}
+
+/// Get the gpu driver with the given index
+pub fn get_gpu_driver(index: usize) -> Option<&'static mut drivers::gpu::GPUDriver>
+{
+    if let Some(collection) = unsafe { &mut VIRTIO_DEVICE_COLLECTION }
+    {
+        if let Some(driver) = collection.gpu_devices.get_mut(index)
         {
             Some(driver)
         }
