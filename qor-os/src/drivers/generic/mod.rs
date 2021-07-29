@@ -13,3 +13,20 @@ pub trait ByteInterface
     /// Flush the interface
     fn flush(&mut self) {}
 }
+
+/// Buffer Interface Trait
+/// Allows reading and writing to and from a buffer in memory
+pub trait BufferInterface
+{
+    /// Read a byte
+    fn read_byte(&mut self, offset: usize) -> Option<u8>;
+
+    /// Write a byte
+    fn write_byte(&mut self, offset: usize, data: u8);
+
+    /// Get the size of the buffer
+    fn get_size(&self) -> usize;
+
+    /// Flush the memory (send an update to wherever it is pointing)
+    fn flush(&mut self);
+}
