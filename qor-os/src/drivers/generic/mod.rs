@@ -9,4 +9,7 @@ pub trait ByteInterface
 
     /// Write a byte to the interface
     fn write_byte(&mut self, data: u8);
+
+    /// Flush the interface
+    fn flush(&mut self) {}
 }
