@@ -184,11 +184,32 @@ impl GPUDriver
                ctx_id: 0,
                padding: 0,
             },
-            r: Rect::new(x as u32, y as u32, width as u32, height as u32),
+            r: Rect::new(0 as u32, 0 as u32, 640 as u32, 480 as u32),
             resource_id: 1,
             padding: 0,
          }));
     }
 
-    
+    /// Write a glpyh to part of the display
+    pub fn write_glpyh(&mut self, glyph: &[u16; 9], x: usize, y: usize, foreground: Pixel, background: Pixel)
+    {
+        let x_start = x * 9;
+        let y_start = y * 16;
+
+        for (i, col) in glyph.iter().enumerate()
+        {
+            for row in 0..16
+            {
+                *self.frame_buffer.pixel_mut(x_start + i, y_start + row) = 
+                    if col & (0b1000000000000000 >> row) > 0
+                    {
+                        foreground
+                    }
+                    else
+                    {
+                        background
+                    };
+            }
+        }
+    }
 }

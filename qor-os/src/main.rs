@@ -37,6 +37,7 @@ mod mem;
 mod kprint;
 mod panic;
 mod process;
+mod resources;
 mod syscalls;
 mod test;
 mod trap;
@@ -104,6 +105,12 @@ fn kmain()
     let driver = drivers::virtio::get_gpu_driver(0).unwrap();
 
     driver.init();
+
+    for i in 0..16
+    {
+        driver.write_glpyh(&resources::fonts::vga::GLYPHS['#' as u8 as usize], i, 0, resources::colors::ega::EGA_COLORS[i], resources::colors::ega::EGA_COLORS[0])
+    }
+    
     driver.invalidate(0, 0, 640, 480);
 
     let mut vfs = fs::vfs::FilesystemInterface::new();

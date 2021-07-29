@@ -4,6 +4,8 @@ use super::consts::*;
 
 use crate::mem::PAGE_SIZE;
 
+pub use crate::resources::colors::Pixel;
+
 /// Command header for VirtIO GPU
 #[repr(C)]
 pub struct CtrlHeader
@@ -42,31 +44,6 @@ pub enum Formats
    X8B8G8R8Unorm = 68,
    A8B8G8R8Unorm = 121,
    R8G8B8X8Unorm = 134,
-}
-
-/// Pixel Object
-#[repr(C)]
-pub struct Pixel
-{
-    red: u8,
-    green: u8,
-    blue: u8,
-    alpha: u8
-}
-
-impl Pixel
-{
-    /// Create a new pixel
-    pub fn new(red: u8, green: u8, blue: u8) -> Self
-    {
-        Self
-        {
-            red,
-            green,
-            blue,
-            alpha: 255
-        }
-    }
 }
 
 /// Framebuffer Object
@@ -262,3 +239,4 @@ pub struct UpdateCursor
 	pub hot_y: u32,
 	pub padding: u32,
 }
+
