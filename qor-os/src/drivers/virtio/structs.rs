@@ -122,6 +122,7 @@ impl VirtIOHelper
  */
 
  #[repr(C)]
+ #[derive(Debug, Clone, Copy)]
 pub struct VirtIODescriptor
 {
 	pub addr:  u64,

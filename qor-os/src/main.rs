@@ -88,25 +88,17 @@ fn kmain()
     kdebugln!(Initialization, "Process Manager Initialized");
 
     // Enumerate the virtio drivers
-    drivers::virtio_new::probe_virtio_address_space();
+    drivers::virtio::probe_virtio_address_space();
     kdebugln!(Initialization, "VirtIO Devices Enumerated");
 
     // Enumerate the virtio drivers
     kdebugln!(Initialization, "Initialize VirtIO Devices");
-    drivers::virtio_new::initialize_virtio_devices();
+    drivers::virtio::initialize_virtio_devices();
     kdebugln!(Initialization, "VirtIO Devices Initialized");
 
-    let block_driver = drivers::virtio_new::get_block_driver(0).unwrap();
-
-    block_driver.device.dump_queue_state();
-
-
-    /*
     // Initialize the virtio interrtupts
     drivers::virtio::init_virtio_interrupts();
     kdebugln!(Initialization, "VirtIO Interrupts Initialized");
-
-    kprintln!("Start Filesystem Testing");
 
     let mut vfs = fs::vfs::FilesystemInterface::new();
     let mut disk0 = fs::minix3::Minix3Filesystem::new(0);
@@ -128,5 +120,5 @@ fn kmain()
 
     // Start the timer
     drivers::init_timer_driver(1000);
-    kdebugln!(Initialization, "Timer Started");*/
+    kdebugln!(Initialization, "Timer Started");
 }

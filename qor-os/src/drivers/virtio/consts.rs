@@ -19,3 +19,8 @@ pub const VIRTIO_STATUS_DEVICE_NEEDS_RESET: u32 = 64;
 
 // Allowable size of the Queues
 pub const VIRTIO_QUEUE_SIZE: u32 = 1024;
+
+// Descriptor flags
+pub const VIRTIO_DESC_F_NEXT: u16 = 1;
+pub const VIRTIO_DESC_F_WRITE: u16 = 2;
+pub const VIRTIO_DESC_F_INDIRECT: u16 = 4;

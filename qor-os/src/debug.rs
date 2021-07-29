@@ -82,7 +82,7 @@ pub const SYSCALLS: bool = false;
 pub const SYSCALLS: bool = false;
 
 #[cfg(not(test))]
-pub const VIRTIO: bool = true;
+pub const VIRTIO: bool = false;
 #[cfg(test)]
 pub const VIRTIO: bool = false;
 

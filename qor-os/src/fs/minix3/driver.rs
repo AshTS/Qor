@@ -11,7 +11,7 @@ use libutils::paths::PathBuffer;
 /// Minix3 Filesystem Driver
 pub struct Minix3Filesystem
 {
-    block_driver: crate::drivers::block::BlockDeviceDriver,
+    block_driver: &'static mut crate::drivers::virtio::drivers::block::BlockDriver,
     mount_id: Option<usize>,
     vfs: Option<&'static mut crate::fs::vfs::FilesystemInterface>,
     superblock: Option<Minix3SuperBlock>,
@@ -27,7 +27,7 @@ impl Minix3Filesystem
     {
         Self
         {
-            block_driver: crate::drivers::block::get_driver_by_index(driver_id),
+            block_driver: crate::drivers::virtio::get_block_driver(driver_id).unwrap(),
             mount_id: None,
             vfs: None,
             superblock: None,

@@ -117,10 +117,47 @@ impl VirtIODeviceDriver
         {
             let data = &self.queue_aux_data[i];
 
-            kdebugln!(" Queue {}", i);
-            kdebugln!("   Index:     {}", data.index);
-            kdebugln!("   Ack Index: {}", data.ack_index);
+            kdebugln!(VirtIO, " Queue {}", i);
+            kdebugln!(VirtIO, "   Index:     {}", data.index);
+            kdebugln!(VirtIO, "   Ack Index: {}", data.ack_index);
         }
+    }
+
+    /// Send a descriptor index to the device on the given queue
+    pub fn send_on_queue(&mut self, queue: usize, index: usize)
+    {
+        let queue_ref = unsafe { self.queues[queue].as_mut().unwrap() };
+
+        // Insert the descriptor ptr into the queue
+        queue_ref.avail.ring[queue_ref.avail.idx as usize] = index as u16;
+        queue_ref.avail.idx = (queue_ref.avail.idx + 1) % VIRTIO_QUEUE_SIZE as u16;
+
+        // Notify the device
+        self.device.write_field(Field::QueueNotify, queue as u32);
+    }
+
+    /// Add a VirtIODescriptor to one of the loaded queues
+    pub fn add_descriptor_to_queue(&mut self, queue: usize, descriptor: VirtIODescriptor) -> usize
+    {
+        kdebugln!(VirtIO, "Adding descriptor to queue {} on driver at 0x{:x}", queue, self.device.base);
+
+        // Incremement the index
+        self.queue_aux_data[queue].index += 1;
+        self.queue_aux_data[queue].index %= VIRTIO_QUEUE_SIZE as usize;
+        let idx = self.queue_aux_data[queue].index;
+
+        // Insert the descriptor
+        unsafe { &mut *self.queues[queue] }.desc[idx] = descriptor;
+
+        // If another descriptor is required, link to the next descriptor entry
+        if descriptor.flags & VIRTIO_DESC_F_NEXT > 0
+        {
+            unsafe { &mut *self.queues[queue] }.desc[idx].next = 
+                ((self.queue_aux_data[queue].index + 1) % VIRTIO_QUEUE_SIZE as usize) as u16;
+        }
+
+        // Return the index of the written descriptor
+        self.queue_aux_data[queue].index
     }
 
     /// Internal VirtIO device driver initialization, should be called wrapped

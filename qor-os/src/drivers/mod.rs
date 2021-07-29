@@ -3,14 +3,12 @@
 use crate::*;
 
 // Modules for each driver
-pub mod block;
 pub mod generic;
 pub mod mmio;
 pub mod plic;
 pub mod timer;
 pub mod uart;
 pub mod virtio;
-pub mod virtio_new;
 
 // Static Driver Implementations
 pub static mut PLIC_DRIVER: plic::PLICDriver = unsafe { plic::PLICDriver::new(0x0c00_0000) };
