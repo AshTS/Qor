@@ -1,6 +1,7 @@
 //! Minix3 File System
 
 // Modules
+pub mod devfs;
 pub mod fstrait;
 pub mod minix3;
 pub mod ramdisk;

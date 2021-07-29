@@ -25,6 +25,7 @@
 
 // Alloc Prelude
 extern crate alloc;
+use alloc::*;
 use alloc::prelude::v1::*;
 
 // Includes
@@ -36,6 +37,7 @@ mod mem;
 mod kprint;
 mod panic;
 mod process;
+mod resources;
 mod syscalls;
 mod test;
 mod trap;
@@ -86,26 +88,36 @@ fn kmain()
     process::scheduler::init_process_manager();
     kdebugln!(Initialization, "Process Manager Initialized");
 
-    // Initialize the virtio drivers (including the block device driver)
-    drivers::virtio::probe_virt_io();
+    // Enumerate the virtio drivers
+    drivers::virtio::probe_virtio_address_space();
+    kdebugln!(Initialization, "VirtIO Devices Enumerated");
+
+    // Enumerate the virtio drivers
+    kdebugln!(Initialization, "Initialize VirtIO Devices");
+    drivers::virtio::initialize_virtio_devices();
     kdebugln!(Initialization, "VirtIO Devices Initialized");
 
     // Initialize the virtio interrtupts
     drivers::virtio::init_virtio_interrupts();
     kdebugln!(Initialization, "VirtIO Interrupts Initialized");
 
-    kprintln!("Start Filesystem Testing");
+    // Initialize the graphics driver
+    drivers::gpu::init_graphics_driver();
+    kdebugln!(Initialization, "Graphics Driver Initialized");
 
     let mut vfs = fs::vfs::FilesystemInterface::new();
     let mut disk0 = fs::minix3::Minix3Filesystem::new(0);
+    let mut dev = fs::devfs::DevFilesystem::new();
 
     use fs::fstrait::Filesystem;
     use libutils::paths::OwnedPath;
 
     vfs.init().unwrap();
     disk0.init().unwrap();
+    dev.init().unwrap();
 
     vfs.mount_fs(&OwnedPath::new("/"), Box::new(disk0)).unwrap();
+    vfs.mount_fs(&OwnedPath::new("/dev"), Box::new(dev)).unwrap();
 
     vfs.index().unwrap();
 

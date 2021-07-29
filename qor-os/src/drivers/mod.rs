@@ -3,8 +3,8 @@
 use crate::*;
 
 // Modules for each driver
-pub mod block;
 pub mod generic;
+pub mod gpu;
 pub mod mmio;
 pub mod plic;
 pub mod timer;
