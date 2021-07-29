@@ -102,16 +102,14 @@ fn kmain()
     kdebugln!(Initialization, "VirtIO Interrupts Initialized");
 
     // Test the GPU
-    let driver = drivers::virtio::get_gpu_driver(0).unwrap();
+    let raw_driver = drivers::virtio::get_gpu_driver(0).unwrap();
+    let mut driver = drivers::gpu::GenericGraphics::new(raw_driver);
 
     driver.init();
 
-    for i in 0..16
-    {
-        driver.write_glpyh(&resources::fonts::vga::GLYPHS['#' as u8 as usize], i, 0, resources::colors::ega::EGA_COLORS[i], resources::colors::ega::EGA_COLORS[0])
-    }
-    
-    driver.invalidate(0, 0, 640, 480);
+    driver.write_string("Hello World!\nThis is written using the new video driver");
+
+    driver.force_update();
 
     let mut vfs = fs::vfs::FilesystemInterface::new();
     let mut disk0 = fs::minix3::Minix3Filesystem::new(0);

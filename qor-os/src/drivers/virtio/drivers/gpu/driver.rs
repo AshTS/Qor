@@ -212,4 +212,10 @@ impl GPUDriver
             }
         }
     }
+
+    /// Get the width and height of the display
+    pub fn get_size(&self) -> (usize, usize)
+    {
+        self.frame_buffer.get_size()
+    }
 }
