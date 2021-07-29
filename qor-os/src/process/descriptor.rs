@@ -345,3 +345,112 @@ impl FileDescriptor for ByteInterfaceDescriptor
         i
     }
 }
+
+/// Buffer descriptor
+pub struct BufferDescriptor
+{
+    buffer: &'static mut dyn crate::drivers::generic::BufferInterface,
+    index: usize
+}
+
+impl BufferDescriptor
+{
+    /// Create a new buffer descriptor
+    pub fn new(buffer: &'static mut dyn crate::drivers::generic::BufferInterface) -> Self
+    {
+        Self
+        {
+            buffer,
+            index: 0,
+        }
+    }
+}
+
+impl FileDescriptor for BufferDescriptor
+{
+    fn get_inode(&mut self) -> Option<FilesystemIndex>
+    {
+        None
+    }
+
+    fn seek(&mut self, offset: usize, mode: SeekMode) -> usize
+    {
+        match mode
+        {
+            SeekMode::SeekSet => 
+            {
+                if offset >= self.buffer.get_size()
+                {
+                    return offset - 1;
+                }
+
+                self.index = offset;
+                self.index
+            },
+            SeekMode::SeekCurrent => 
+            {
+                if self.index + offset >= self.buffer.get_size()
+                {
+                    return offset - 1;
+                }
+
+                self.index += offset;
+                self.index
+            },
+            SeekMode::SeekEnd => 
+            {
+                if offset != 0
+                {
+                    return offset - 1;
+                }
+
+                self.index = self.buffer.get_size() - 1;
+                self.index
+            },
+        }
+    }
+
+    fn close(&mut self, _fs: &mut fs::vfs::FilesystemInterface)
+    {
+        self.buffer.flush();
+    }
+
+    fn write(&mut self, _fs: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
+    {
+        for i in 0..count
+        {
+            let value = unsafe { buffer.add(i).read() };
+
+            self.buffer.write_byte(self.index, value);
+
+            if self.index >= self.buffer.get_size()
+            {
+                return i + 1;
+            }
+
+            self.index += 1;
+        }
+
+        count
+    }
+
+    fn read(&mut self, _fs: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
+    {
+        for i in 0..count
+        {
+            if let Some(value) = self.buffer.read_byte(self.index)
+            {
+                unsafe { buffer.add(i).write(value) };
+            }
+
+            if self.index >= self.buffer.get_size()
+            {
+                return i + 1;
+            }
+
+            self.index += 1;
+        }
+
+        count
+    }
+}
