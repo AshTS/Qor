@@ -5,6 +5,8 @@ use super::structures::*;
 
 use alloc::vec;
 
+use crate::process::descriptor::*;
+
 use libutils::paths::PathBuffer;
 
 /// Ram Disk INode
@@ -345,5 +347,32 @@ impl Filesystem for RamDiskFilesystem
     fn mount_fs_at(&mut self, _inode: FilesystemIndex, _root: FilesystemIndex, _name: String) -> FilesystemResult<()>
     {
         todo!()
+    }
+
+    /// Open a filedescriptor for the given inode
+    fn open_fd(&mut self, inode: FilesystemIndex, mode: usize) -> FilesystemResult<Box<dyn crate::process::descriptor::FileDescriptor>>
+    {
+        if let Some(vfs) = &mut self.vfs
+        {
+            if Some(inode.mount_id) == self.mount_id
+            {
+                if inode.inode < self.inodes.len()
+                {
+                    Ok(Box::new(InodeFileDescriptor::new(vfs, inode, mode).unwrap()))
+                }
+                else
+                {
+                    Err(FilesystemError::BadINode)
+                }
+            }
+            else
+            {
+                vfs.open_fd(inode, mode)   
+            }
+        }
+        else
+        {
+            Err(FilesystemError::FilesystemNotMounted)
+        }
     }
 }

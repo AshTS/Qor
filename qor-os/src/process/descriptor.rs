@@ -240,3 +240,56 @@ impl FileDescriptor for InodeFileDescriptor
         Some(self.inode)
     }
 }
+
+/// Byte interface wrapper
+pub struct ByteInterfaceDescriptor
+{
+    interface: &'static mut dyn crate::drivers::generic::ByteInterface
+}
+
+impl ByteInterfaceDescriptor
+{
+    /// Create a new ByteInterfaceDescriptor
+    pub fn new(interface: &'static mut dyn crate::drivers::generic::ByteInterface) -> Self
+    {
+        Self
+        {
+            interface
+        }
+    }
+}
+
+impl FileDescriptor for ByteInterfaceDescriptor
+{
+    fn close(&mut self, _: &mut fs::vfs::FilesystemInterface) {}
+    
+    fn write(&mut self, _: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
+    {
+        for i in 0..count
+        {
+            self.interface.write_byte(unsafe { buffer.add(i).read() });
+        }
+
+        count
+    }
+
+    fn read(&mut self, _: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
+    {
+        let mut i = 0;
+
+        while i < count
+        {
+            if let Some(byte) = self.interface.read_byte()
+            {
+                unsafe { buffer.add(i).write(byte) };
+                i += 1;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        i
+    }
+}

@@ -47,4 +47,7 @@ pub trait Filesystem
 
     /// Mount a filesystem at the given inode
     fn mount_fs_at(&mut self, inode: FilesystemIndex, root: FilesystemIndex, name: String) -> FilesystemResult<()>;
+
+    /// Open a filedescriptor for the given inode
+    fn open_fd(&mut self, inode: FilesystemIndex, mode: usize) -> FilesystemResult<Box<dyn crate::process::descriptor::FileDescriptor>>;
 }

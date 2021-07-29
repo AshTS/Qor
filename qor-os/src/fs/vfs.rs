@@ -417,4 +417,19 @@ impl Filesystem for FilesystemInterface
             Err(FilesystemError::UnableToFindDiskMount(inode.mount_id))
         }
     }
+
+    /// Open a filedescriptor for the given inode
+    fn open_fd(&mut self, inode: FilesystemIndex, mode: usize) -> FilesystemResult<Box<dyn crate::process::descriptor::FileDescriptor>>
+    {
+        kdebugln!(Filesystem, "Open fd at inode {:?}", inode);
+
+        if let Some(fs) = self.get_fs_mount(inode.mount_id)
+        {
+            fs.open_fd(inode, mode)
+        }
+        else
+        {
+            Err(FilesystemError::UnableToFindDiskMount(inode.mount_id))
+        }
+    }
 }

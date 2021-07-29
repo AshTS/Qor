@@ -7,6 +7,8 @@ use super::structures::*;
 
 use alloc::vec;
 
+use crate::process::descriptor::*;
+
 use libutils::paths::PathBuffer;
 /// Minix3 Filesystem Driver
 pub struct Minix3Filesystem
@@ -777,6 +779,26 @@ impl Filesystem for Minix3Filesystem
         self.mount_inodes.push((inode, root, name));
 
         Ok(())
+    }
+
+    /// Open a filedescriptor for the given inode
+    fn open_fd(&mut self, inode: FilesystemIndex, mode: usize) -> FilesystemResult<Box<dyn crate::process::descriptor::FileDescriptor>>
+    {
+        if let Some(vfs) = &mut self.vfs
+        {
+            if Some(inode.mount_id) == self.mount_id
+            {
+                Ok(Box::new(InodeFileDescriptor::new(vfs, inode, mode).unwrap()))
+            }
+            else
+            {
+                vfs.open_fd(inode, mode)   
+            }
+        }
+        else
+        {
+            Err(FilesystemError::FilesystemNotMounted)
+        }
     }
 }
 

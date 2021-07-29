@@ -8,6 +8,8 @@ use super::structures::*;
 
 use libutils::paths::PathBuffer;
 
+use crate::process::descriptor::*;
+
 /// Filesystem which gives access to various devices
 pub struct DevFilesystem
 {
@@ -192,23 +194,10 @@ impl Filesystem for DevFilesystem
     {
         if Some(inode.mount_id) == self.mount_id
         {
-            if inode.inode == 2
-            {
-                let driver = crate::drivers::gpu::get_global_graphics_driver();
+            // If an inode is written to, just dump the data, it doesn't need to
+            // be stored
 
-                for v in data
-                {
-                    driver.write_character(*v);
-                }
-
-                driver.force_update();
-
-                Ok(())
-            }
-            else
-            {
-                Err(FilesystemError::BadINode)
-            }
+            Ok(())
         }
         else
         {
@@ -226,5 +215,30 @@ impl Filesystem for DevFilesystem
     fn mount_fs_at(&mut self, _inode: super::structures::FilesystemIndex, _root: super::structures::FilesystemIndex, _name: alloc::string::String) -> super::structures::FilesystemResult<()>
     {
         todo!()
+    }
+
+    /// Open a filedescriptor for the given inode
+    fn open_fd(&mut self, inode: FilesystemIndex, mode: usize) -> FilesystemResult<Box<dyn crate::process::descriptor::FileDescriptor>>
+    {
+        if let Some(vfs) = &mut self.vfs
+        {
+            if Some(inode.mount_id) == self.mount_id
+            {
+                match inode.inode
+                {
+                    1 => Ok(Box::new(InodeFileDescriptor::new(vfs, inode, mode).unwrap())),
+                    2 => Ok(Box::new(ByteInterfaceDescriptor::new(drivers::gpu::get_global_graphics_driver()))),
+                    _ => Err(FilesystemError::BadINode)
+                }
+            }
+            else
+            {
+                vfs.open_fd(inode, mode)   
+            }
+        }
+        else
+        {
+            Err(FilesystemError::FilesystemNotMounted)
+        }
     }
 }

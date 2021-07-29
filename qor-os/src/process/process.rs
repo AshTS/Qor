@@ -262,9 +262,9 @@ impl Process
             i += 1;
         }
 
-        if let Ok(fd) = super::descriptor::InodeFileDescriptor::new(vfs, inode, mode)
+        if let Ok(fd) = vfs.open_fd(inode, mode)
         {
-            self.data.descriptors.insert(i, Box::new(fd));
+            self.data.descriptors.insert(i, fd);
             Ok(i)
         }
         else
