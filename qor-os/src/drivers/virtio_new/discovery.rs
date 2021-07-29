@@ -125,22 +125,6 @@ pub fn probe_virtio_address_space()
     }
 }
 
-/// Get any block driver indexes
-pub fn get_block_driver_indexes() -> Vec<usize>
-{
-    let mut result = Vec::new();
-
-    for (i, val) in unsafe {VIRTIO_DEVICES}.iter().enumerate()
-    {
-        if let Some(VirtIODeviceType::BlockDevice) = val
-        {
-            result.push(i);
-        }
-    }
-
-    result
-}
-
 /// Get the driver at the given index
 pub fn get_driver_at_index(index: usize) -> Option<VirtIODeviceDriver>
 {
@@ -158,7 +142,7 @@ const FMT_CLEAR: &'static str = "\x1B[0m";
 /// Initialize the located VirtIO devices
 pub fn initialize_virtio_devices()
 {
-    let mut block_devices = Vec::new();
+    let mut devices = DeviceCollection::new();
 
     for (i, dev_type) in unsafe {VIRTIO_DEVICES}.iter().enumerate()
     {
@@ -190,7 +174,7 @@ pub fn initialize_virtio_devices()
                             else
                             {
                                 kprintln!("{}OK{}", FMT_OK, FMT_CLEAR);
-                                block_devices.push(block_driver);
+                                devices.block_devices.push(block_driver);
                             }
                         }
                     }
@@ -206,4 +190,6 @@ pub fn initialize_virtio_devices()
             }
         }
     }
+
+    *unsafe { &mut super::VIRTIO_DEVICE_COLLECTION } = Some(devices);
 }

@@ -96,8 +96,10 @@ fn kmain()
     drivers::virtio_new::initialize_virtio_devices();
     kdebugln!(Initialization, "VirtIO Devices Initialized");
 
-    let key_block_driver = drivers::virtio_new::get_block_driver_indexes()[0];
-    kprintln!("Key Block Driver Index: {}", key_block_driver);
+    let block_driver = drivers::virtio_new::get_block_driver(0).unwrap();
+
+    
+
 
     /*
     // Initialize the virtio interrtupts

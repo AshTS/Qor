@@ -1,3 +1,9 @@
+use crate::*;
+
+use super::consts::*;
+
+use crate::mem::PAGE_SIZE;
+
 /// VirtIO Memory Mapped Input / Output Offsets
 #[repr(usize)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -76,5 +82,116 @@ impl VirtIOHelper
 
         // Safety: See safety of VirtIOHelper constructor
         unsafe { write_offset(self.base, field as usize, value) }
+    }
+}
+
+/* From the VirtIO page on the OsDev Wiki (https://wiki.osdev.org/Virtio)
+    struct VirtualQueue
+    {
+    struct Buffers[QueueSize]
+    {
+        uint64_t Address; // 64-bit address of the buffer on the guest machine.
+        uint32_t Length;  // 32-bit length of the buffer.
+        uint16_t Flags;   // 1: Next field contains linked buffer index;  2: Buffer is write-only (clear for read-only).
+                        // 4: Buffer contains additional buffer addresses.
+        uint16_t Next;    // If flag is set, contains index of next buffer in chain.
+    }
+    
+    struct Available
+    {
+        uint16_t Flags;             // 1: Do not trigger interrupts.
+        uint16_t Index;             // Index of the next ring index to be used.  (Last available ring buffer index+1)
+        uint16_t [QueueSize] Ring;  // List of available buffer indexes from the Buffers array above.
+        uint16_t EventIndex;        // Only used if VIRTIO_F_EVENT_IDX was negotiated
+    }
+    
+    uint8_t[] Padding;  // Reserved
+    // 4096 byte alignment
+    struct Used
+    {
+        uint16_t Flags;            // 1: Do not notify device when buffers are added to available ring.
+        uint16_t Index;            // Index of the next ring index to be used.  (Last used ring buffer index+1)
+        struct Ring[QueueSize]
+        {
+        uint32_t Index;  // Index of the used buffer in the Buffers array above.
+        uint32_t Length; // Total bytes written to buffer.
+        }
+        uint16_t AvailEvent;       // Only used if VIRTIO_F_EVENT_IDX was negotiated
+    }
+    }
+ */
+
+ #[repr(C)]
+pub struct VirtIODescriptor
+{
+	pub addr:  u64,
+	pub len:   u32,
+	pub flags: u16,
+	pub next:  u16,
+}
+
+#[repr(C)]
+pub struct VirtIOAvailable
+{
+	pub flags: u16,
+	pub idx:   u16,
+	pub ring:  [u16; VIRTIO_QUEUE_SIZE as usize],
+	pub event: u16,
+}
+
+#[repr(C)]
+pub struct VirtIOUsedElem 
+{
+	pub id:  u32,
+	pub len: u32,
+}
+
+#[repr(C)]
+pub struct VirtIOUsed
+{
+	pub flags: u16,
+	pub idx:   u16,
+	pub ring:  [VirtIOUsedElem; VIRTIO_QUEUE_SIZE as usize],
+	pub event: u16,
+}
+
+const BEFORE_PADDING: usize = core::mem::size_of::<VirtIODescriptor>() * VIRTIO_QUEUE_SIZE as usize + 
+                                core::mem::size_of::<VirtIOAvailable>();
+const PADDING: usize = (PAGE_SIZE - BEFORE_PADDING % PAGE_SIZE) % PAGE_SIZE;
+
+#[repr(C, align(4096))]
+pub struct VirtIOQueue
+{
+	pub desc:  [VirtIODescriptor; VIRTIO_QUEUE_SIZE as usize],
+	pub avail: VirtIOAvailable,
+	pub padding0: [u8; PADDING],
+	pub used:     VirtIOUsed,
+}
+
+static_assertions::const_assert!((BEFORE_PADDING + PADDING) % PAGE_SIZE == 0);
+static_assertions::const_assert_eq!(core::mem::align_of::<VirtIOQueue>() % PAGE_SIZE, 0);
+
+/// Auxillary queue data for the VirtIO driver
+pub struct AuxQueueData
+{
+    pub index: usize,
+    pub ack_index: usize
+}
+
+/// VirtIO Devices Collection
+pub struct DeviceCollection
+{
+    pub block_devices: Vec<super::drivers::block::BlockDriver>
+}
+
+impl DeviceCollection
+{
+    /// Create a new, empty device collection
+    pub fn new() -> Self
+    {
+        Self
+        {
+            block_devices: Vec::new()
+        }
     }
 }

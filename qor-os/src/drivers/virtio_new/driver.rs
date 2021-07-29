@@ -5,6 +5,8 @@ use super::structs::*;
 
 use alloc::format;
 
+use crate::mem::PAGE_SIZE;
+
 use VirtIOMmioOffsets as Field;
 
 /// Generic VirtIO Device Driver
@@ -13,7 +15,9 @@ pub struct VirtIODeviceDriver
     device_type: VirtIODeviceType,
     device: VirtIOHelper,
     device_status: u32,
-    driver_ready: bool
+    driver_ready: bool,
+    queues: Vec<*mut VirtIOQueue>,
+    queue_aux_data: Vec<AuxQueueData>
 }
 
 impl VirtIODeviceDriver
@@ -26,7 +30,9 @@ impl VirtIODeviceDriver
             device_type,
             device,
             device_status: 0,
-            driver_ready: false
+            driver_ready: false,
+            queues: Vec::new(),
+            queue_aux_data: Vec::new()
         }
     }
 
@@ -43,6 +49,61 @@ impl VirtIODeviceDriver
     {
         self.device.write_field(Field::Status, VIRTIO_STATUS_FAILED);
         self.driver_ready = false;
+    }
+
+    /// If needed, verity the queue size with the device, for now, if the device
+    /// does not accept our global queue size, we will simply fail, it may be
+    /// possible in the future to have variable queue sizes, however, for now it
+    /// is easiest to just have a single global value, and set it such that all
+    /// needed devices accept it
+    pub fn verify_queue_size(&self) -> Result<(), String>
+    {
+        let largest_allowable_queue = self.device.read_field(Field::QueueNumMax);
+        self.device.write_field(Field::QueueNum, VIRTIO_QUEUE_SIZE);
+
+        if VIRTIO_QUEUE_SIZE > largest_allowable_queue
+        {
+            Err(format!("Max queue size {} < {}", largest_allowable_queue, VIRTIO_QUEUE_SIZE))
+        }
+        else
+        {
+            Ok(())
+        }
+    }
+
+    /// Initialize some number of queues for the device
+    pub fn init_queues(&mut self, queue_count: usize) -> Result<(), String>
+    {
+        self.queues = Vec::with_capacity(queue_count);
+        self.queue_aux_data = Vec::with_capacity(queue_count);
+
+        // Notify the device of our page size
+        self.device.write_field(Field::GuestPageSize, PAGE_SIZE as u32);
+
+        for queue_index in 0..queue_count
+        {
+            const PAGE_COUNT: usize = (core::mem::size_of::<VirtIOQueue>() + PAGE_SIZE - 1) / PAGE_SIZE;
+            let queue_location = crate::mem::kpalloc(PAGE_COUNT, "VirtIO Device Queue").unwrap() as *mut VirtIOQueue;
+
+            // Tell the device which queue we are telling it about
+            self.device.write_field(Field::QueueSel, queue_index as u32);
+
+            // Tell the device where this queue is to be stored in memory
+            self.device.write_field(Field::QueuePfn, (queue_location as usize / PAGE_SIZE) as u32);
+
+            self.queues.push(queue_location);
+
+            // Add the auxillary queue data 
+            let data = AuxQueueData
+            {
+                index: 0,
+                ack_index: 0
+            };
+
+            self.queue_aux_data.push(data);
+        }
+
+        Ok(())
     }
 
     /// Internal VirtIO device driver initialization, should be called wrapped

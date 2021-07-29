@@ -16,3 +16,6 @@ pub const VIRTIO_STATUS_FAILED: u32 = 128;
 pub const VIRTIO_STATUS_FEATURES_OK: u32 = 8;
 pub const VIRTIO_STATUS_DRIVER_OK: u32 = 4;
 pub const VIRTIO_STATUS_DEVICE_NEEDS_RESET: u32 = 64;
+
+// Allowable size of the Queues
+pub const VIRTIO_QUEUE_SIZE: u32 = 1024;

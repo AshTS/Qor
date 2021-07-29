@@ -27,6 +27,10 @@ impl BlockDriver
     /// Perform the device specific initialization
     pub fn device_specific(&mut self, _features: u32) -> Result<(), String>
     {
-        Err(format!("Unable to perform device specific setup"))
+        self.device.verify_queue_size()?;
+
+        self.device.init_queues(1)?;
+
+        Ok(())
     }
 }
