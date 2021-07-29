@@ -32,6 +32,10 @@ const O_TRUNC: usize =  8;
 const O_CREAT: usize =  16;
 const O_EXCL: usize =   32;
 
+const SEEK_SET: usize = 1;
+const SEEK_CUR: usize = 2;
+const SEEK_END: usize = 4;
+
 
 /// Process State Enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -322,6 +326,29 @@ impl Process
         }
 
         v
+    }
+
+    /// Seek to a location in the file descriptor
+    pub fn seek(&mut self, fd: usize, offset: usize, mode: usize) -> usize
+    {
+        use super::descriptor::SeekMode;
+
+        let enum_mode = match mode
+        {
+            SEEK_CUR => SeekMode::SeekCurrent,
+            SEEK_END => SeekMode::SeekEnd,
+            SEEK_SET => SeekMode::SeekSet,
+            _ => { return offset.wrapping_sub(1); }
+        };
+
+        if let Some(fd) = self.data.descriptors.get_mut(&fd)
+        {
+            fd.seek(offset, enum_mode)
+        }
+        else
+        {
+            usize::MAX
+        }
     }
 
     /// Display the memory map for this process

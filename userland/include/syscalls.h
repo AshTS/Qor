@@ -19,6 +19,10 @@
 #define O_CREAT  16
 #define O_EXCL   32
 
+#define SEEK_SET 1
+#define SEEK_CUR 2
+#define SEEK_END 4
+
 extern unsigned int exit(int val);
 extern unsigned int write(int fd, void* buffer, int size);
 extern unsigned int open(const char* name, int open_mode);
@@ -33,5 +37,6 @@ extern unsigned int munmap(void* buffer, int size);
 extern unsigned int getdents(int fd, void* dirents, unsigned int count);
 extern unsigned int chdir(const char* path);
 extern unsigned int mkdir(const char* path, unsigned short mode);
+extern unsigned int lseek(int fd, unsigned int offset, int whence);
 
 #endif // _SYSCALLS_H

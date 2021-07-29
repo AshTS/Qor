@@ -12,6 +12,7 @@ mod exit;
 mod fork;
 mod getcwd;
 mod getdents;
+mod lseek;
 mod mkdir;
 mod mmap;
 mod munmap;
@@ -44,6 +45,11 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         3 =>
         {
             close::syscall_close(proc, arg0)
+        },
+        // lseek Syscall
+        8 =>
+        {
+            lseek::syscall_lseek(proc, arg0, arg1, arg2)
         },
         // mmap Syscall
         9 =>

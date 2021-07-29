@@ -45,6 +45,12 @@ close:
     ecall
     ret
 
+.globl lseek
+lseek:
+    li a7, 8
+    ecall
+    ret
+
 .globl mmap
 mmap:
     li a7, 9
