@@ -5,7 +5,7 @@ use crate::drivers::virtio_new::*;
 /// VirtIO Block Driver
 pub struct BlockDriver
 {
-    device: VirtIODeviceDriver
+    pub device: VirtIODeviceDriver
 }
 
 impl BlockDriver

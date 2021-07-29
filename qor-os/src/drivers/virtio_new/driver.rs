@@ -106,6 +106,23 @@ impl VirtIODeviceDriver
         Ok(())
     }
 
+    /// Dump the state of the aux queue data
+    pub fn dump_queue_state(&self)
+    {
+        kdebugln!("Dumping state of {:?} driver at 0x{:x}", self.device_type, self.device.base);
+        let count = self.queues.len();
+        kdebugln!(VirtIO, "Queue Count: {} queue{} loaded", count, if count > 1 { "s" } else { "" });
+
+        for i in 0..count
+        {
+            let data = &self.queue_aux_data[i];
+
+            kdebugln!(" Queue {}", i);
+            kdebugln!("   Index:     {}", data.index);
+            kdebugln!("   Ack Index: {}", data.ack_index);
+        }
+    }
+
     /// Internal VirtIO device driver initialization, should be called wrapped
     /// in an error handler which will set the failed bit to notify the device
     /// of the failure

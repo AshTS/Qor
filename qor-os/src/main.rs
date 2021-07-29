@@ -98,7 +98,7 @@ fn kmain()
 
     let block_driver = drivers::virtio_new::get_block_driver(0).unwrap();
 
-    
+    block_driver.device.dump_queue_state();
 
 
     /*

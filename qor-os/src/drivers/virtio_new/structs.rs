@@ -49,7 +49,7 @@ pub enum VirtIODeviceType
 /// Helper structure for interacting with a VirtIO device
 pub struct VirtIOHelper
 {
-    base: usize
+    pub base: usize
 }
 
 impl VirtIOHelper
