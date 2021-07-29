@@ -9,7 +9,7 @@ use super::consts::*;
 pub struct GPUDriver
 {
     pub device: VirtIODeviceDriver,
-    frame_buffer: Framebuffer
+    pub frame_buffer: Framebuffer
 }
 
 impl GPUDriver

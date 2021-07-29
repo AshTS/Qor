@@ -125,9 +125,18 @@ impl Filesystem for DevFilesystem
 
                 result.push(display);
 
+                // Construct the entry for the frame buffer
+                let display = DirectoryEntry{
+                    index: FilesystemIndex { mount_id: inode.mount_id, inode: 3},
+                    name: String::from("fb0"),
+                    entry_type: DirectoryEntryType::CharDevice,
+                };
+
+                result.push(display);
+
                 Ok(result)
             }
-            else if inode.inode == 2
+            else if inode.inode < 4
             {
                 Err(FilesystemError::INodeIsNotADirectory)
             }
@@ -168,7 +177,7 @@ impl Filesystem for DevFilesystem
     {
         if Some(inode.mount_id) == self.mount_id
         {
-            if inode.inode < 3
+            if inode.inode < 4
             {
                 Ok(Vec::new())
             }
@@ -228,6 +237,7 @@ impl Filesystem for DevFilesystem
                 {
                     1 => Ok(Box::new(InodeFileDescriptor::new(vfs, inode, mode).unwrap())),
                     2 => Ok(Box::new(ByteInterfaceDescriptor::new(drivers::gpu::get_global_graphics_driver()))),
+                    3 => Ok(Box::new(BufferDescriptor::new(drivers::gpu::get_global_graphics_driver()))),
                     _ => Err(FilesystemError::BadINode)
                 }
             }

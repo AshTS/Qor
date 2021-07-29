@@ -3,7 +3,7 @@ use crate::*;
 const TEXT_MODE_WIDTH: usize = 70;
 const TEXT_MODE_HEIGHT: usize = 30;
 
-use crate::drivers::generic::ByteInterface;
+use crate::drivers::generic::*;
 
 /// Text Mode Cell
 #[derive(Debug, Clone, Copy)]
@@ -246,5 +246,41 @@ impl ByteInterface for GenericGraphics
     fn flush(&mut self)
     {
         self.invalidate_screen();
+    }
+}
+
+impl BufferInterface for GenericGraphics
+{
+    fn read_byte(&mut self, offset: usize) -> Option<u8>
+    {
+        if offset < self.get_size()
+        {
+            Some(unsafe { (self.driver.frame_buffer.data as *mut u8).add(offset).read() })
+        }
+        else
+        {
+            None
+        }
+    }
+
+    fn write_byte(&mut self, offset: usize, data: u8)
+    {
+        if offset < self.get_size()
+        {
+            unsafe { (self.driver.frame_buffer.data as *mut u8).add(offset).write(data) }
+        }
+    }
+
+    fn get_size(&self) -> usize
+    {
+        let (w, h) = self.driver.frame_buffer.get_size();
+
+        4 * w * h
+    }
+
+    fn flush(&mut self)
+    {
+        let (w, h) = self.driver.frame_buffer.get_size();
+        self.driver.invalidate(0, 0, w, h)
     }
 }
