@@ -8,11 +8,11 @@ int main(int argc, char** argv)
 
     if (fd == -1)
     {
-        printf("Unable to open `open.txt`\n");
+        printf("Unable to open `/dev/disp`\n");
         return -1;
     }
 
-    char* data = "Hello from a userspace program!\0";
+    char* data = "Hello from a userspace program!\n\0";
     int length = strlen(data);
 
     write(fd, data, length);

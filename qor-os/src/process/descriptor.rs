@@ -261,7 +261,10 @@ impl ByteInterfaceDescriptor
 
 impl FileDescriptor for ByteInterfaceDescriptor
 {
-    fn close(&mut self, _: &mut fs::vfs::FilesystemInterface) {}
+    fn close(&mut self, _: &mut fs::vfs::FilesystemInterface)
+    {
+        self.interface.flush()
+    }
     
     fn write(&mut self, _: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
