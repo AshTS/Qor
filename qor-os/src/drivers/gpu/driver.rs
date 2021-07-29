@@ -120,11 +120,11 @@ impl GenericGraphics
     }
 
     /// Write a character to a position on screen
-    pub fn write_character(&mut self, c: char)
+    pub fn write_character(&mut self, c: u8)
     {
         if let GraphicsMode::PseudoTextMode(data) = &mut self.mode
         {
-            if c == '\n'
+            if c == '\n' as u8
             {
                 data.cursor_pos.0 = 0;
                 data.cursor_pos.1 += 1;
@@ -153,7 +153,7 @@ impl GenericGraphics
     {
         for c in s.chars()
         {
-            self.write_character(c);
+            self.write_character(c as u8);
         }
     }
 }

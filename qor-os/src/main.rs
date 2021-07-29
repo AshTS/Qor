@@ -101,26 +101,23 @@ fn kmain()
     drivers::virtio::init_virtio_interrupts();
     kdebugln!(Initialization, "VirtIO Interrupts Initialized");
 
-    // Test the GPU
-    let raw_driver = drivers::virtio::get_gpu_driver(0).unwrap();
-    let mut driver = drivers::gpu::GenericGraphics::new(raw_driver);
-
-    driver.init();
-
-    driver.write_string("Hello World!\nThis is written using the new video driver");
-
-    driver.force_update();
+    // Initialize the graphics driver
+    drivers::gpu::init_graphics_driver();
+    kdebugln!(Initialization, "Graphics Driver Initialized");
 
     let mut vfs = fs::vfs::FilesystemInterface::new();
     let mut disk0 = fs::minix3::Minix3Filesystem::new(0);
+    let mut dev = fs::devfs::DevFilesystem::new();
 
     use fs::fstrait::Filesystem;
     use libutils::paths::OwnedPath;
 
     vfs.init().unwrap();
     disk0.init().unwrap();
+    dev.init().unwrap();
 
     vfs.mount_fs(&OwnedPath::new("/"), Box::new(disk0)).unwrap();
+    vfs.mount_fs(&OwnedPath::new("/dev"), Box::new(dev)).unwrap();
 
     vfs.index().unwrap();
 
