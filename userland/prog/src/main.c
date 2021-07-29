@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv)
 {
-    int fd = open("output.txt", O_WRONLY | O_APPEND | O_CREAT);
+    int fd = open("/dev/disp", O_WRONLY | O_TRUNC);
 
     if (fd == -1)
     {
