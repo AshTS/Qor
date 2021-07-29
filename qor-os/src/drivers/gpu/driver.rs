@@ -3,6 +3,8 @@ use crate::*;
 const TEXT_MODE_WIDTH: usize = 70;
 const TEXT_MODE_HEIGHT: usize = 30;
 
+use crate::drivers::generic::ByteInterface;
+
 /// Text Mode Cell
 #[derive(Debug, Clone, Copy)]
 pub struct TextModeCell
@@ -34,6 +36,60 @@ impl core::default::Default for TextModeData
             buffer: [TextModeCell { c: ' ' as u8, fg, bg}; TEXT_MODE_WIDTH * TEXT_MODE_HEIGHT],
             cursor_pos: (0, 0),
             bg, fg
+        }
+    }
+}
+
+impl TextModeData
+{
+    /// Add a newline
+    pub fn newline(&mut self)
+    {
+        self.cursor_pos.0 = 0;
+        self.cursor_pos.1 += 1;
+
+        if self.cursor_pos.1 >= TEXT_MODE_HEIGHT
+        {
+            let amt = 1 + self.cursor_pos.1 - TEXT_MODE_HEIGHT;
+            self.scroll(amt);
+        }
+    }
+
+    /// Scroll by some amount
+    pub fn scroll(&mut self, mut amt: usize)
+    {
+        if amt <= TEXT_MODE_HEIGHT
+        {
+            for y in 0..TEXT_MODE_HEIGHT - amt
+            {
+                for x in 0..TEXT_MODE_WIDTH
+                {
+                    self.buffer[x + y * TEXT_MODE_WIDTH] = self.buffer[x + (y + amt) * TEXT_MODE_WIDTH];
+                }
+            }
+
+            if self.cursor_pos.1 <= amt
+            {
+                self.cursor_pos.1 = 0;
+            }
+            else
+            {
+                self.cursor_pos.1 -= amt;
+            }
+        }
+
+        if amt > TEXT_MODE_HEIGHT
+        {
+            amt = TEXT_MODE_HEIGHT;
+        }
+
+        
+        for y in (TEXT_MODE_HEIGHT - amt)..=TEXT_MODE_HEIGHT - 1
+        {
+            for x in 0..TEXT_MODE_WIDTH
+            {
+                self.buffer[x + y * TEXT_MODE_WIDTH] = TextModeCell { c: 0x20, fg: self.fg, bg: self.bg };
+            }
         }
     }
 }
@@ -75,8 +131,15 @@ impl GenericGraphics
     /// Force a screen update
     pub fn force_update(&mut self)
     {
-        let (width, height) = self.driver.get_size();
-        self.driver.invalidate(0, 0, width, height);
+        if let GraphicsMode::PseudoTextMode(_) = self.mode
+        {
+            self.invalidate_screen();
+        }
+        else
+        {
+            let (width, height) = self.driver.get_size();
+            self.driver.invalidate(0, 0, width, height);
+        }
     }
     
     /// Update a character location
@@ -119,6 +182,20 @@ impl GenericGraphics
         }
     }
 
+    /// Invalidate the entire screen
+    fn invalidate_screen(&mut self)
+    {
+        for y in 0..TEXT_MODE_HEIGHT
+        {
+            for x in 0..TEXT_MODE_WIDTH
+            {
+                self.update_character(x, y);
+            }
+        }
+
+        self.driver.invalidate(0, 0, TEXT_MODE_WIDTH * 9, TEXT_MODE_HEIGHT * 16);
+    }
+
     /// Write a character to a position on screen
     pub fn write_character(&mut self, c: u8)
     {
@@ -126,8 +203,7 @@ impl GenericGraphics
         {
             if c == '\n' as u8
             {
-                data.cursor_pos.0 = 0;
-                data.cursor_pos.1 += 1;
+                data.newline();
             }
             else
             {
@@ -139,11 +215,8 @@ impl GenericGraphics
 
                 if data.cursor_pos.0 >= TEXT_MODE_WIDTH
                 {
-                    data.cursor_pos.0 = 0;
-                    data.cursor_pos.1 += 1;
+                    data.newline();
                 }
-
-                self.update_character(x, y);
             }
         }
     }
@@ -155,5 +228,23 @@ impl GenericGraphics
         {
             self.write_character(c as u8);
         }
+    }
+}
+
+impl ByteInterface for GenericGraphics
+{
+    fn read_byte(&mut self) -> Option<u8>
+    {
+        None
+    }
+
+    fn write_byte(&mut self, data: u8)
+    {
+        self.write_character(data)
+    }
+
+    fn flush(&mut self)
+    {
+        self.invalidate_screen();
     }
 }
