@@ -5,6 +5,123 @@ const TEXT_MODE_HEIGHT: usize = 30;
 
 use crate::drivers::generic::*;
 
+#[derive(Debug, Clone)]
+pub enum ParserState
+{
+    WaitingForEscape(usize),
+    WaitingForArgs(Vec<usize>),
+}
+
+/// ANSI Escape Sequence Parser
+#[derive(Debug, Clone)]
+pub struct ANSIParser
+{
+    state: ParserState,
+    command: Option<(Vec<usize>, char)>
+}
+
+impl ANSIParser
+{
+    pub fn new() -> Self
+    {
+        Self
+        {
+            state: ParserState::WaitingForEscape(0),
+            command: None
+        }
+    }
+
+    pub fn get_command(&mut self) -> Option<(Vec<usize>, char)>
+    {
+        self.command.take()
+    }
+
+    pub fn report_char(&mut self, c: u8) -> bool
+    {
+        let mut consumed = true;
+        self.state = match &self.state
+        {
+            ParserState::WaitingForEscape(i) => 
+            {
+                match (i, c)
+                {
+                    (0, 0x1B) =>
+                    {
+                        ParserState::WaitingForEscape(1)
+                    },
+                    (1, 0x5B) =>
+                    {
+                        ParserState::WaitingForArgs(vec![0])
+                    },
+                    _ =>
+                    {
+                        consumed = false;
+                        ParserState::WaitingForEscape(0)
+                    }
+                }
+            },
+            ParserState::WaitingForArgs(args) => 
+            {
+                match c as char
+                {
+                    ';' =>
+                    {
+                        let mut next = args.clone();
+                        next.push(0);
+
+                        ParserState::WaitingForArgs(next)
+                    },
+                    '0'..='9' =>
+                    {
+                        let v = c - 0x30;
+
+                        let mut next = args.clone();
+                        let l = next.len() - 1;
+                        next[l] *= 10;
+                        next[l] += v as usize;
+
+                        ParserState::WaitingForArgs(next)
+                    },
+                    'm' =>
+                    {
+                        let mut args = args.clone();
+                        if args.len() == 0
+                        {
+                            args.push(0);
+
+                        }
+                        self.command = Some((args, c as char));
+
+                        ParserState::WaitingForEscape(0)
+                    },
+                    _ => 
+                    {
+                        consumed = false;
+                        ParserState::WaitingForEscape(0)
+                    }
+                }
+            },
+        };
+
+        consumed
+    }
+}
+
+pub fn ansi_to_ega(c: u8) -> u8
+{
+    match c
+    {
+        1 => 4,
+        3 => 6,
+        4 => 1,
+        6 => 3,
+        _ => 
+        {
+            8 + ansi_to_ega(c & 7)
+        }
+    }
+}
+
 /// Text Mode Cell
 #[derive(Debug, Clone, Copy)]
 pub struct TextModeCell
@@ -15,9 +132,10 @@ pub struct TextModeCell
 }
 
 /// Text Mode Data
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct TextModeData
 {
+    parser: ANSIParser,
     buffer: [TextModeCell; TEXT_MODE_WIDTH * TEXT_MODE_HEIGHT],
     cursor_pos: (usize, usize),
     bg: u8,
@@ -33,6 +151,7 @@ impl core::default::Default for TextModeData
 
         Self
         {
+            parser: ANSIParser::new(),
             buffer: [TextModeCell { c: ' ' as u8, fg, bg}; TEXT_MODE_WIDTH * TEXT_MODE_HEIGHT],
             cursor_pos: (0, 0),
             bg, fg
@@ -95,7 +214,7 @@ impl TextModeData
 }
 
 /// Graphics Mode
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum GraphicsMode
 {
     PseudoTextMode(TextModeData),
@@ -201,6 +320,40 @@ impl GenericGraphics
     {
         if let GraphicsMode::PseudoTextMode(data) = &mut self.mode
         {
+            if data.parser.report_char(c)
+            {
+                if let Some(cmd) = data.parser.get_command()
+                {
+                    if cmd.1 == 'm' && cmd.0[0] == 0
+                    {
+                        data.fg = 15;
+                        data.bg = 0;
+                    }
+                    else if cmd.1 == 'm' && cmd.0[0] >= 30 && cmd.0[0] <= 37
+                    {
+                        data.fg = ansi_to_ega(cmd.0[0] as u8 - 30);
+                    }
+                    else if cmd.1 == 'm' && cmd.0[0] >= 90 && cmd.0[0] <= 97
+                    {
+                        data.fg = ansi_to_ega(8 + cmd.0[0] as u8 - 90);
+                    }
+                    else if cmd.1 == 'm' && cmd.0[0] >= 40 && cmd.0[0] <= 47
+                    {
+                        data.bg = ansi_to_ega(cmd.0[0] as u8 - 40);
+                    }
+                    else if cmd.1 == 'm' && cmd.0[0] >= 100 && cmd.0[0] <= 107
+                    {
+                        data.bg = ansi_to_ega(8 + cmd.0[0] as u8 - 100);
+                    }
+                    else
+                    {
+                        kwarnln!("Cmd: {:?}", cmd);
+                    }
+                }
+
+                return;
+            }
+
             if c == 10 || c == 13
             {
                 data.newline();
