@@ -17,6 +17,7 @@ mod mkdir;
 mod mmap;
 mod munmap;
 mod open;
+mod pipe;
 mod read;
 mod wait;
 mod write;
@@ -55,6 +56,11 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         9 =>
         {
             mmap::syscall_mmap(proc, arg0, arg1, arg2, arg3, arg4, arg5)
+        },
+        // pipe Syscall
+        22 =>
+        {
+            pipe::syscall_pipe(proc, arg0)
         },
         // munmap Syscall
         11 =>

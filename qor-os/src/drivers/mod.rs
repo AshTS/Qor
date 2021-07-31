@@ -43,3 +43,9 @@ pub fn init_plic_driver()
     unsafe { drivers::PLIC_DRIVER.set_priority(drivers::plic::PLICInterrupt(10), 
                                        drivers::plic::PLICPriority::Priority1) };
 }
+
+/// Get the UART driver
+pub fn get_uart_driver() -> &'static mut uart::UARTDriver
+{
+    unsafe { &mut UART_DRIVER }
+}

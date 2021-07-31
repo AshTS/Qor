@@ -27,16 +27,17 @@ extern unsigned int exit(int val);
 extern unsigned int write(int fd, void* buffer, int size);
 extern unsigned int open(const char* name, int open_mode);
 extern unsigned int close(int fd);
-extern unsigned int read(int fd, void* buffer, int size);
+extern unsigned int read(int fd, void *buffer, int size);
 extern unsigned int fork();
-extern unsigned int execve(const char* path, const char** argv, const char** envp);
-extern unsigned int wait(int* wstatus);
-extern unsigned int getcwd(void* buffer, int size);
-extern void* mmap(void* start, int length, int prot, int flags, int fd, int off);
-extern unsigned int munmap(void* buffer, int size);
-extern unsigned int getdents(int fd, void* dirents, unsigned int count);
-extern unsigned int chdir(const char* path);
-extern unsigned int mkdir(const char* path, unsigned short mode);
+extern unsigned int execve(const char *path, const char **argv, const char **envp);
+extern unsigned int wait(int *wstatus);
+extern unsigned int getcwd(void *buffer, int size);
+extern void *mmap(void *start, int length, int prot, int flags, int fd, int off);
+extern unsigned int munmap(void *buffer, int size);
+extern unsigned int getdents(int fd, void *dirents, unsigned int count);
+extern unsigned int chdir(const char *path);
+extern unsigned int mkdir(const char *path, unsigned short mode);
 extern unsigned int lseek(int fd, unsigned int offset, int whence);
+extern unsigned int pipe(int fds[2]);
 
 #endif // _SYSCALLS_H

@@ -108,8 +108,10 @@ fn kmain()
     }
 
     // Initialize the graphics driver
-    drivers::gpu::init_graphics_driver();
-    kdebugln!(Initialization, "Graphics Driver Initialized");
+    if drivers::gpu::init_graphics_driver()
+    {
+        kdebugln!(Initialization, "Graphics Driver Initialized");
+    }
 
     let mut vfs = fs::vfs::FilesystemInterface::new();
     let mut disk0 = fs::minix3::Minix3Filesystem::new(0);
@@ -127,9 +129,9 @@ fn kmain()
 
     vfs.index().unwrap();
 
-    let mut elf_proc = process::elf::load_elf(&mut vfs, &OwnedPath::new("/bin/shell")).unwrap();
+    let elf_proc = process::elf::load_elf(&mut vfs, &OwnedPath::new("/bin/term")).unwrap();
     process::scheduler::get_init_process_mut().unwrap().register_child(elf_proc.pid);
-    elf_proc.connect_to_term();
+
     process::scheduler::add_process(elf_proc);
 
     // Start the timer

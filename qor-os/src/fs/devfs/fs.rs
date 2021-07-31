@@ -1,20 +1,20 @@
-//! The dev filesystem is to be mounted at /dev/ and gives access to various
-//! devices
-
 use crate::*;
 
-use super::fstrait::*;
-use super::structures::*;
+use super::super::fstrait::*;
+use super::super::structures::*;
 
 use libutils::paths::PathBuffer;
 
 use crate::process::descriptor::*;
 
+use super::devices::*;
+
 /// Filesystem which gives access to various devices
 pub struct DevFilesystem
 {
     mount_id: Option<usize>,
-    vfs: Option<&'static mut crate::fs::vfs::FilesystemInterface>
+    vfs: Option<&'static mut crate::fs::vfs::FilesystemInterface>,
+    devices: Vec<DeviceFile>
 }
 
 impl DevFilesystem
@@ -25,20 +25,23 @@ impl DevFilesystem
         Self
         {
             mount_id: None,
-            vfs: None
+            vfs: None,
+            devices: Vec::new()
         }
     }
 }
 
 impl Filesystem for DevFilesystem
 {
-    fn init(&mut self) -> super::structures::FilesystemResult<()>
+    fn init(&mut self) -> FilesystemResult<()>
     {
-        // No initialization required
+        // Set up the devices available on the system
+        self.devices = get_device_files();
+
         Ok(())
     }
 
-    fn sync(&mut self) -> super::structures::FilesystemResult<()>
+    fn sync(&mut self) -> FilesystemResult<()>
     {
         // Nothing to sync
         Ok(())
@@ -50,7 +53,7 @@ impl Filesystem for DevFilesystem
         self.vfs = Some(vfs);
     }
 
-    fn get_root_index(&mut self) -> super::structures::FilesystemResult<super::structures::FilesystemIndex>
+    fn get_root_index(&mut self) -> FilesystemResult<FilesystemIndex>
     {
         if let Some(id) = self.mount_id
         {
@@ -92,7 +95,7 @@ impl Filesystem for DevFilesystem
         }
     }
 
-    fn get_dir_entries(&mut self, inode: super::structures::FilesystemIndex) -> super::structures::FilesystemResult<alloc::vec::Vec<super::structures::DirectoryEntry>>
+    fn get_dir_entries(&mut self, inode: FilesystemIndex) -> FilesystemResult<alloc::vec::Vec<DirectoryEntry>>
     {
         if Some(inode.mount_id) == self.mount_id
         {
@@ -116,27 +119,21 @@ impl Filesystem for DevFilesystem
                 result.push(loopback);
                 result.push(parent);
 
-                // Construct the entry for the display
-                let display = DirectoryEntry{
-                    index: FilesystemIndex { mount_id: inode.mount_id, inode: 2},
-                    name: String::from("disp"),
-                    entry_type: DirectoryEntryType::CharDevice,
-                };
+                for (i, (dev_name, _)) in self.devices.iter().enumerate()
+                {
+                    let dir_ent = DirectoryEntry
+                        {
+                            index: FilesystemIndex { mount_id: inode.mount_id, inode: i + 2},
+                            name: String::from(*dev_name),
+                            entry_type: DirectoryEntryType::CharDevice,
+                        };
 
-                result.push(display);
-
-                // Construct the entry for the frame buffer
-                let display = DirectoryEntry{
-                    index: FilesystemIndex { mount_id: inode.mount_id, inode: 3},
-                    name: String::from("fb0"),
-                    entry_type: DirectoryEntryType::CharDevice,
-                };
-
-                result.push(display);
+                    result.push(dir_ent);
+                }
 
                 Ok(result)
             }
-            else if inode.inode < 4
+            else if inode.inode < 2 + self.devices.len()
             {
                 Err(FilesystemError::INodeIsNotADirectory)
             }
@@ -158,22 +155,22 @@ impl Filesystem for DevFilesystem
         }
     }
 
-    fn create_file(&mut self, _inode: super::structures::FilesystemIndex, _name: alloc::string::String) -> super::structures::FilesystemResult<super::structures::FilesystemIndex>
+    fn create_file(&mut self, _inode: FilesystemIndex, _name: alloc::string::String) -> FilesystemResult<FilesystemIndex>
     {
         todo!()
     }
 
-    fn create_directory(&mut self, _inode: super::structures::FilesystemIndex, _name: alloc::string::String) -> super::structures::FilesystemResult<super::structures::FilesystemIndex>
+    fn create_directory(&mut self, _inode: FilesystemIndex, _name: alloc::string::String) -> FilesystemResult<FilesystemIndex>
     {
         todo!()
     }
 
-    fn remove_inode(&mut self, _inode: super::structures::FilesystemIndex, _directory: super::structures::FilesystemIndex) -> super::structures::FilesystemResult<()>
+    fn remove_inode(&mut self, _inode: FilesystemIndex, _directory: FilesystemIndex) -> FilesystemResult<()>
     {
         todo!()
     }
 
-    fn read_inode(&mut self, inode: super::structures::FilesystemIndex) -> super::structures::FilesystemResult<alloc::vec::Vec<u8>>
+    fn read_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<alloc::vec::Vec<u8>>
     {
         if Some(inode.mount_id) == self.mount_id
         {
@@ -199,7 +196,7 @@ impl Filesystem for DevFilesystem
         }
     }
 
-    fn write_inode(&mut self, inode: super::structures::FilesystemIndex, data: &[u8]) -> super::structures::FilesystemResult<()>
+    fn write_inode(&mut self, inode: FilesystemIndex, data: &[u8]) -> FilesystemResult<()>
     {
         if Some(inode.mount_id) == self.mount_id
         {
@@ -221,7 +218,7 @@ impl Filesystem for DevFilesystem
         }
     }
 
-    fn mount_fs_at(&mut self, _inode: super::structures::FilesystemIndex, _root: super::structures::FilesystemIndex, _name: alloc::string::String) -> super::structures::FilesystemResult<()>
+    fn mount_fs_at(&mut self, _inode: FilesystemIndex, _root: FilesystemIndex, _name: alloc::string::String) -> FilesystemResult<()>
     {
         todo!()
     }
@@ -236,9 +233,17 @@ impl Filesystem for DevFilesystem
                 match inode.inode
                 {
                     1 => Ok(Box::new(InodeFileDescriptor::new(vfs, inode, mode).unwrap())),
-                    2 => Ok(Box::new(ByteInterfaceDescriptor::new(drivers::gpu::get_global_graphics_driver()))),
-                    3 => Ok(Box::new(BufferDescriptor::new(drivers::gpu::get_global_graphics_driver()))),
-                    _ => Err(FilesystemError::BadINode)
+                    default =>
+                    {
+                        if default > 1 && default < 2 + self.devices.len()
+                        {
+                            Ok(self.devices[default - 2].1())
+                        }
+                        else
+                        {
+                            Err(FilesystemError::BadINode)
+                        }
+                    }
                 }
             }
             else

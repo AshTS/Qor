@@ -201,9 +201,17 @@ impl GenericGraphics
     {
         if let GraphicsMode::PseudoTextMode(data) = &mut self.mode
         {
-            if c == '\n' as u8
+            if c == 10 || c == 13
             {
                 data.newline();
+            }
+            else if c == 8 || c == 127
+            {
+                data.cursor_pos.0 = data.cursor_pos.0.max(1) - 1;
+
+                let (x, y) = data.cursor_pos;
+
+                data.buffer[x + y * TEXT_MODE_WIDTH] = TextModeCell { c: ' ' as u8, fg: data.fg, bg: data.bg };
             }
             else
             {

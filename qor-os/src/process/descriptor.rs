@@ -3,6 +3,10 @@ use crate::*;
 use fs::fstrait::Filesystem;
 
 use fs::structures::FilesystemIndex;
+use alloc::collections::BTreeMap;
+
+/// Descriptor table type
+pub type DescriptorTable = alloc::sync::Arc<core::cell::RefCell<BTreeMap<usize, Box<dyn super::descriptor::FileDescriptor>>>>;
 
 /// Seek Modes
 #[derive(Debug, Clone, Copy)]
@@ -324,6 +328,8 @@ impl FileDescriptor for ByteInterfaceDescriptor
         {
             self.interface.write_byte(unsafe { buffer.add(i).read() });
         }
+
+        self.interface.flush();
 
         count
     }

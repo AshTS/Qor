@@ -52,6 +52,12 @@ munmap:
     ecall
     ret
 
+.globl pipe
+pipe:
+    li a7, 22
+    ecall
+    ret
+
 .globl fork
 fork:
     li a7, 57

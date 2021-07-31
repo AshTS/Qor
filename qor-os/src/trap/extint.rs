@@ -23,9 +23,12 @@ pub fn external_interrupt_handler(interrupt: PLICInterrupt, _interrupt_context: 
         PLICInterrupt(10) => 
         {
             // Temporary handler to make sure the UART port is read
-            use drivers::generic::ByteInterface;
-            let c = unsafe { drivers::UART_DRIVER.read_byte()};
+            // use drivers::generic::ByteInterface;
+            // let c = unsafe { drivers::UART_DRIVER.read_byte()};
 
+            drivers::get_uart_driver().notify_recieve();
+
+            /*
             match c
             {
                 Some(10) | Some(13) => 
@@ -42,7 +45,7 @@ pub fn external_interrupt_handler(interrupt: PLICInterrupt, _interrupt_context: 
                             process::descriptor::STDIN_BUFFER.enqueue_byte(byte);
                         }
                     }
-                }, 
+                },
                 Some(8) | Some(127) =>
                 {
                     kprint!("{} {}", 8 as char, 8 as char);
@@ -56,7 +59,7 @@ pub fn external_interrupt_handler(interrupt: PLICInterrupt, _interrupt_context: 
                     unsafe { UART_IN_BUFFER.enqueue_byte(c) };
                 },
                 _ => {}
-            }
+            } */
         },
         _ => {}
     }
