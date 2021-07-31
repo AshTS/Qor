@@ -42,6 +42,7 @@ int main()
 
             if (c == 10 || c == 13)
             {
+                write(out, "\n", 1);
                 write(fds[1], buffer, buffer_index + 1);
                 buffer_index = 0;
             }
