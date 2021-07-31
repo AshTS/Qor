@@ -24,14 +24,14 @@ impl ProcessData
     /// Safety: The mem_ptr must be valid or zero
     pub unsafe fn new(stack_size: usize) -> Self
     {
-        let descriptors: BTreeMap<usize, Box<dyn FileDescriptor>> = BTreeMap::new();
+        let descriptors: DescriptorTable = BTreeMap::new();
 
         Self
         {
             stack_size,
             mem: Vec::new(),
             next_heap: 0x4_0000_0000,
-            descriptors: alloc::sync::Arc::new(core::cell::RefCell::new(descriptors)),
+            descriptors: descriptors,
             children: Vec::new(),
             parent_pid: 0,
             cwd: OwnedPath::new("/root/"),
@@ -66,7 +66,7 @@ impl ProcessData
     /// Remap a file descriptor
     pub fn remap_file_descriptor(&mut self, index: usize, fd: Box<dyn FileDescriptor>)
     {
-        self.descriptors.borrow_mut().insert(index, fd);
+        self.descriptors.insert(index, alloc::sync::Arc::new(core::cell::RefCell::new(fd)));
     }
 
     /// Register a child process
