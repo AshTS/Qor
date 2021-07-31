@@ -108,8 +108,10 @@ fn kmain()
     }
 
     // Initialize the graphics driver
-    drivers::gpu::init_graphics_driver();
-    kdebugln!(Initialization, "Graphics Driver Initialized");
+    if drivers::gpu::init_graphics_driver()
+    {
+        kdebugln!(Initialization, "Graphics Driver Initialized");
+    }
 
     let mut vfs = fs::vfs::FilesystemInterface::new();
     let mut disk0 = fs::minix3::Minix3Filesystem::new(0);
