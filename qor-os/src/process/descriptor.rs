@@ -5,6 +5,7 @@ use fs::fstrait::Filesystem;
 use fs::structures::FilesystemIndex;
 
 /// Seek Modes
+#[derive(Debug, Clone, Copy)]
 pub enum SeekMode
 {
     SeekSet,
@@ -227,6 +228,7 @@ impl FileDescriptor for InodeFileDescriptor
                 self.data.push(value);
             }
 
+            self.index += 1;
         }
 
         count
@@ -244,7 +246,8 @@ impl FileDescriptor for InodeFileDescriptor
 
         while self.index < self.data.len()
         {
-            unsafe { buffer.add(self.index).write(self.data[self.index]) };
+            let data = self.data[self.index];
+            unsafe { buffer.add(written).write(data) };
 
             written += 1;
             self.index += 1;
