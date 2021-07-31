@@ -101,6 +101,12 @@ fn kmain()
     drivers::virtio::init_virtio_interrupts();
     kdebugln!(Initialization, "VirtIO Interrupts Initialized");
 
+    // Check for a block device
+    if drivers::virtio::get_block_driver(0).is_none()
+    {
+        panic!("Cannot boot without block device");
+    }
+
     // Initialize the graphics driver
     drivers::gpu::init_graphics_driver();
     kdebugln!(Initialization, "Graphics Driver Initialized");

@@ -1,3 +1,5 @@
+use crate::*;
+
 pub mod driver;
 pub use driver::*;
 
@@ -7,16 +9,22 @@ static mut GLOBAL_GRAPHICS_DRIVER: Option<GenericGraphics> = None;
 /// Initialize the graphics driver
 pub fn init_graphics_driver()
 {
-
     // Test the GPU
-    let raw_driver = super::virtio::get_gpu_driver(0).unwrap();
-    let mut driver = GenericGraphics::new(raw_driver);
+    if let Some(raw_driver) = super::virtio::get_gpu_driver(0)
+    {
+        let mut driver = GenericGraphics::new(raw_driver);
 
-    driver.init();
+        driver.init();
 
-    driver.force_update();
+        driver.force_update();
 
-    *unsafe { &mut GLOBAL_GRAPHICS_DRIVER } = Some(driver);
+        *unsafe { &mut GLOBAL_GRAPHICS_DRIVER } = Some(driver);
+
+    }
+    else
+    {
+        kerrorln!("Unable to find GPU driver, /dev/fb0 and /dev/disp will not be available");
+    }
 }
 
 /// Get a reference to the global graphics driver
