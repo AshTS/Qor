@@ -23,11 +23,7 @@ impl ProcessData
     /// Safety: The mem_ptr must be valid or zero
     pub unsafe fn new(stack_size: usize) -> Self
     {
-        let mut descriptors: BTreeMap<usize, Box<dyn FileDescriptor>> = BTreeMap::new();
-
-        descriptors.insert(0, Box::new(NullDescriptor{}));
-        descriptors.insert(1, Box::new(NullDescriptor{}));
-        descriptors.insert(2, Box::new(NullDescriptor{}));
+        let descriptors: BTreeMap<usize, Box<dyn FileDescriptor>> = BTreeMap::new();
 
         Self
         {

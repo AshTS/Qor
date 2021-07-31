@@ -105,9 +105,9 @@ impl generic::ByteInterface for UARTDriver
     /// Read a byte from the UART
     fn read_byte(&mut self) -> Option<u8>
     {
-        // self.buffer.dequeue_byte()
+        self.buffer.dequeue_byte()
 
-        unsafe { read_byte(self.base) }
+        // unsafe { read_byte(self.base) }
     }
 
     /// Write a byte to the UART

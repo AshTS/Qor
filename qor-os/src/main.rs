@@ -129,12 +129,8 @@ fn kmain()
 
     vfs.index().unwrap();
 
-    let mut elf_proc = process::elf::load_elf(&mut vfs, &OwnedPath::new("/bin/shell")).unwrap();
+    let elf_proc = process::elf::load_elf(&mut vfs, &OwnedPath::new("/bin/term")).unwrap();
     process::scheduler::get_init_process_mut().unwrap().register_child(elf_proc.pid);
-
-    elf_proc.data.remap_file_descriptor(0, Box::new(process::descriptor::UARTIn {}));
-    elf_proc.data.remap_file_descriptor(1, Box::new(process::descriptor::UARTOut {}));
-    elf_proc.data.remap_file_descriptor(2, Box::new(process::descriptor::UARTError {}));
 
     process::scheduler::add_process(elf_proc);
 

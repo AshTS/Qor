@@ -5,6 +5,7 @@ use fs::structures::DirectoryEntry;
 use libutils::paths::PathBuffer;
 
 use super::data::ProcessData;
+use super::descriptor::FileDescriptor;
 
 use mem::mmu::PageTable;
 use mem::mmu::TranslationError;
@@ -229,6 +230,21 @@ impl Process
         }
     }
 
+    /// Write descriptor into the next open file descriptor
+    pub fn add_descriptor(&mut self, fd: Box<dyn FileDescriptor>) -> usize
+    {
+        let mut i = 0;
+
+        while self.data.descriptors.borrow().contains_key(&i)
+        {
+            i += 1;
+        }
+
+        self.data.descriptors.borrow_mut().insert(i, fd);
+
+        i
+    }
+
     /// Open a file by path
     pub fn open(&mut self, path: PathBuffer, mode: usize) -> Result<usize, fs::structures::FilesystemError>
     {
@@ -259,17 +275,9 @@ impl Process
                 vfs.create_file(dest_inode, name.to_string())?
             };
 
-        let mut i = 3;
-
-        while self.data.descriptors.borrow().contains_key(&i)
-        {
-            i += 1;
-        }
-
         if let Ok(fd) = vfs.open_fd(inode, mode)
         {
-            self.data.descriptors.borrow_mut().insert(i, fd);
-            Ok(i)
+            Ok(self.add_descriptor(fd))
         }
         else
         {
@@ -326,6 +334,17 @@ impl Process
         }
 
         v
+    }
+
+    /// Create a new pipe
+    pub fn pipe(&mut self) -> (usize, usize)
+    {
+        let (read, write) = super::pipe::new_pipe();
+
+        let read = self.add_descriptor(Box::new(read));
+        let write = self.add_descriptor(Box::new(write));
+
+        (read, write)
     }
 
     /// Seek to a location in the file descriptor

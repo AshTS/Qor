@@ -27,8 +27,6 @@ pub fn get_device_files() -> Vec<DeviceFile>
                 ))));
     }
 
-    
-
     // /dev/tty0 : UART Port
     result.push(("tty0", 
         Box::new(
@@ -36,6 +34,12 @@ pub fn get_device_files() -> Vec<DeviceFile>
                 ByteInterfaceDescriptor::new(drivers::get_uart_driver())
             )))); 
 
+    // /dev/null : Null Descriptor
+    result.push(("null", 
+    Box::new(
+        || Box::new(
+            NullDescriptor{}
+        ))));
 
     result
 }
