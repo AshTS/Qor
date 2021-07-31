@@ -18,7 +18,7 @@ LIBS = $(patsubst %,$(LIB_DIR)/%,$(_LIBS))
 _OBJ = main.o
 OBJ = $(patsubst %,$(BUILD_DIR)/%,$(_OBJ))
 
-$(OUTPUT_DIR)/clear : $(BUILD_DIR) $(OBJ)
+$(OUTPUT_DIR)/bmp : $(BUILD_DIR) $(OBJ)
 	$(LINK) $(LINKFLAGS) $(OBJ) $(LIBS) -o $@
 
 $(BUILD_DIR)/%.o : $(SRC_DIR)/%.c $(INCLUDES)

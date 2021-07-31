@@ -35,7 +35,7 @@ echo 'OUTPUT_DIR = ../bin' >> makefile
 echo 'BUILD_DIR = build' >> makefile
 echo 'SRC_DIR = src' >> makefile
 echo '' >> makefile
-echo '_LIBS = slib' >> makefile
+echo '_LIBS = slib libc' >> makefile
 echo 'LIBS = $(patsubst %,$(LIB_DIR)/%,$(_LIBS))' >> makefile
 echo '' >> makefile
 echo '_OBJ = main.o' >> makefile
