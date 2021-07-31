@@ -131,7 +131,11 @@ fn kmain()
 
     let mut elf_proc = process::elf::load_elf(&mut vfs, &OwnedPath::new("/bin/shell")).unwrap();
     process::scheduler::get_init_process_mut().unwrap().register_child(elf_proc.pid);
-    elf_proc.connect_to_term();
+
+    elf_proc.data.remap_file_descriptor(0, Box::new(process::descriptor::UARTIn {}));
+    elf_proc.data.remap_file_descriptor(1, Box::new(process::descriptor::UARTOut {}));
+    elf_proc.data.remap_file_descriptor(2, Box::new(process::descriptor::UARTError {}));
+
     process::scheduler::add_process(elf_proc);
 
     // Start the timer

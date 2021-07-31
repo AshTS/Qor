@@ -100,7 +100,7 @@ pub fn syscall_execve(proc: &mut super::Process, path_ptr: usize, argv_ptr: usiz
     if let Ok(mut new_proc) = process::elf::load_elf(proc.fs_interface.as_mut().unwrap(), &OwnedPath::new(path))
     // if true
     {
-        new_proc.connect_to_term();
+        new_proc.data.descriptors = proc.data.descriptors.clone();
 
         new_proc.data.cwd = proc.data.cwd.clone();
 

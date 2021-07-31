@@ -261,14 +261,14 @@ impl Process
 
         let mut i = 3;
 
-        while self.data.descriptors.contains_key(&i)
+        while self.data.descriptors.borrow().contains_key(&i)
         {
             i += 1;
         }
 
         if let Ok(fd) = vfs.open_fd(inode, mode)
         {
-            self.data.descriptors.insert(i, fd);
+            self.data.descriptors.borrow_mut().insert(i, fd);
             Ok(i)
         }
         else
@@ -282,7 +282,7 @@ impl Process
     {
         self.ensure_fs();
 
-        if let Some(fd) = self.data.descriptors.get_mut(&fd)
+        if let Some(fd) = self.data.descriptors.borrow_mut().get_mut(&fd)
         {
             fd.read(self.fs_interface.as_mut().unwrap(), buffer, count)
         }
@@ -297,7 +297,7 @@ impl Process
     {
         self.ensure_fs();
 
-        if let Some(fd) = self.data.descriptors.get_mut(&fd)
+        if let Some(fd) = self.data.descriptors.borrow_mut().get_mut(&fd)
         {
             fd.write(self.fs_interface.as_mut().unwrap(), buffer, count)
         }
@@ -310,7 +310,7 @@ impl Process
     /// Close a file descriptor
     pub fn close(&mut self, fd: usize) -> usize
     {
-        let v = if let Some(fd) = self.data.descriptors.get_mut(&fd)
+        let v = if let Some(fd) = self.data.descriptors.borrow_mut().get_mut(&fd)
         {
             fd.close(self.fs_interface.as_mut().unwrap());
             0
@@ -322,7 +322,7 @@ impl Process
 
         if v == 0
         {
-            self.data.descriptors.remove(&fd);
+            self.data.descriptors.borrow_mut().remove(&fd);
         }
 
         v
@@ -341,7 +341,7 @@ impl Process
             _ => { return offset.wrapping_sub(1); }
         };
 
-        if let Some(fd) = self.data.descriptors.get_mut(&fd)
+        if let Some(fd) = self.data.descriptors.borrow_mut().get_mut(&fd)
         {
             fd.seek(offset, enum_mode)
         }
@@ -359,12 +359,6 @@ impl Process
         pt.display_mapping();
     }
 
-    /// Connect the process to a terminal
-    pub fn connect_to_term(&mut self)
-    {
-        self.data.connect_to_term();
-    }
-
     /// Get a forked version of the current process
     pub fn forked(&mut self) -> Self
     {
@@ -379,7 +373,7 @@ impl Process
         temp.frame = new_frame;
         unsafe { temp.frame.as_mut().unwrap() }.regs[10] = 0;
 
-        temp.connect_to_term();
+        temp.data.descriptors = self.data.descriptors.clone();
         
         temp.data.cwd = self.data.cwd.clone();
 
@@ -475,7 +469,7 @@ impl Process
     /// Get directory entries for the given file descriptor
     pub fn get_dir_entries(&mut self, fd: usize) -> Option<Vec<DirectoryEntry>>
     {
-        let inode = if let Some(desc) = self.data.descriptors.get_mut(&fd)
+        let inode = if let Some(desc) = self.data.descriptors.borrow_mut().get_mut(&fd)
         {
             if let Some(inode) = desc.get_inode()
             {
