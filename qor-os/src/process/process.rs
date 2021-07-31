@@ -120,6 +120,8 @@ impl Process
     {
         // Set argc
         unsafe { self.frame.as_mut().unwrap() }.regs[10] = args.len();
+
+        let mut args_to_store = Vec::new();
         
         let mut arg_addrs = Vec::with_capacity(args.len());
         let mut envp_addrs = Vec::with_capacity(envp.len());
@@ -127,6 +129,7 @@ impl Process
         // Write the arguments
         for s in args
         {
+            args_to_store.push(unsafe { String::from_utf8_unchecked(Vec::from(*s)) });
             arg_addrs.push(self.push_buffer(s));
         }
 
@@ -155,6 +158,9 @@ impl Process
 
         // Set envp
         unsafe { self.frame.as_mut().unwrap() }.regs[12] = ptr;
+
+        // Store the arguments in the process data
+        self.data.fill_command_line_args(args_to_store);
     }
 
     /// Push a buffer
@@ -509,6 +515,19 @@ impl Process
         self.ensure_fs();
 
         Some(self.fs_interface.as_mut().unwrap().get_dir_entries(inode).unwrap())
+    }
+
+    /// Get the total memory held by the process in pages
+    pub fn get_process_memory(&self) -> usize
+    {
+        let mut total = 0;
+
+        for (_, size) in &self.data.mem
+        {
+            total += size;
+        }
+
+        total
     }
 }
 

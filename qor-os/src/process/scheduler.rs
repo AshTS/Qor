@@ -14,7 +14,7 @@ pub struct ProcessManager
 {
     current_pid: Option<u16>,
     max_pid: Option<u16>,
-    processes: BTreeMap<u16, Box<Process>>
+    pub processes: BTreeMap<u16, Box<Process>>
 }
 
 impl ProcessManager
@@ -289,6 +289,19 @@ pub fn schedule_next() -> (usize, usize, usize)
     unsafe 
     {
         GLOBAL_PROC_MANAGER.as_mut().unwrap().schedule_process()
+    }
+}
+
+/// Get a reference to the process manager
+pub fn get_process_manager() -> Option<&'static mut ProcessManager>
+{
+    if let Some(data) = unsafe { &mut GLOBAL_PROC_MANAGER }
+    {
+        Some(data)
+    }
+    else
+    {
+        None
     }
 }
 

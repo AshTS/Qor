@@ -15,6 +15,7 @@ pub struct ProcessData
     pub children: Vec<u16>,
     pub parent_pid: u16,
     pub cwd: OwnedPath,
+    pub cmdline_args: Vec<String>,
 }
 
 impl ProcessData
@@ -33,8 +34,33 @@ impl ProcessData
             descriptors: alloc::sync::Arc::new(core::cell::RefCell::new(descriptors)),
             children: Vec::new(),
             parent_pid: 0,
-            cwd: OwnedPath::new("/root/")
+            cwd: OwnedPath::new("/root/"),
+            cmdline_args: Vec::new()
         }
+    }
+
+    /// Fill in the command line arguments
+    pub fn fill_command_line_args(&mut self, args: Vec<String>)
+    {
+        self.cmdline_args = args;
+    }
+
+    /// Convert the command line arguments to a single string to display
+    pub fn command_line_args_to_string(&self) -> String
+    {
+        let mut s = String::new();
+
+        for arg in &self.cmdline_args
+        {
+            if s.len() > 0
+            {
+                s += "\0";
+            }
+
+            s += arg;
+        }
+        
+        s
     }
 
     /// Remap a file descriptor

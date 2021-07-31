@@ -188,8 +188,12 @@ pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: PathBuffer) 
             0);
     }
 
-    Ok(Process::from_components(
+    let mut proc = Process::from_components(
         elf_header.e_entry as usize, 
         table as *mut mem::mmu::PageTable, 
-        4, 0x2_0000_0000))
+        4, 0x2_0000_0000);
+
+    proc.data.fill_command_line_args(vec![path.as_str().to_string()]);
+
+    Ok(proc)
 }

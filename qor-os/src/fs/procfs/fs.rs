@@ -8,7 +8,7 @@ use libutils::paths::PathBuffer;
 use crate::process::descriptor::*;
 
 const PROC_INODE_FLAG_PID: usize = 0x10000;
-const PROC_INODE_FLAG_PID_MEM: usize = 0x20000;
+const PROC_INODE_FLAG_PID_CMDLINE: usize = 0x20000;
 
 /// /proc Filesystem Handler
 pub struct ProcFilesystem
@@ -96,7 +96,7 @@ impl Filesystem for ProcFilesystem
     {
         if Some(inode.mount_id) == self.mount_id
         {
-            if inode.inode == 1
+            if inode.inode == 1 || inode.inode & PROC_INODE_FLAG_PID > 0
             {
                 let mut result = Vec::new();
 
@@ -108,7 +108,7 @@ impl Filesystem for ProcFilesystem
                 };
 
                 let parent = DirectoryEntry{
-                    index: FilesystemIndex { mount_id: inode.mount_id, inode: 1},
+                    index: FilesystemIndex { mount_id: inode.mount_id, inode: inode.inode},
                     name: String::from(".."),
                     entry_type: DirectoryEntryType::Directory,
                 };
@@ -116,8 +116,47 @@ impl Filesystem for ProcFilesystem
                 result.push(loopback);
                 result.push(parent);
 
+                if inode.inode == 1
+                {
+                    if let Some(proc_manager) = process::scheduler::get_process_manager()
+                    {
+                        for key in proc_manager.processes.keys()
+                        {
+                            let entry = DirectoryEntry{
+                                index: FilesystemIndex { mount_id: inode.mount_id, inode: PROC_INODE_FLAG_PID | (*key as usize)},
+                                name: format!("{}", *key),
+                                entry_type: DirectoryEntryType::Directory,
+                            };
+            
+                            result.push(entry);
+                        }
+                    }
+                }
+                else if inode.inode & PROC_INODE_FLAG_PID > 0
+                {
+                    let pid = inode.inode & 0xFFFF;
+
+                    if let Some(proc_manager) = process::scheduler::get_process_manager()
+                    {
+                        if let Some(_) = proc_manager.get_process_by_pid(pid as u16)
+                        {
+                            let entry = DirectoryEntry
+                                {
+                                    index: FilesystemIndex { mount_id: inode.mount_id, inode: PROC_INODE_FLAG_PID_CMDLINE | (pid as usize)},
+                                    name: String::from("cmdline"),
+                                    entry_type: DirectoryEntryType::RegularFile,
+                                };
+
+                            result.push(entry);
+                        }
+                    }
+                }
 
                 Ok(result)
+            }
+            else if inode.inode & !0xFFFF > 0
+            {
+                Err(FilesystemError::INodeIsNotADirectory)
             }
             else
             {
@@ -156,7 +195,30 @@ impl Filesystem for ProcFilesystem
     {
         if Some(inode.mount_id) == self.mount_id
         {
-            Err(FilesystemError::BadINode)
+            let pid = inode.inode & 0xFFFF;
+
+            if inode.inode & PROC_INODE_FLAG_PID_CMDLINE > 0
+            {
+                if let Some(proc_manager) = process::scheduler::get_process_manager()
+                {
+                    if let Some(proc) = proc_manager.get_process_by_pid(pid as u16)
+                    {
+                        Ok(Vec::from(proc.data.command_line_args_to_string().as_bytes()))
+                    }
+                    else
+                    {
+                        Err(FilesystemError::BadINode)
+                    }
+                }
+                else
+                {
+                    Ok(Vec::new())
+                }
+            }
+            else
+            {
+                Ok(Vec::new())
+            }
         }
         else
         {
@@ -205,13 +267,17 @@ impl Filesystem for ProcFilesystem
         {
             if Some(inode.mount_id) == self.mount_id
             {
-                match inode.inode
+                if inode.inode == 1 || inode.inode & PROC_INODE_FLAG_PID > 0
                 {
-                    1 => Ok(Box::new(InodeFileDescriptor::new(vfs, inode, mode).unwrap())),
-                    default =>
-                    {
-                        Err(FilesystemError::BadINode)
-                    }
+                    Ok(Box::new(InodeFileDescriptor::new(vfs, inode, mode).unwrap()))
+                }
+                else if inode.inode & PROC_INODE_FLAG_PID_CMDLINE > 0
+                {
+                    Ok(Box::new(InodeFileDescriptor::new(vfs, inode, mode).unwrap()))
+                }
+                else
+                {
+                    Err(FilesystemError::BadINode)
                 }
             }
             else
