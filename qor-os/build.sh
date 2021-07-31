@@ -3,7 +3,7 @@ if not test -d ../userland/bin
   mkdir ../userland/bin
 end
 
-set programs slib libc term shell prog hello libc-test pwd basic cat ls clear mkdir checkers bmp
+set programs slib libc term shell prog hello libc-test pwd basic cat ls clear mkdir checkers bmp ps
 
 cd ../userland
 
