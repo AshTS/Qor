@@ -448,6 +448,8 @@ impl Process
 
         let user_addr = self.data.next_heap;
 
+        self.data.mem.push((ptr as *mut u8, length / mem::PAGE_SIZE));
+
         // Map the memory
         for i in 0..(length / mem::PAGE_SIZE)
         {
@@ -530,6 +532,7 @@ impl core::ops::Drop for Process
         {
             if !ptr.is_null()
             {
+                kprintln!("Freeing space {:?}", ptr);
                 mem::kpfree(*ptr as usize, *length).unwrap();
             }
         }
