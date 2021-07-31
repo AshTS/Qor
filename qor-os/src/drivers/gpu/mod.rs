@@ -41,3 +41,9 @@ pub fn get_global_graphics_driver() -> &'static mut GenericGraphics
         panic!("Cannot access uninitialized graphics driver");
     }
 }
+
+/// Check if the graphics driver is loaded
+pub fn is_graphics_driver_loaded() -> bool
+{
+    unsafe { &GLOBAL_GRAPHICS_DRIVER }.is_some()
+}
