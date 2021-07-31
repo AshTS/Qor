@@ -1,5 +1,3 @@
-
-
 CC = clang
 CFLAGS = --target=riscv64 -march=rv64gc -mno-relax
 INCLUDE = -isystem ../include
@@ -17,7 +15,7 @@ SRC_DIR = src
 _LIBS = 
 LIBS = $(patsubst %,$(LIB_DIR)/%,$(_LIBS))
 
-_OBJ = slib.o printf.o string.o malloc.o
+_OBJ = slib.o
 OBJ = $(patsubst %,$(BUILD_DIR)/%,$(_OBJ))
 
 $(OUTPUT_DIR)/slib : $(BUILD_DIR) $(OBJ)
