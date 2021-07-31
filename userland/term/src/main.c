@@ -48,6 +48,7 @@ int main()
             }
             else if (c == 8 || c == 127)
             {
+                write(out, "\x08 \x08", 3);
                 if (buffer_index > 0)
                 {
                     buffer_index--;
