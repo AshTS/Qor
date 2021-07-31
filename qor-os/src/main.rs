@@ -116,6 +116,7 @@ fn kmain()
     let mut vfs = fs::vfs::FilesystemInterface::new();
     let mut disk0 = fs::minix3::Minix3Filesystem::new(0);
     let mut dev = fs::devfs::DevFilesystem::new();
+    let mut proc = fs::procfs::ProcFilesystem::new();
 
     use fs::fstrait::Filesystem;
     use libutils::paths::OwnedPath;
@@ -123,9 +124,11 @@ fn kmain()
     vfs.init().unwrap();
     disk0.init().unwrap();
     dev.init().unwrap();
+    proc.init().unwrap();
 
     vfs.mount_fs(&OwnedPath::new("/"), Box::new(disk0)).unwrap();
     vfs.mount_fs(&OwnedPath::new("/dev"), Box::new(dev)).unwrap();
+    vfs.mount_fs(&OwnedPath::new("/proc"), Box::new(proc)).unwrap();
 
     vfs.index().unwrap();
 
