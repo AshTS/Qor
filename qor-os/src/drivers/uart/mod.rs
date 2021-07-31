@@ -1,5 +1,8 @@
 //! Driver for a MMIO UART Interface
 
+use crate::*;
+
+use super::generic::ByteInterface;
 use super::mmio;
 use super::generic;
 
@@ -56,7 +59,8 @@ unsafe fn write_byte(base: usize, data: u8)
 /// MMIO UART Driver
 pub struct UARTDriver
 {
-    base: usize
+    base: usize,
+    buffer: utils::ByteRingBuffer
 }
 
 impl UARTDriver
@@ -68,7 +72,8 @@ impl UARTDriver
     {
         Self
         {
-            base
+            base,
+            buffer: utils::ByteRingBuffer::new()
         }
     }
 
@@ -82,6 +87,17 @@ impl UARTDriver
             init(self.base);
         }
     }
+
+    /// Notify of a byte being recieved by the device
+    pub fn notify_recieve(&mut self)
+    {
+        // Safety: Assuming the safety from the `new` implementation is
+        // satisfied, this is safe
+        if let Some(byte) = unsafe { read_byte(self.base) }
+        {
+            self.buffer.enqueue_byte(byte);
+        }
+    }
 }
 
 impl generic::ByteInterface for UARTDriver
@@ -89,12 +105,9 @@ impl generic::ByteInterface for UARTDriver
     /// Read a byte from the UART
     fn read_byte(&mut self) -> Option<u8>
     {
-        // Safety: Assuming the safety from the `new` implementation is
-        // satisfied, this is safe
-        unsafe 
-        {
-            read_byte(self.base)
-        }
+        // self.buffer.dequeue_byte()
+
+        unsafe { read_byte(self.base) }
     }
 
     /// Write a byte to the UART
@@ -116,7 +129,6 @@ impl core::fmt::Write for UARTDriver
     {
         for byte in s.as_bytes()
         {
-            use generic::ByteInterface;
             self.write_byte(*byte);
         }
 

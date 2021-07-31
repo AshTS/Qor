@@ -27,5 +27,15 @@ pub fn get_device_files() -> Vec<DeviceFile>
                 ))));
     }
 
+    
+
+    // /dev/tty0 : UART Port
+    result.push(("tty0", 
+        Box::new(
+            || Box::new(
+                ByteInterfaceDescriptor::new(drivers::get_uart_driver())
+            )))); 
+
+
     result
 }

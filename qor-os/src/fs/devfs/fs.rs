@@ -133,7 +133,7 @@ impl Filesystem for DevFilesystem
 
                 Ok(result)
             }
-            else if inode.inode < 4
+            else if inode.inode < 2 + self.devices.len()
             {
                 Err(FilesystemError::INodeIsNotADirectory)
             }

@@ -32,11 +32,18 @@ void end_context(int);
 
 int main(int argc, char** argv)
 {
+    int fd = open("/dev/tty0", O_WRONLY);
+
+    write(fd, "Hi", 2);
+
+    close(fd);
+
+    /*
     int fd = start_context();
 
     draw_box(fd, 25, 25, 25, 25, new_pixel(255, 200, 255));
 
-    end_context(fd);
+    end_context(fd);*/
 }
 
 void draw_box(int fd, int x, int y, int width, int height, Pixel color)

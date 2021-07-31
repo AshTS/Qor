@@ -42,7 +42,7 @@ pub fn external_interrupt_handler(interrupt: PLICInterrupt, _interrupt_context: 
                             process::descriptor::STDIN_BUFFER.enqueue_byte(byte);
                         }
                     }
-                }, 
+                },
                 Some(8) | Some(127) =>
                 {
                     kprint!("{} {}", 8 as char, 8 as char);
