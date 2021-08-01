@@ -6,7 +6,7 @@ Basic kernel written in Rust for RISC-V, following the tutorial by Stephen Marz 
 
 1. Clone the repository and all submodules
 2. Navigate to the `qemu` directory
-3. Create a new directory called `build`
+3. Create a new directory called `build` and navigate there
 4. Run `../configure --target-list=riscv64-softmmu && make`
 5. Install qemu to your path
 6. Navigate to the `qor-os` directory
