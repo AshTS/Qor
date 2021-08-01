@@ -40,5 +40,6 @@ extern unsigned int mkdir(const char *path, unsigned short mode);
 extern unsigned int lseek(int fd, unsigned int offset, int whence);
 extern unsigned int pipe(int fds[2]);
 extern unsigned int dup2(int old, int new);
+extern unsigned int dup(int old);
 
 #endif // _SYSCALLS_H

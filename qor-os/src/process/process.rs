@@ -354,7 +354,7 @@ impl Process
     }
 
     /// Duplicate a file descriptor
-    pub fn dup(&mut self, old: usize, new: usize) -> usize
+    pub fn dup(&mut self, old: usize, new: Option<usize>) -> usize
     {
         let fd = if let Some(fd) = self.data.descriptors.get(&old)
         {
@@ -365,9 +365,32 @@ impl Process
             return usize::MAX;
         };
 
-        self.data.descriptors.insert(new, fd);
+        let out = if let Some(new) = new
+        {
+            new
+        }
+        else
+        {
+            let mut i = 0;
 
-        0
+            while self.data.descriptors.contains_key(&i)
+            {
+                i += 1;
+            }
+
+            i
+        };
+
+        self.data.descriptors.insert(out, fd);
+
+        if new.is_some()
+        {
+            0
+        }
+        else
+        {
+            out
+        }
     }
 
     /// Seek to a location in the file descriptor
