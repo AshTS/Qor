@@ -4,14 +4,12 @@ then
   mkdir ../userland/bin
 fi
 
-set programs slib libc term shell prog hello libc-test pwd basic cat ls clear mkdir checkers bmp ps
-
 cd ../userland
 
-for i in $programs
+for i in slib libc term shell prog hello libc-test pwd basic cat ls clear mkdir checkers bmp ps
 do
     cd $i
-    make $argv
+    make $1
     cd ..
 done
 
