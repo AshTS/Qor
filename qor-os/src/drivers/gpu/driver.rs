@@ -82,7 +82,7 @@ impl ANSIParser
 
                         ParserState::WaitingForArgs(next)
                     },
-                    'm' =>
+                    'm' | 'H' =>
                     {
                         let mut args = args.clone();
                         if args.len() == 0
@@ -344,6 +344,10 @@ impl GenericGraphics
                     else if cmd.1 == 'm' && cmd.0[0] >= 100 && cmd.0[0] <= 107
                     {
                         data.bg = ansi_to_ega(8 + cmd.0[0] as u8 - 100);
+                    }
+                    else if cmd.1 == 'H'
+                    {
+                        data.cursor_pos = (cmd.0[0].max(1) - 1, cmd.0[1].max(1) - 1);
                     }
                     else
                     {
