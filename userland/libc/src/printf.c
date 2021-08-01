@@ -24,6 +24,8 @@ void printf_helper(char* buffer, unsigned int* index, char c, int fd)
     if (*index % (PRINTF_BUFFER_LEN - 1) == 0 || c == 0)
     {
         local_put(buffer, fd);
+
+        *index = 0;
     }
 }
 
@@ -197,6 +199,8 @@ void sprintf_helper(char* buffer, unsigned int* index, char c, char** dest)
     if (*index % (PRINTF_BUFFER_LEN - 1) == 0 || c == 0)
     {
         local_sput(buffer, dest);
+
+        *index = 0;
     }
 }
 
@@ -343,11 +347,13 @@ int sprintf(char* dest, const char* data, ...)
             last_char = c;
             continue;
         }
-        
 
         // Add to the buffer and possibly refresh the buffer
         sprintf_helper(buffer, &index, c, &dest);
     }
+
+    // Make sure the string gets null terminated
+    *dest = 0;
 
     return index;
 }
