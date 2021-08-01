@@ -97,7 +97,7 @@ pub fn syscall_execve(proc: &mut super::Process, path_ptr: usize, argv_ptr: usiz
     }
      
     // Create a process from an elf file
-    if let Ok(mut new_proc) = process::elf::load_elf(proc.fs_interface.as_mut().unwrap(), &OwnedPath::new(path))
+    if let Ok(mut new_proc) = process::elf::load_elf(proc.fs_interface.as_mut().unwrap(), &OwnedPath::new(path), Vec::new())
     // if true
     {
         new_proc.data.descriptors = proc.data.descriptors.clone();

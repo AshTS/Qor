@@ -73,7 +73,7 @@ pub struct Segment
 
 
 /// Load a file from a file interface and convert it to a process
-pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: PathBuffer) -> Result<Process, ElfLoadError>
+pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: PathBuffer, args: Vec<String>) -> Result<Process, ElfLoadError>
 {
     kdebugln!(Elf, "Loading ELF File `{}`", path);
 
@@ -193,7 +193,21 @@ pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: PathBuffer) 
         table as *mut mem::mmu::PageTable, 
         4, 0x2_0000_0000);
 
-    proc.data.fill_command_line_args(vec![path.as_str().to_string()]);
+    let mut full_arguments = vec![path.as_str().to_string()];
+
+    full_arguments.extend_from_slice(&args);
+    let mut raw_args = Vec::new();
+
+    for arg in &mut full_arguments
+    {
+        arg.push('\0');
+
+        raw_args.push(arg.as_bytes());
+    }
+
+    proc.set_arguments(&raw_args, &[]);
+
+    proc.data.fill_command_line_args(full_arguments);
 
     Ok(proc)
 }

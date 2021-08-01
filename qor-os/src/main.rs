@@ -132,7 +132,10 @@ fn kmain()
 
     vfs.index().unwrap();
 
-    let elf_proc = process::elf::load_elf(&mut vfs, &OwnedPath::new("/bin/term")).unwrap();
+    let elf_proc = process::elf::load_elf(
+        &mut vfs, 
+        &OwnedPath::new("/bin/term"), 
+        vec![String::from("/dev/tty0")]).unwrap();
     process::scheduler::get_init_process_mut().unwrap().register_child(elf_proc.pid);
 
     process::scheduler::add_process(elf_proc);
