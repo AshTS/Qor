@@ -8,8 +8,8 @@ Processes
     Add segmentation fault display
     Allow programs to be haulted
 Kernel
-    Rewrite VirtIO Driver
-    Rewrite Block Driver
     Add Keyboard Driver
     Add Mouse Driver
-    Add Graphics Driver
+Shell
+    Add Pipe
+    Add Chevrons
