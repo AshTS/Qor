@@ -90,7 +90,7 @@ impl Process
         let text = mem::lds::text_end() - mem::lds::text_start();
         let data = mem::lds::rodata_end() - mem::lds::rodata_start();
 
-        let mem_stats = MemoryStats::new(0, 0, text, data / mem::PAGE_SIZE + stack_size);
+        let mem_stats = MemoryStats::new(0, 0, text / mem::PAGE_SIZE, data / mem::PAGE_SIZE + stack_size);
 
         Self::from_components(entry_point, page_table_ptr, stack_size, stack, mem_stats)
     }
