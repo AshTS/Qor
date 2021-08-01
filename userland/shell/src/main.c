@@ -2,9 +2,13 @@
 #include "syscalls.h"
 #include "string.h"
 
+#include <stdbool.h>
+
 char* PATH = "/bin/";
 
 void display_tag();
+
+int handle_redirect(char** argv);
 
 int main()
 {
@@ -82,6 +86,8 @@ int main()
                 buffer_index++;
             }
 
+            handle_redirect(argv);
+
             execve(argv[0], argv, envp);
 
             if (argv[0][0] != '/')
@@ -131,4 +137,40 @@ void display_tag()
     buffer[pos] = 0;
 
     printf("%s$> ", buffer);
+}
+
+int handle_redirect(char** argv)
+{
+    bool next_pipe_out = false;
+
+    for (int i = 0; argv[i] != 0; i++)
+    {
+        if (!next_pipe_out)
+        {
+            if (strcmp(argv[i], ">") == 0)
+            {
+                // Found a cheveron
+                next_pipe_out = true;
+            }
+            else
+            {
+                next_pipe_out = false;
+            }
+        }
+        else
+        {
+            int fd = open(argv[i], O_CREAT | O_TRUNC | O_WRONLY);
+
+            if (fd < 0)
+            {
+                printf("Unable to open `%s`\n", argv[i]);
+
+                return -1;
+            }
+
+            dup2(fd, 1);
+
+            return fd;
+        }
+    }
 }
