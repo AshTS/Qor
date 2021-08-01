@@ -329,8 +329,6 @@ impl FileDescriptor for ByteInterfaceDescriptor
             self.interface.write_byte(unsafe { buffer.add(i).read() });
         }
 
-        self.interface.flush();
-
         count
     }
 
