@@ -490,14 +490,14 @@ impl Process
     pub fn map(&mut self, length: usize, perm: mem::mmu::PageTableEntryFlags) -> usize
     {
         // Allocate the memory
-        let ptr = mem::kpzalloc(length / mem::PAGE_SIZE, "mmap").unwrap();
+        let ptr = mem::kpzalloc(length, "mmap").unwrap();
 
         let user_addr = self.data.next_heap;
 
-        self.data.mem.push((ptr as *mut u8, length / mem::PAGE_SIZE));
+        self.data.mem.push((ptr as *mut u8, length));
 
         // Map the memory
-        for i in 0..(length / mem::PAGE_SIZE)
+        for i in 0..length
         {
             unsafe { self.root.as_mut().unwrap() }.map(self.data.next_heap, ptr + i * mem::PAGE_SIZE, perm, 0);
             self.data.next_heap += mem::PAGE_SIZE;
