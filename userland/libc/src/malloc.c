@@ -4,7 +4,7 @@
 #include "stdbool.h"
 
 #define PAGESIZE 4096
-#define INITIAL_HEAP PAGESIZE * 128
+#define INITIAL_HEAP PAGESIZE
 
 #ifdef DEBUG
 #define DEBUG_PRINT(...) printf(__VA_ARGS__)
@@ -84,6 +84,44 @@ void check_table()
     }
 }*/
 
+void expand_malloc(unsigned int pages)
+{
+    DEBUG_PRINT("Expanding malloc space by %i pages\n", pages);
+
+    // Map the next segment of malloc memory
+    void* segment = mmap(0, PAGESIZE * pages, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
+
+    heap_size += PAGESIZE * pages;
+
+    MallocChunk new_chunk = {.ptr = segment, .size = pages * PAGESIZE, .flags = CHUNK_FREE | CHUNK_VALID, .next = 0};
+
+    MallocChunk* walk = (void*) heap_table + heap_table_size;
+    walk--;
+
+    if (walk->flags & CHUNK_VALID)
+    {
+        eprintf("All Malloc Chunks Used\n");
+        exit(-1);
+    }
+
+    do
+    {
+        if (walk->flags & CHUNK_VALID)
+        {
+            MallocChunk* old = walk;
+            walk++;
+
+            old->next = walk;
+
+            break;
+        }
+        walk--;
+    }
+    while ((void*) walk > (void*) heap_table);
+
+    *walk = new_chunk;
+}
+
 void *malloc(unsigned int size)
 {
     DEBUG_PRINT("malloc(%i) => ", size);
@@ -92,8 +130,8 @@ void *malloc(unsigned int size)
         heap_start = mmap(0, INITIAL_HEAP, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
         heap_size = INITIAL_HEAP;
 
-        heap_table = mmap(0, PAGESIZE * 16, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
-        heap_table_size = PAGESIZE * 16;
+        heap_table = mmap(0, PAGESIZE * 4, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
+        heap_table_size = PAGESIZE * 4;
 
         MallocChunk *walk = (MallocChunk *)heap_table;
 
@@ -115,7 +153,7 @@ void *malloc(unsigned int size)
     MallocChunk *walk = (MallocChunk *)heap_table;
     void *result = 0;
 
-    while (walk != 0 && (void *)walk - heap_table < heap_table_size)
+    while (walk != 0 && (void *)walk - (void *)heap_table < heap_table_size)
     {
         if ((walk->flags & CHUNK_VALID) == 0)
         {
@@ -148,6 +186,16 @@ void *malloc(unsigned int size)
         }
 
         walk = walk->next;
+    }
+
+    if (result == 0)
+    {
+        DEBUG_PRINT("EMPTY\n");
+
+        int page_count = 1 + (size / PAGESIZE);
+        expand_malloc(page_count);
+
+        return malloc(size);
     }
 
     DEBUG_PRINT("%p\n", result);
@@ -194,7 +242,7 @@ void free(void *ptr)
     unsigned int count = 0;
     unsigned int expected_next = 0;
 
-    while (walk != 0 && (void *)walk - heap_table < heap_table_size)
+    while (walk != 0 && (void *)walk - (void *)heap_table < heap_table_size)
     {
         if ((walk->flags & CHUNK_VALID) == 0)
         {
@@ -257,6 +305,18 @@ void dump()
         if ((walk->flags & CHUNK_VALID) == 0)
         {
             printf("Invalid Chunk\n");
+
+            if ((walk->flags & CHUNK_FREE) == 0)
+            {
+                printf("[ALLOC] ");
+            }
+            else
+            {
+                printf("[FREE ] ");
+            }
+
+            printf("%p %ld byte%c\n", walk->ptr, walk->size, (walk->size > 1) ? 's' : ' ');
+
             break;
         }
 
