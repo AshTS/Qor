@@ -58,6 +58,12 @@ pipe:
     ecall
     ret
 
+.globl dup2
+dup2:
+    li a7, 33
+    ecall
+    ret
+
 .globl fork
 fork:
     li a7, 57

@@ -353,6 +353,23 @@ impl Process
         (read, write)
     }
 
+    /// Duplicate a file descriptor
+    pub fn dup(&mut self, old: usize, new: usize) -> usize
+    {
+        let fd = if let Some(fd) = self.data.descriptors.get(&old)
+        {
+            fd.clone()
+        }
+        else
+        {
+            return usize::MAX;
+        };
+
+        self.data.descriptors.insert(new, fd);
+
+        0
+    }
+
     /// Seek to a location in the file descriptor
     pub fn seek(&mut self, fd: usize, offset: usize, mode: usize) -> usize
     {

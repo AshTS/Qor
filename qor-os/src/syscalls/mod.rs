@@ -7,6 +7,7 @@ use process::process::Process;
 // Modules
 mod chdir;
 mod close;
+mod dup2;
 mod execve;
 mod exit;
 mod fork;
@@ -61,6 +62,11 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         22 =>
         {
             pipe::syscall_pipe(proc, arg0)
+        },
+        // dup2 Syscall
+        33 =>
+        {
+            dup2::syscall_dup2(proc, arg0, arg1)
         },
         // munmap Syscall
         11 =>
