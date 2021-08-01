@@ -1,17 +1,19 @@
-#! /usr/bin/fish
-if not test -d ../userland/bin
+#! /usr/bin/bash
+if test ! -d ../userland/bin
+then
   mkdir ../userland/bin
-end
+fi
 
 set programs slib libc term shell prog hello libc-test pwd basic cat ls clear mkdir checkers bmp ps
 
 cd ../userland
 
 for i in $programs
+do
     cd $i
     make $argv
     cd ..
-end 
+done
 
 cd ../qor-os
 
