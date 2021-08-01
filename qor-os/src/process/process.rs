@@ -6,6 +6,7 @@ use libutils::paths::PathBuffer;
 
 use super::data::ProcessData;
 use super::descriptor::FileDescriptor;
+use super::stats::MemoryStats;
 
 use mem::mmu::PageTable;
 use mem::mmu::TranslationError;
@@ -86,11 +87,16 @@ impl Process
         // Map the stack
         page_table.identity_map(stack, stack + (stack_size - 1) * mem::PAGE_SIZE, PageTableEntryFlags::readable() | PageTableEntryFlags::writable() | PageTableEntryFlags::user());
 
-        Self::from_components(entry_point, page_table_ptr, stack_size, stack)
+        let text = mem::lds::text_end() - mem::lds::text_start();
+        let data = mem::lds::rodata_end() - mem::lds::rodata_start();
+
+        let mem_stats = MemoryStats::new(0, 0, text, data / mem::PAGE_SIZE + stack_size);
+
+        Self::from_components(entry_point, page_table_ptr, stack_size, stack, mem_stats)
     }
 
     /// Create a new process from components
-    pub fn from_components(entry_point: usize, page_table: *mut PageTable, stack_size: usize, stack_ptr: usize) -> Self
+    pub fn from_components(entry_point: usize, page_table: *mut PageTable, stack_size: usize, stack_ptr: usize, mem_stats: MemoryStats) -> Self
     {
         let frame = mem::kpalloc(1, "Trap Frame").unwrap() as *mut TrapFrame;
         unsafe { frame.write(TrapFrame::new(4)) }
@@ -105,7 +111,7 @@ impl Process
                 pid: next_pid(),
                 root: page_table,
                 state: ProcessState::Running,
-                data: unsafe { ProcessData::new(stack_size) },
+                data: unsafe { ProcessData::new(stack_size, mem_stats) },
                 fs_interface: None,
             };
 
@@ -429,7 +435,7 @@ impl Process
     {
         let stack_size = self.data.stack_size;
 
-        let mut temp = Self::from_components(self.program_counter + 4, unsafe { self.root.as_mut().unwrap().duplicate_map() }, stack_size, self.stack as usize);
+        let mut temp = Self::from_components(self.program_counter + 4, unsafe { self.root.as_mut().unwrap().duplicate_map() }, stack_size, self.stack as usize, self.data.mem_stats);
 
         let new_frame = mem::kpalloc(1, "Trap Frame").unwrap() as *mut TrapFrame;
 
@@ -491,6 +497,8 @@ impl Process
     {
         // Allocate the memory
         let ptr = mem::kpzalloc(length, "mmap").unwrap();
+
+        self.data.mem_stats.resident += length;
 
         let user_addr = self.data.next_heap;
 

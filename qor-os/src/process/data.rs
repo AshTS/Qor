@@ -4,6 +4,7 @@ use libutils::paths::OwnedPath;
 use crate::*;
 
 use super::descriptor::*;
+use super::stats::*;
 
 /// Process Data
 pub struct ProcessData
@@ -16,13 +17,14 @@ pub struct ProcessData
     pub parent_pid: u16,
     pub cwd: OwnedPath,
     pub cmdline_args: Vec<String>,
+    pub mem_stats: MemoryStats
 }
 
 impl ProcessData
 {
     /// Initialize a fresh process data
     /// Safety: The mem_ptr must be valid or zero
-    pub unsafe fn new(stack_size: usize) -> Self
+    pub unsafe fn new(stack_size: usize, mem_stats: MemoryStats) -> Self
     {
         let descriptors: DescriptorTable = BTreeMap::new();
 
@@ -35,7 +37,8 @@ impl ProcessData
             children: Vec::new(),
             parent_pid: 0,
             cwd: OwnedPath::new("/root/"),
-            cmdline_args: Vec::new()
+            cmdline_args: Vec::new(),
+            mem_stats
         }
     }
 

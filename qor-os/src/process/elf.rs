@@ -9,6 +9,8 @@ use libutils::paths::PathBuffer;
 
 use super::process::Process;
 
+use super::stats::MemoryStats;
+
 /// Elf Loading Error
 #[derive(Debug, Clone)]
 pub enum ElfLoadError
@@ -81,6 +83,9 @@ pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: PathBuffer, 
     let index = interface.path_to_inode(path).map_err(|e| ElfLoadError::ReadError(e))?;
     let file_data = interface.read_inode(index).map_err(|e| ElfLoadError::ReadError(e))?;
 
+    let mut text_size = 0;
+    let mut data_size = 0;
+
     // Verify it is an elf file
     if file_data[0..4] != [0x7F, 'E' as u8, 'L' as u8, 'F' as u8]
     {
@@ -142,6 +147,15 @@ pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: PathBuffer, 
         }
         kdebugln!(Elf, "{} bytes", header.memsz);
 
+        if header.flags & 1 > 0
+        {
+            text_size += (header.memsz + mem::PAGE_SIZE - 1) / mem::PAGE_SIZE;
+        }
+        else
+        {
+            data_size += (header.memsz + mem::PAGE_SIZE - 1) / mem::PAGE_SIZE;
+        }
+
         segments.push(
             Segment
             {
@@ -176,11 +190,13 @@ pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: PathBuffer, 
         }
     }
 
+    let stack_size = 4;
+
     // Allocate space for four pages of stack space
-    let stack_space = mem::kpzalloc(4, "ELF Stack Space").unwrap();
+    let stack_space = mem::kpzalloc(stack_size, "ELF Stack Space").unwrap();
 
     // Map the stack space
-    for i in 0..4
+    for i in 0..stack_size
     {
         table.map(0x2_0000_0000 + mem::PAGE_SIZE * i,
             stack_space + mem::PAGE_SIZE * i,
@@ -188,10 +204,13 @@ pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: PathBuffer, 
             0);
     }
 
+    let mem_stats = MemoryStats::new(0, 0, text_size, data_size + stack_size);
+
     let mut proc = Process::from_components(
         elf_header.e_entry as usize, 
         table as *mut mem::mmu::PageTable, 
-        4, 0x2_0000_0000);
+        stack_size, 0x2_0000_0000,
+        mem_stats);
 
     let mut full_arguments = vec![path.as_str().to_string()];
 

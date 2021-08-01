@@ -9,6 +9,7 @@ use crate::process::descriptor::*;
 
 const PROC_INODE_FLAG_PID: usize = 0x10000;
 const PROC_INODE_FLAG_PID_CMDLINE: usize = 0x20000;
+const PROC_INODE_FLAG_PID_STATM: usize = 0x40000;
 
 /// /proc Filesystem Handler
 pub struct ProcFilesystem
@@ -148,6 +149,15 @@ impl Filesystem for ProcFilesystem
                                 };
 
                             result.push(entry);
+
+                            let entry = DirectoryEntry
+                                {
+                                    index: FilesystemIndex { mount_id: inode.mount_id, inode: PROC_INODE_FLAG_PID_STATM | (pid as usize)},
+                                    name: String::from("statm"),
+                                    entry_type: DirectoryEntryType::RegularFile,
+                                };
+
+                            result.push(entry);
                         }
                     }
                 }
@@ -215,6 +225,24 @@ impl Filesystem for ProcFilesystem
                     Ok(Vec::new())
                 }
             }
+            else if inode.inode & PROC_INODE_FLAG_PID_STATM > 0
+            {
+                if let Some(proc_manager) = process::scheduler::get_process_manager()
+                {
+                    if let Some(proc) = proc_manager.get_process_by_pid(pid as u16)
+                    {
+                        Ok(Vec::from(proc.data.mem_stats.to_string().as_bytes()))
+                    }
+                    else
+                    {
+                        Err(FilesystemError::BadINode)
+                    }
+                }
+                else
+                {
+                    Ok(Vec::new())
+                }
+            }
             else
             {
                 Ok(Vec::new())
@@ -271,7 +299,7 @@ impl Filesystem for ProcFilesystem
                 {
                     Ok(Box::new(InodeFileDescriptor::new(vfs, inode, mode).unwrap()))
                 }
-                else if inode.inode & PROC_INODE_FLAG_PID_CMDLINE > 0
+                else if inode.inode & (PROC_INODE_FLAG_PID_CMDLINE | PROC_INODE_FLAG_PID_STATM) > 0
                 {
                     Ok(Box::new(InodeFileDescriptor::new(vfs, inode, mode).unwrap()))
                 }
