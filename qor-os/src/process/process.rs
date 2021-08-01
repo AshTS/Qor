@@ -591,7 +591,6 @@ impl core::ops::Drop for Process
         {
             if !ptr.is_null()
             {
-                kprintln!("Freeing space {:?}", ptr);
                 mem::kpfree(*ptr as usize, *length).unwrap();
             }
         }
