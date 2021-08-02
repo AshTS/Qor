@@ -9,6 +9,8 @@ use crate::process::descriptor::*;
 
 use super::devices::*;
 
+use super::super::ioctl::*;
+
 /// Filesystem which gives access to various devices
 pub struct DevFilesystem
 {
@@ -249,6 +251,27 @@ impl Filesystem for DevFilesystem
             else
             {
                 vfs.open_fd(inode, mode)   
+            }
+        }
+        else
+        {
+            Err(FilesystemError::FilesystemNotMounted)
+        }
+    }
+
+    /// Execute an ioctl command on an inode
+    fn exec_ioctl(&mut self, inode: FilesystemIndex, cmd: IOControlCommand) -> FilesystemResult<usize>
+    {
+        if let Some(vfs) = &mut self.vfs
+        {
+            if Some(inode.mount_id) == self.mount_id
+            {
+                // Nothing to do here (yet)
+                Ok(usize::MAX)
+            }
+            else
+            {
+                vfs.exec_ioctl(inode, cmd)   
             }
         }
         else

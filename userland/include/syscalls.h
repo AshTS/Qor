@@ -41,5 +41,6 @@ extern unsigned int lseek(int fd, unsigned int offset, int whence);
 extern unsigned int pipe(int fds[2]);
 extern unsigned int dup2(int old, int new);
 extern unsigned int dup(int old);
+extern unsigned int ioctl(unsigned int fd, unsigned int cmd, unsigned long arg);
 
 #endif // _SYSCALLS_H

@@ -10,6 +10,9 @@ use alloc::vec;
 use crate::process::descriptor::*;
 
 use libutils::paths::PathBuffer;
+
+use super::super::ioctl::*;
+
 /// Minix3 Filesystem Driver
 pub struct Minix3Filesystem
 {
@@ -793,6 +796,27 @@ impl Filesystem for Minix3Filesystem
             else
             {
                 vfs.open_fd(inode, mode)   
+            }
+        }
+        else
+        {
+            Err(FilesystemError::FilesystemNotMounted)
+        }
+    }
+
+    /// Execute an ioctl command on an inode
+    fn exec_ioctl(&mut self, inode: FilesystemIndex, cmd: IOControlCommand) -> FilesystemResult<usize>
+    {
+        if let Some(vfs) = &mut self.vfs
+        {
+            if Some(inode.mount_id) == self.mount_id
+            {
+                // Nothing to do here (yet)
+                Ok(usize::MAX)
+            }
+            else
+            {
+                vfs.exec_ioctl(inode, cmd)   
             }
         }
         else

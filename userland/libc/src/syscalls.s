@@ -52,6 +52,12 @@ munmap:
     ecall
     ret
 
+.globl ioctl
+ioctl:
+    li a7, 16
+    ecall
+    ret
+
 .globl pipe
 pipe:
     li a7, 22

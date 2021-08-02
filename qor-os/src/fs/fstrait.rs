@@ -6,6 +6,8 @@ use super::structures::*;
 
 use libutils::paths::PathBuffer;
 
+use super::ioctl::*;
+
 /// Generic Filesystem Trait
 pub trait Filesystem
 {
@@ -50,4 +52,7 @@ pub trait Filesystem
 
     /// Open a filedescriptor for the given inode
     fn open_fd(&mut self, inode: FilesystemIndex, mode: usize) -> FilesystemResult<Box<dyn crate::process::descriptor::FileDescriptor>>;
+
+    /// Execute an ioctl command on an inode
+    fn exec_ioctl(&mut self, inode: FilesystemIndex, cmd: IOControlCommand) -> FilesystemResult<usize>;
 }

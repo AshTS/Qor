@@ -9,6 +9,8 @@ use crate::process::descriptor::*;
 
 use libutils::paths::PathBuffer;
 
+use super::ioctl::*;
+
 /// Ram Disk INode
 pub enum RamDiskInode
 {
@@ -368,6 +370,34 @@ impl Filesystem for RamDiskFilesystem
             else
             {
                 vfs.open_fd(inode, mode)   
+            }
+        }
+        else
+        {
+            Err(FilesystemError::FilesystemNotMounted)
+        }
+    }
+
+    /// Execute an ioctl command on an inode
+    fn exec_ioctl(&mut self, inode: FilesystemIndex, cmd: IOControlCommand) -> FilesystemResult<usize>
+    {
+        if let Some(vfs) = &mut self.vfs
+        {
+            if Some(inode.mount_id) == self.mount_id
+            {
+                if inode.inode < self.inodes.len()
+                {
+                    // Nothing to do here (yet)
+                    Ok(usize::MAX)
+                }
+                else
+                {
+                    Err(FilesystemError::BadINode)
+                }
+            }
+            else
+            {
+                vfs.exec_ioctl(inode, cmd)   
             }
         }
         else

@@ -11,6 +11,8 @@ const PROC_INODE_FLAG_PID: usize = 0x10000;
 const PROC_INODE_FLAG_PID_CMDLINE: usize = 0x20000;
 const PROC_INODE_FLAG_PID_STATM: usize = 0x40000;
 
+use super::super::ioctl::*;
+
 /// /proc Filesystem Handler
 pub struct ProcFilesystem
 {
@@ -311,6 +313,27 @@ impl Filesystem for ProcFilesystem
             else
             {
                 vfs.open_fd(inode, mode)   
+            }
+        }
+        else
+        {
+            Err(FilesystemError::FilesystemNotMounted)
+        }
+    }
+
+    /// Execute an ioctl command on an inode
+    fn exec_ioctl(&mut self, inode: FilesystemIndex, cmd: IOControlCommand) -> FilesystemResult<usize>
+    {
+        if let Some(vfs) = &mut self.vfs
+        {
+            if Some(inode.mount_id) == self.mount_id
+            {
+                // Nothing to do here (yet)
+                Ok(usize::MAX)
+            }
+            else
+            {
+                vfs.exec_ioctl(inode, cmd)   
             }
         }
         else

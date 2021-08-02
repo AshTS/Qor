@@ -3,6 +3,7 @@
 // Modules
 pub mod devfs;
 pub mod fstrait;
+pub mod ioctl;
 pub mod minix3;
 pub mod procfs;
 pub mod ramdisk;

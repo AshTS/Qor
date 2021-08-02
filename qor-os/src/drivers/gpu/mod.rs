@@ -3,6 +3,8 @@ use crate::*;
 pub mod driver;
 pub use driver::*;
 
+pub mod structs;
+
 // Global Graphics Driver
 static mut GLOBAL_GRAPHICS_DRIVER: Option<GenericGraphics> = None;
 

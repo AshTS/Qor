@@ -422,6 +422,33 @@ impl Process
         }
     }
 
+    /// Run an ioctl command
+    pub fn exec_ioctl(&mut self, fd: usize, cmd: fs::ioctl::IOControlCommand) -> usize
+    {
+        if let Some(fd) = self.data.descriptors.get_mut(&fd)
+        {
+            if let Some(inode) = fd.borrow_mut().get_inode()
+            {
+                if let Ok(val) = self.fs_interface.as_mut().unwrap().exec_ioctl(inode, cmd)
+                {
+                    val
+                }
+                else
+                {
+                    usize::MAX
+                }
+            }
+            else
+            {
+                usize::MAX
+            }
+        }
+        else
+        {
+            usize::MAX
+        }
+    }
+
     /// Display the memory map for this process
     pub fn display_memory_map(&self)
     {

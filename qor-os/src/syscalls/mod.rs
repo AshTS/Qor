@@ -13,6 +13,7 @@ mod exit;
 mod fork;
 mod getcwd;
 mod getdents;
+mod ioctl;
 mod lseek;
 mod mkdir;
 mod mmap;
@@ -57,6 +58,11 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         9 =>
         {
             mmap::syscall_mmap(proc, arg0, arg1, arg2, arg3, arg4, arg5)
+        },
+        // ioctl Syscall
+        16 =>
+        {
+            ioctl::syscall_ioctl(proc, arg0, arg1, arg2)
         },
         // pipe Syscall
         22 =>

@@ -8,6 +8,8 @@ use alloc::format;
 
 use libutils::paths::{OwnedPath, PathBuffer};
 
+use super::ioctl::IOControlCommand;
+
 static VFS_INTERFACE: core::sync::atomic::AtomicPtr<FilesystemInterface> = core::sync::atomic::AtomicPtr::new(0 as *mut FilesystemInterface);
 
 /// Get a reference to the vfs interface
@@ -426,6 +428,19 @@ impl Filesystem for FilesystemInterface
         if let Some(fs) = self.get_fs_mount(inode.mount_id)
         {
             fs.open_fd(inode, mode)
+        }
+        else
+        {
+            Err(FilesystemError::UnableToFindDiskMount(inode.mount_id))
+        }
+    }
+
+    /// Execute an ioctl command on an inode
+    fn exec_ioctl(&mut self, inode: FilesystemIndex, cmd: IOControlCommand) -> FilesystemResult<usize>
+    {
+        if let Some(fs) = self.get_fs_mount(inode.mount_id)
+        {
+            fs.exec_ioctl(inode, cmd)
         }
         else
         {
