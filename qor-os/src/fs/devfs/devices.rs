@@ -2,7 +2,32 @@ use crate::*;
 
 use process::descriptor::*;
 
-pub type DeviceFile = (&'static str, Box<dyn Fn() -> Box<dyn FileDescriptor>>);
+use fs::structures::FilesystemIndex;
+
+/// DeviceFile object
+pub struct DeviceFile
+{
+    pub name: &'static str,
+    pub desc_const: Box<dyn Fn(FilesystemIndex) -> Box<dyn FileDescriptor>>
+}
+
+impl DeviceFile
+{
+    /// Create a new device file
+    pub fn new(name: &'static str, desc_const: Box<dyn Fn(FilesystemIndex) -> Box<dyn FileDescriptor>>) -> Self
+    {
+        Self
+        {
+            name, desc_const
+        }
+    }
+
+    /// Make the descriptor
+    pub fn make_descriptor(&self, index: FilesystemIndex) -> Box<dyn FileDescriptor>
+    {
+        (self.desc_const)(index)
+    }
+}
 
 /// Return all available device files for the system
 pub fn get_device_files() -> Vec<DeviceFile>
@@ -13,33 +38,41 @@ pub fn get_device_files() -> Vec<DeviceFile>
     if drivers::gpu::is_graphics_driver_loaded()
     {
         // /dev/disp : Text mode for the frame buffer
-        result.push(("disp", 
-            Box::new(
-                || Box::new(
-                    ByteInterfaceDescriptor::new(drivers::gpu::get_global_graphics_driver())
-                ))));
+        result.push(
+            DeviceFile::new(
+                "disp",
+                Box::new(
+                    |_index| Box::new(
+                        ByteInterfaceDescriptor::new(drivers::gpu::get_global_graphics_driver())
+                    ))));
 
         // /dev/fb0 : Raw frame buffer access
-        result.push(("fb0", 
-            Box::new(
-                || Box::new(
-                    BufferDescriptor::new(drivers::gpu::get_global_graphics_driver())
-                ))));
+        result.push(
+            DeviceFile::new(
+                "fb0",
+                Box::new(
+                    |_index| Box::new(
+                        BufferDescriptor::new(drivers::gpu::get_global_graphics_driver())
+                    ))));
     }
 
     // /dev/tty0 : UART Port
-    result.push(("tty0", 
-        Box::new(
-            || Box::new(
-                ByteInterfaceDescriptor::new(drivers::get_uart_driver())
-            )))); 
+    result.push(
+        DeviceFile::new(
+            "tty0",
+            Box::new(
+                |_index| Box::new(
+                    ByteInterfaceDescriptor::new(drivers::get_uart_driver())
+                ))));
 
     // /dev/null : Null Descriptor
-    result.push(("null", 
-    Box::new(
-        || Box::new(
-            NullDescriptor{}
-        ))));
+    result.push(
+        DeviceFile::new(
+            "null",
+            Box::new(
+                |_index| Box::new(
+                    NullDescriptor{})
+                )));
 
     result
 }

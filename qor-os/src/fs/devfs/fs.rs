@@ -121,12 +121,12 @@ impl Filesystem for DevFilesystem
                 result.push(loopback);
                 result.push(parent);
 
-                for (i, (dev_name, _)) in self.devices.iter().enumerate()
+                for (i, dev) in self.devices.iter().enumerate()
                 {
                     let dir_ent = DirectoryEntry
                         {
                             index: FilesystemIndex { mount_id: inode.mount_id, inode: i + 2},
-                            name: String::from(*dev_name),
+                            name: String::from(dev.name),
                             entry_type: DirectoryEntryType::CharDevice,
                         };
 
@@ -239,7 +239,7 @@ impl Filesystem for DevFilesystem
                     {
                         if default > 1 && default < 2 + self.devices.len()
                         {
-                            Ok(self.devices[default - 2].1())
+                            Ok(self.devices[default - 2].make_descriptor(inode))
                         }
                         else
                         {
