@@ -3,7 +3,7 @@ const FREQUENCY: usize = 10_000_000;
 
 /// Structure to store a time value
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct KernelTime(usize);
+pub struct KernelTime(pub usize);
 
 impl KernelTime
 {
@@ -29,6 +29,22 @@ impl KernelTime
     pub fn microseconds(microseconds: usize) -> Self
     {
         Self(microseconds * FREQUENCY / 1_000_000)
+    }
+
+    /// Create a new Kernel Timing value from nanoseconds
+    pub fn nanoseconds(nanoseconds: usize) -> Self
+    {
+        Self(nanoseconds * FREQUENCY / 1_000_000_000)
+    }
+}
+
+impl core::ops::Add for KernelTime
+{
+    type Output = KernelTime;
+
+    fn add(self, rhs: Self) -> Self::Output
+    {
+        Self(self.0 + rhs.0)
     }
 }
 

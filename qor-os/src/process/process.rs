@@ -1,4 +1,5 @@
 use crate::*;
+use crate::drivers::timer::KernelTime;
 use crate::fs::fstrait::Filesystem;
 
 use fs::structures::DirectoryEntry;
@@ -44,7 +45,7 @@ const SEEK_END: usize = 4;
 pub enum ProcessState
 {
     Running,
-    Sleeping,
+    Sleeping{wake_time: KernelTime},
     Waiting,
     Dead,
     Zombie

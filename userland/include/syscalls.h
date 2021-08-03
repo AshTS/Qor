@@ -23,6 +23,12 @@
 #define SEEK_CUR 2
 #define SEEK_END 4
 
+struct time_repr
+{
+    long tv_sec;
+    long tv_nsec;
+};
+
 extern unsigned int exit(int val);
 extern unsigned int write(int fd, void* buffer, int size);
 extern unsigned int open(const char* name, int open_mode);
@@ -42,5 +48,6 @@ extern unsigned int pipe(int fds[2]);
 extern unsigned int dup2(int old, int new);
 extern unsigned int dup(int old);
 extern unsigned int ioctl(unsigned int fd, unsigned int cmd, unsigned long arg);
+extern unsigned int nanosleep(struct time_repr* req, struct time_repr* rem);
 
 #endif // _SYSCALLS_H

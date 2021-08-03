@@ -142,8 +142,20 @@ impl ProcessManager
                         {
                             children = Some(proc.get_children().clone())
                         },
-                        // If it is asleep or a zombie, skip
-                        ProcessState::Sleeping | ProcessState::Zombie => {},
+                        // If it is asleep, check if it hsould be woken up
+                        ProcessState::Sleeping {wake_time } =>
+                        {
+                            // Check if the wake time has passed by checking the timer driver
+                            let current = unsafe { &drivers::TIMER_DRIVER }.time();
+
+                            // If so, switch the process to the Running state and switch to it
+                            if current > wake_time
+                            {
+                                break;
+                            }
+                        },
+                        // If the process is a zombie, ignore it
+                        ProcessState::Zombie => {},
                         // If it is dead, remove it from the process tree
                         ProcessState::Dead => 
                         {
@@ -193,6 +205,9 @@ impl ProcessManager
                     }
                 }
             }
+
+            // If the process was woken up or sleeping, make sure it is running now
+            self.get_process_by_pid_mut(step_pid).unwrap().state = ProcessState::Running;
 
             step_pid
         }

@@ -18,6 +18,7 @@ mod lseek;
 mod mkdir;
 mod mmap;
 mod munmap;
+mod nanosleep;
 mod open;
 mod pipe;
 mod read;
@@ -78,6 +79,11 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         33 =>
         {
             dup::syscall_dup2(proc, arg0, arg1)
+        },
+        // nanosleep Syscall
+        35 =>
+        {
+            nanosleep::syscall_nanosleep(proc, arg0, arg1)
         },
         // munmap Syscall
         11 =>

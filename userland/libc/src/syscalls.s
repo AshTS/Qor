@@ -76,6 +76,12 @@ dup2:
     ecall
     ret
 
+.globl nanosleep
+nanosleep:
+    li a7, 35
+    ecall
+    ret
+
 .globl fork
 fork:
     li a7, 57
