@@ -35,6 +35,10 @@ int fprintf(int fd, const char* data, ...)
     va_list args;
     va_start(args, data);
 
+    // Longer format specifiers
+    char long_fmt_spec[16];
+    unsigned int fmt_index = 0;
+
     // Initialize the buffer
     char buffer[PRINTF_BUFFER_LEN];
     unsigned int index = 0;
@@ -63,6 +67,9 @@ int fprintf(int fd, const char* data, ...)
             {
                 next_format_specifier = true;
                 last_char = c;
+
+                fmt_index = 0;
+
                 continue;
             }
 
@@ -84,6 +91,20 @@ int fprintf(int fd, const char* data, ...)
                 while (counter <= i / 10)
                 {
                     counter *= 10;
+                }
+
+                if (fmt_index > 1)
+                {
+                    int this_counter = 1;
+                    while (long_fmt_spec[1]-- > '1')
+                    {
+                        this_counter *= 10;
+                    }
+
+                    if (this_counter > counter)
+                    {
+                        counter = this_counter; 
+                    }
                 }
 
                 while (counter >= 1)
@@ -169,10 +190,10 @@ int fprintf(int fd, const char* data, ...)
                 printf_helper(buffer, &index, (char)c, fd);
                 next_format_specifier = false;
             }
+            long_fmt_spec[fmt_index++] = c;
             last_char = c;
             continue;
         }
-        
 
         // Add to the buffer and possibly refresh the buffer
         printf_helper(buffer, &index, c, fd);
@@ -210,6 +231,10 @@ int sprintf(char* dest, const char* data, ...)
     va_list args;
     va_start(args, data);
 
+    // Longer format specifiers
+    char long_fmt_spec[16];
+    unsigned int fmt_index = 0;
+
     // Initialize the buffer
     char buffer[PRINTF_BUFFER_LEN];
     unsigned int index = 0;
@@ -238,6 +263,9 @@ int sprintf(char* dest, const char* data, ...)
             {
                 next_format_specifier = true;
                 last_char = c;
+
+                fmt_index = 0;
+
                 continue;
             }
 
@@ -259,6 +287,20 @@ int sprintf(char* dest, const char* data, ...)
                 while (counter <= i / 10)
                 {
                     counter *= 10;
+                }
+
+                if (fmt_index > 1)
+                {
+                    int this_counter = 1;
+                    while (long_fmt_spec[1]-- > '1')
+                    {
+                        this_counter *= 10;
+                    }
+
+                    if (this_counter > counter)
+                    {
+                        counter = this_counter; 
+                    }
                 }
 
                 while (counter >= 1)
@@ -344,6 +386,7 @@ int sprintf(char* dest, const char* data, ...)
                 sprintf_helper(buffer, &index, (char)c, &dest);
                 next_format_specifier = false;
             }
+            long_fmt_spec[fmt_index++] = c;
             last_char = c;
             continue;
         }
