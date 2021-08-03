@@ -23,6 +23,7 @@ pub fn syscall_ioctl(proc: &mut super::Process, fd: usize, cmd: usize, args: usi
                 #define FBIOPUTCMAP         0x4605
                 #define FBIOPAN_DISPLAY		0x4606
             */
+            // Framebuffer
             0x4600 =>
             {
                 IOControlCommand::FrameBufferGetVariableInfo{ response: map_ptr(proc, args) }
@@ -35,6 +36,13 @@ pub fn syscall_ioctl(proc: &mut super::Process, fd: usize, cmd: usize, args: usi
             {
                 IOControlCommand::FrameBufferGetFixedInfo{ response: map_ptr(proc, args) }
             },
+
+            // Real Time Clock
+            0x7009 =>
+            {
+                IOControlCommand::RealTimeClockGetTime{ response: map_ptr(proc, args) }
+            }
+
             default =>
                 {
                     kwarnln!("Unknown ioctl command 0x{:x} from PID {}", default, proc.pid);

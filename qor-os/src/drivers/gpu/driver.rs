@@ -476,6 +476,8 @@ impl GenericGraphics
                     };
                 0
             },
+
+            _ => usize::MAX
         }
     }
 }

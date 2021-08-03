@@ -92,5 +92,18 @@ pub fn get_device_files() -> Vec<DeviceFile>
             Box::new( |_| usize::MAX)
         ));
 
+    // TODO: This needs to respect the interrupt requirements of the RTC, however,
+    // for right now we will just implement a null descriptor for it
+    // /dev/rtc0 : Real Time Clock
+    result.push(
+        DeviceFile::new(
+            "rtc0",
+            Box::new(
+                |inode| Box::new(
+                    NullDescriptor{ inode })
+                ),
+            Box::new( |cmd| drivers::rtc::RealTimeClockDriver::get_driver().exec_ioctl(cmd))
+        ));
+
     result
 }

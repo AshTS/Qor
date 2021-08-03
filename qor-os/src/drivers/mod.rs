@@ -7,6 +7,7 @@ pub mod generic;
 pub mod gpu;
 pub mod mmio;
 pub mod plic;
+pub mod rtc;
 pub mod timer;
 pub mod uart;
 pub mod virtio;
