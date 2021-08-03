@@ -1,5 +1,7 @@
 use crate::*;
 
+use fs::ioctl::IOControlCommand;
+
 use process::descriptor::*;
 
 use fs::structures::FilesystemIndex;
@@ -8,17 +10,19 @@ use fs::structures::FilesystemIndex;
 pub struct DeviceFile
 {
     pub name: &'static str,
-    pub desc_const: Box<dyn Fn(FilesystemIndex) -> Box<dyn FileDescriptor>>
+    desc_const: Box<dyn Fn(FilesystemIndex) -> Box<dyn FileDescriptor>>,
+    io_ctl: Box<dyn Fn(IOControlCommand) -> usize>
 }
 
 impl DeviceFile
 {
     /// Create a new device file
-    pub fn new(name: &'static str, desc_const: Box<dyn Fn(FilesystemIndex) -> Box<dyn FileDescriptor>>) -> Self
+    pub fn new(name: &'static str, desc_const: Box<dyn Fn(FilesystemIndex) -> Box<dyn FileDescriptor>>,
+               io_ctl: Box<dyn Fn(IOControlCommand) -> usize>) -> Self
     {
         Self
         {
-            name, desc_const
+            name, desc_const, io_ctl
         }
     }
 
@@ -26,6 +30,12 @@ impl DeviceFile
     pub fn make_descriptor(&self, index: FilesystemIndex) -> Box<dyn FileDescriptor>
     {
         (self.desc_const)(index)
+    }
+
+    /// Execute an ioctl command on the driver
+    pub fn exec_ioctl(&self, cmd: IOControlCommand) -> usize
+    {
+        (self.io_ctl)(cmd)
     }
 }
 
@@ -42,18 +52,22 @@ pub fn get_device_files() -> Vec<DeviceFile>
             DeviceFile::new(
                 "disp",
                 Box::new(
-                    |_index| Box::new(
-                        ByteInterfaceDescriptor::new(drivers::gpu::get_global_graphics_driver())
-                    ))));
+                    |inode| Box::new(
+                        ByteInterfaceDescriptor::new(drivers::gpu::get_global_graphics_driver(), inode)
+                    )),
+                    Box::new( |_| usize::MAX)
+                ));
 
         // /dev/fb0 : Raw frame buffer access
         result.push(
             DeviceFile::new(
                 "fb0",
                 Box::new(
-                    |_index| Box::new(
-                        BufferDescriptor::new(drivers::gpu::get_global_graphics_driver())
-                    ))));
+                    |inode| Box::new(
+                        BufferDescriptor::new(drivers::gpu::get_global_graphics_driver(), inode)
+                    )),
+                    Box::new( |cmd| drivers::gpu::get_global_graphics_driver().exec_ioctl(cmd))
+                ));
     }
 
     // /dev/tty0 : UART Port
@@ -61,18 +75,22 @@ pub fn get_device_files() -> Vec<DeviceFile>
         DeviceFile::new(
             "tty0",
             Box::new(
-                |_index| Box::new(
-                    ByteInterfaceDescriptor::new(drivers::get_uart_driver())
-                ))));
+                |inode| Box::new(
+                    ByteInterfaceDescriptor::new(drivers::get_uart_driver(), inode)
+                )),
+                Box::new( |_| usize::MAX)
+            ));
 
     // /dev/null : Null Descriptor
     result.push(
         DeviceFile::new(
             "null",
             Box::new(
-                |_index| Box::new(
-                    NullDescriptor{})
-                )));
+                |inode| Box::new(
+                    NullDescriptor{ inode })
+                ),
+            Box::new( |_| usize::MAX)
+        ));
 
     result
 }

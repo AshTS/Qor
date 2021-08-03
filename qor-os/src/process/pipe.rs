@@ -1,6 +1,8 @@
 use crate::*;
 use super::descriptor::*;
 
+use crate::fs::structures::FilesystemIndex;
+
 /// Write side of a pipe
 pub struct WritePipeDescriptor
 {
@@ -28,6 +30,11 @@ impl FileDescriptor for WritePipeDescriptor
     {
         // Cannot read from the write end
         0
+    }
+
+    fn get_inode(&mut self) -> Option<FilesystemIndex>
+    {
+        None
     }
 }
 
@@ -65,6 +72,11 @@ impl FileDescriptor for ReadPipeDescriptor
         }
 
         count
+    }
+
+    fn get_inode(&mut self) -> Option<FilesystemIndex>
+    {
+        None
     }
 }
 

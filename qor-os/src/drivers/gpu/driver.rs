@@ -4,6 +4,9 @@ const TEXT_MODE_WIDTH: usize = 70;
 const TEXT_MODE_HEIGHT: usize = 30;
 
 use crate::drivers::generic::*;
+use crate::fs::ioctl::IOControlCommand;
+
+use super::structs::*;
 
 #[derive(Debug, Clone)]
 pub enum ParserState
@@ -392,6 +395,87 @@ impl GenericGraphics
         for c in s.chars()
         {
             self.write_character(c as u8);
+        }
+    }
+
+    /// Execute an ioctl command for this driver
+    pub fn exec_ioctl(&mut self, ioctl: IOControlCommand) -> usize
+    {
+        match ioctl
+        {
+            IOControlCommand::FrameBufferGetFixedInfo { response } => 
+            {
+                let (width, height) = self.driver.get_size();
+
+                *response = FramebufferFixedInfo
+                    {
+                        name: ['V' as u8, 'i' as u8, 'r' as u8, 't' as u8,
+                               'I' as u8, 'O' as u8, ' ' as u8, 'G' as u8,
+                               'P' as u8, 'U' as u8, 0, 0, 0, 0, 0, 0],
+                        buffer_start: self.driver.frame_buffer.data as u64,
+                    
+                        buffer_len: (width * height * 4) as u32,
+                        fb_type: 0x1000,
+                        aux_type: 0,
+                        visual: 2,
+                        x_pan_step: 0,
+                        y_pan_step: 0,
+                        y_wrap_step: 0,
+                    
+                        line_length: (width * 4) as u32,
+                    
+                        mmio_len: 0,
+                        accel: 0,
+                    
+                        capabilities: 0,
+                        reserved: [0; 2]
+                    };
+
+                0
+            },
+            IOControlCommand::FrameBufferPutVariableInfo { .. } => 
+            {
+                // TODO: Add variability here
+
+                // Nothing here can be edited so far, so we will have to leave
+                // this returning -1 until such features can be implemented
+                usize::MAX
+            },
+            IOControlCommand::FrameBufferGetVariableInfo { response } => 
+            {
+                let (width, height) = self.driver.get_size();
+
+                *response = FramebufferVariableInfo
+                    {
+                        x_res: width as u32,
+                        y_res: height as u32,
+
+                        x_res_virtual: width as u32,
+                        y_res_virtual: height as u32,
+                        x_offset: 0,
+                        y_offset: 0,
+
+                        bits_per_pixel: 32,
+                        grayscale: 0,
+
+                        red: FramebufferBitfield { offset: 0, length: 8, msb_right: 0 },
+                        green: FramebufferBitfield { offset: 8, length: 8, msb_right: 0 },
+                        blue: FramebufferBitfield { offset: 16, length: 8, msb_right: 0 },
+                        transp: FramebufferBitfield { offset: 24, length: 8, msb_right: 0 },
+
+                        non_std: 0,
+
+                        activate: 0,
+
+                        height: height as u32 / 80,
+                        width: width as u32 / 80,
+
+                        obsolete_flags: 0,
+
+                        unused_timing: [0; 15]
+                    };
+                0
+            },
         }
     }
 }

@@ -266,8 +266,14 @@ impl Filesystem for DevFilesystem
         {
             if Some(inode.mount_id) == self.mount_id
             {
-                // Nothing to do here (yet)
-                Ok(usize::MAX)
+                if inode.inode > 1 && inode.inode < 2 + self.devices.len()
+                {
+                    Ok(self.devices[inode.inode - 2].exec_ioctl(cmd))
+                }
+                else
+                {
+                    Err(FilesystemError::BadINode)
+                }
             }
             else
             {

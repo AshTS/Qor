@@ -41,6 +41,6 @@ pub fn syscall_ioctl(proc: &mut super::Process, fd: usize, cmd: usize, args: usi
                     return 0;
                 }
         };
-
+        
     proc.exec_ioctl(fd, structured_command)
 }

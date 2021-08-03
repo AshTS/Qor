@@ -30,10 +30,7 @@ pub trait FileDescriptor
     fn read(&mut self, fs: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize;
 
     /// Get the inode of the entry
-    fn get_inode(&mut self) -> Option<FilesystemIndex>
-    {
-        None
-    }
+    fn get_inode(&mut self) -> Option<FilesystemIndex>;
 
     /// Seek to the given location in the descriptor
     fn seek(&mut self, offset: usize, _mode: SeekMode) -> usize
@@ -44,7 +41,10 @@ pub trait FileDescriptor
 
 /// Null File Descriptor
 #[derive(Debug, Clone)]
-pub struct NullDescriptor;
+pub struct NullDescriptor
+{
+    pub inode: FilesystemIndex
+}
 
 impl FileDescriptor for NullDescriptor
 {
@@ -63,6 +63,11 @@ impl FileDescriptor for NullDescriptor
         }
 
         count
+    }
+
+    fn get_inode(&mut self) -> Option<FilesystemIndex>
+    {
+        Some(self.inode)
     }
 }
 
@@ -213,17 +218,19 @@ impl FileDescriptor for InodeFileDescriptor
 /// Byte interface wrapper
 pub struct ByteInterfaceDescriptor
 {
-    interface: &'static mut dyn crate::drivers::generic::ByteInterface
+    interface: &'static mut dyn crate::drivers::generic::ByteInterface,
+    inode: FilesystemIndex
 }
 
 impl ByteInterfaceDescriptor
 {
     /// Create a new ByteInterfaceDescriptor
-    pub fn new(interface: &'static mut dyn crate::drivers::generic::ByteInterface) -> Self
+    pub fn new(interface: &'static mut dyn crate::drivers::generic::ByteInterface, inode: FilesystemIndex) -> Self
     {
         Self
         {
-            interface
+            interface,
+            inode
         }
     }
 }
@@ -264,35 +271,37 @@ impl FileDescriptor for ByteInterfaceDescriptor
 
         i
     }
+
+    fn get_inode(&mut self) -> Option<FilesystemIndex>
+    {
+        Some(self.inode)
+    }
 }
 
 /// Buffer descriptor
 pub struct BufferDescriptor
 {
     buffer: &'static mut dyn crate::drivers::generic::BufferInterface,
-    index: usize
+    index: usize,
+    inode: FilesystemIndex
 }
 
 impl BufferDescriptor
 {
     /// Create a new buffer descriptor
-    pub fn new(buffer: &'static mut dyn crate::drivers::generic::BufferInterface) -> Self
+    pub fn new(buffer: &'static mut dyn crate::drivers::generic::BufferInterface, inode: FilesystemIndex) -> Self
     {
         Self
         {
             buffer,
             index: 0,
+            inode
         }
     }
 }
 
 impl FileDescriptor for BufferDescriptor
 {
-    fn get_inode(&mut self) -> Option<FilesystemIndex>
-    {
-        None
-    }
-
     fn seek(&mut self, offset: usize, mode: SeekMode) -> usize
     {
         match mode
@@ -372,5 +381,10 @@ impl FileDescriptor for BufferDescriptor
         }
 
         count
+    }
+
+    fn get_inode(&mut self) -> Option<FilesystemIndex>
+    {
+        Some(self.inode)
     }
 }
