@@ -22,6 +22,12 @@ void handle_side(int disp, int amt, char* buffer, int* cursor, int col, int colo
 
         if (c == '\n')
         {
+            while (cursor[0] <= WIDTH)
+            {
+                write(disp, " ", 1);
+                cursor[0]++;
+            }
+
             cursor[0] = 1;
             cursor[1] += 1;
 
@@ -41,7 +47,7 @@ void handle_side(int disp, int amt, char* buffer, int* cursor, int col, int colo
             cursor[0] += 1;
         }
 
-        if (cursor[0] > 20)
+        if (cursor[0] > WIDTH)
         {
             cursor[0] = 1;
             cursor[1] += 1;
