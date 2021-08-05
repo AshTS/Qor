@@ -1,9 +1,8 @@
-use core::u16;
-
 use crate::*;
 
 use super::process::Process;
 use super::process::ProcessState;
+use super::signals::POSIXSignal;
 
 use alloc::collections::BTreeMap;
 
@@ -128,8 +127,16 @@ impl ProcessManager
                 let mut adoption_data: Option<(u16, Vec<u16>)> = None;
 
                 // Check the current step_pid
-                if let Some(proc) = self.get_process_by_pid(step_pid)
+                if let Some(proc) = self.get_process_by_pid_mut(step_pid)
                 {
+                    if proc.get_state() != ProcessState::Dead && proc.get_state() != ProcessState::Zombie
+                    {
+                        if let Some(sig) = proc.pop_signal()
+                        {
+                            proc.trigger_signal(sig);
+                        }
+                    }
+
                     match proc.get_state()
                     {
                         // If the process is running, switch to it
@@ -138,9 +145,17 @@ impl ProcessManager
                             break;
                         },
                         // If the process is waiting, perform the proper wait checks
-                        ProcessState::Waiting =>
+                        ProcessState::Waiting(mode) =>
                         {
-                            children = Some(proc.get_children().clone())
+                            match mode
+                            {
+                                process::process::WaitMode::ForChild => 
+                                {
+                                    children = Some(proc.get_children().clone())
+                                },
+                                process::process::WaitMode::ForSignal => todo!(),
+                            }
+                            
                         },
                         // If it is asleep, check if it hsould be woken up
                         ProcessState::Sleeping {wake_time } =>
@@ -154,8 +169,8 @@ impl ProcessManager
                                 break;
                             }
                         },
-                        // If the process is a zombie, ignore it
-                        ProcessState::Zombie => {},
+                        // If the process is a zombie or stopped, ignore it
+                        ProcessState::Zombie | ProcessState::Stopped => {},
                         // If it is dead, remove it from the process tree
                         ProcessState::Dead => 
                         {
@@ -236,6 +251,19 @@ impl ProcessManager
         {
             (0, 0, 0)
         }
+    }
+
+    /// Send a signal between processes
+    pub fn send_signal(&mut self, dest_pid: u16, signal: POSIXSignal) -> Result<(), ()>
+    {
+        kdebugln!(Signals, "Sending Signal {:?} to PID {}", signal.sig_type, dest_pid);
+
+        if let Some(proc) = self.get_process_by_pid_mut(dest_pid)
+        {
+            proc.push_signal(signal)?;
+        }
+
+        Ok(())
     }
 }
 

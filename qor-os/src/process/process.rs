@@ -12,6 +12,8 @@ use super::stats::MemoryStats;
 use mem::mmu::PageTable;
 use mem::mmu::TranslationError;
 
+use super::signals::*;
+
 use trap::TrapFrame;
 
 // Global PID counter
@@ -39,6 +41,13 @@ const SEEK_SET: usize = 1;
 const SEEK_CUR: usize = 2;
 const SEEK_END: usize = 4;
 
+/// Reasons for a process to be waiting
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WaitMode
+{
+    ForChild,
+    ForSignal
+}
 
 /// Process State Enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -46,7 +55,8 @@ pub enum ProcessState
 {
     Running,
     Sleeping{wake_time: KernelTime},
-    Waiting,
+    Stopped,
+    Waiting(WaitMode),
     Dead,
     Zombie
 }
@@ -61,7 +71,8 @@ pub struct Process
     pub root: *mut PageTable,
     pub state: ProcessState,
     pub data: ProcessData,
-    pub fs_interface: Option<&'static mut fs::vfs::FilesystemInterface>
+    pub fs_interface: Option<&'static mut fs::vfs::FilesystemInterface>,
+    pub signals: [Option<POSIXSignal>; 4]
 } 
 
 impl Process
@@ -114,6 +125,7 @@ impl Process
                 state: ProcessState::Running,
                 data: unsafe { ProcessData::new(stack_size, mem_stats) },
                 fs_interface: None,
+                signals: [None, None, None, None]
             };
 
         // Update the stack pointer
@@ -476,6 +488,8 @@ impl Process
         
         temp.data.cwd = self.data.cwd.clone();
 
+        temp.data.cmdline_args = self.data.cmdline_args.clone();
+
         self.register_child(temp.pid);
 
         temp
@@ -560,15 +574,6 @@ impl Process
         0
     }
 
-    /// Report a fatal fault in the process
-    pub fn report_fault(&mut self, fault_msg: &str)
-    {
-        kerrorln!("Process PID {} Encountered a Fatal Fault: ", self.pid);
-        kerrorln!("   {}", fault_msg);
-
-        self.kill(1);
-    }
-
     /// Get directory entries for the given file descriptor
     pub fn get_dir_entries(&mut self, fd: usize) -> Option<Vec<DirectoryEntry>>
     {
@@ -604,6 +609,68 @@ impl Process
         }
 
         total
+    }
+
+    /// Execute the handler for a signal
+    pub fn trigger_signal(&mut self, signal: POSIXSignal)
+    {
+        kdebug!(Signals, "PID {} got Signal {:?}, ", self.pid, signal.sig_type);
+
+        match signal.disposition
+        {
+            SignalDisposition::Terminate =>
+            {
+                kdebugln!(Signals, "Terminating");
+                self.kill(usize::MAX)
+            },
+            SignalDisposition::Ignore =>
+            { 
+                kdebugln!(Signals, "Ignoring");
+            },
+            SignalDisposition::Core => todo!(),
+            SignalDisposition::Stop =>
+            {
+                kdebugln!(Signals, "Stopping");
+                self.state = ProcessState::Stopped;
+            },
+            SignalDisposition::Continue => 
+            {
+                kdebugln!(Signals, "Continuing");
+
+                if self.state == ProcessState::Stopped
+                {
+                    self.state = ProcessState::Running;
+                }
+            },
+        }
+    }
+
+    /// Push a signal to the signal stack
+    pub fn push_signal(&mut self, signal: POSIXSignal) -> Result<(), ()>
+    {
+        for val in self.signals.iter_mut()
+        {
+            if val.is_none()
+            {
+                *val = Some(signal);
+                return Ok(())
+            }
+        }
+
+        Err(())
+    }
+
+    /// Pop a signal from the signal stack
+    pub fn pop_signal(&mut self) -> Option<POSIXSignal>
+    {
+        let result = self.signals[0];
+
+        for i in 1..self.signals.len()
+        {
+            self.signals[i - 1] = self.signals[i];
+        }
+
+        result
     }
 }
 

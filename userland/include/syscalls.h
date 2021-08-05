@@ -49,5 +49,7 @@ extern unsigned int dup2(int old, int new);
 extern unsigned int dup(int old);
 extern unsigned int ioctl(unsigned int fd, unsigned int cmd, unsigned long arg);
 extern unsigned int nanosleep(struct time_repr* req, struct time_repr* rem);
+extern int pause();
+extern int kill(short pid, int signal);
 
 #endif // _SYSCALLS_H

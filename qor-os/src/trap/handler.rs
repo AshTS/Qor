@@ -1,9 +1,8 @@
 use crate::*;
+use crate::process::signals::*;
 
 use super::InterruptContext;
 use super::InterruptType;
-
-use alloc::format;
 
 /// Dump on error
 pub fn dump_on_error()
@@ -75,7 +74,17 @@ pub fn interrupt_handler(interrupt_context: InterruptContext) -> usize
             // If the trap occured during a process, report it as a fatal fault
             if let Some(proc) = process::scheduler::current_process()
             {
-                proc.report_fault(&format!("{:?}", default));
+                if process::scheduler::get_process_manager().as_mut().unwrap().send_signal(
+                    proc.pid, 
+                            POSIXSignal
+                            {
+                                sig_type: SignalType::SIGTERM,
+                                disposition: SignalDisposition::Terminate,
+                                dest_pid: proc.pid,
+                            }).is_err()
+                {
+                    kwarnln!("Unable to send SIGTERM to PID {}", proc.pid);   
+                }
 
                 switch_process();
             }

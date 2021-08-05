@@ -6,5 +6,6 @@ pub mod init;
 pub mod process;
 pub mod scheduler;
 pub mod stats;
+pub mod signals;
 
 mod pipe;

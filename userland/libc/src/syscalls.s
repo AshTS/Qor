@@ -76,6 +76,12 @@ dup2:
     ecall
     ret
 
+.globl pause
+pause:
+    li a7, 34
+    ecall
+    ret
+
 .globl nanosleep
 nanosleep:
     li a7, 35
@@ -103,6 +109,12 @@ exit:
 .globl wait
 wait:
     li a7, 61
+    ecall
+    ret
+
+.globl kill
+kill:
+    li a7, 62
     ecall
     ret
 

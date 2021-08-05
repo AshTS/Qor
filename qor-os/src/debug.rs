@@ -13,6 +13,7 @@ pub enum DebugCategories
     MemoryMapping,
     Processes,
     Scheduling,
+    Signals,
     Syscalls,
     VirtIO,
     Other,
@@ -77,7 +78,12 @@ pub const SCHEDULING: bool = false;
 pub const SCHEDULING: bool = false;
 
 #[cfg(not(test))]
-pub const SYSCALLS: bool = false;
+pub const SIGNALS: bool = true;
+#[cfg(test)]
+pub const SIGNALS: bool = false;
+
+#[cfg(not(test))]
+pub const SYSCALLS: bool = true;
 #[cfg(test)]
 pub const SYSCALLS: bool = false;
 
@@ -108,6 +114,7 @@ pub const fn check_debug(cat: DebugCategories) -> bool
             DebugCategories::MemoryMapping => MEMORY_MAPPING,
             DebugCategories::Processes => PROCESSES,
             DebugCategories::Scheduling => SCHEDULING,
+            DebugCategories::Signals => SIGNALS,
             DebugCategories::Syscalls => SYSCALLS,
             DebugCategories::VirtIO => VIRTIO,
             DebugCategories::Other => true // This defaults to true to allow unspecified prints to pass

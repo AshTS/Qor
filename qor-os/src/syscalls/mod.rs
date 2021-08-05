@@ -14,12 +14,14 @@ mod fork;
 mod getcwd;
 mod getdents;
 mod ioctl;
+mod kill;
 mod lseek;
 mod mkdir;
 mod mmap;
 mod munmap;
 mod nanosleep;
 mod open;
+mod pause;
 mod pipe;
 mod read;
 mod wait;
@@ -60,6 +62,11 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         {
             mmap::syscall_mmap(proc, arg0, arg1, arg2, arg3, arg4, arg5)
         },
+        // munmap Syscall
+        11 =>
+        {
+            munmap::syscall_munmap(proc, arg0, arg1)
+        },
         // ioctl Syscall
         16 =>
         {
@@ -80,15 +87,15 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         {
             dup::syscall_dup2(proc, arg0, arg1)
         },
+        // pause Syscall
+        34 =>
+        {
+            pause::syscall_pause(proc)
+        },
         // nanosleep Syscall
         35 =>
         {
             nanosleep::syscall_nanosleep(proc, arg0, arg1)
-        },
-        // munmap Syscall
-        11 =>
-        {
-            munmap::syscall_munmap(proc, arg0, arg1)
         },
         // Fork Syscall
         57 =>
@@ -110,6 +117,12 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         61 =>
         {
             wait::syscall_wait(proc, arg0);
+            0
+        },
+        // Kill Syscall
+        62 =>
+        {
+            kill::syscall_kill(proc, arg0, arg1);
             0
         },
         // Getdents Syscall
