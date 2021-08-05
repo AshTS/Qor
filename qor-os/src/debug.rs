@@ -78,12 +78,12 @@ pub const SCHEDULING: bool = false;
 pub const SCHEDULING: bool = false;
 
 #[cfg(not(test))]
-pub const SIGNALS: bool = true;
+pub const SIGNALS: bool = false;
 #[cfg(test)]
 pub const SIGNALS: bool = false;
 
 #[cfg(not(test))]
-pub const SYSCALLS: bool = true;
+pub const SYSCALLS: bool = false;
 #[cfg(test)]
 pub const SYSCALLS: bool = false;
 
