@@ -31,6 +31,10 @@ struct rtc_time
 
 int main(int argc, char** argv)
 {
+    printf("Sending Signal\n");
+
+    kill(4, 15);
+    /*
     int fd = open("/dev/rtc0", O_RDONLY);
 
     if (fd < 0)
@@ -64,5 +68,9 @@ int main(int argc, char** argv)
         close(disp);
     }
 
-    close(fd);
+    close(fd);*/
+
+    printf("Signal Sent\n");
+
+    return 0;
 }

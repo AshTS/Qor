@@ -3,6 +3,7 @@
 #include "string.h"
 
 #define ESC 27
+#define TERMINATE 3
 
 #define COL0 0
 #define COL1 35
@@ -137,9 +138,10 @@ void splitter(int f0, int f1)
     
 }
 
-void start_shell()
+int start_shell()
 {
-    if (fork() == 0)
+    int r = fork();
+    if (r == 0)
     {
         const char* name = "/bin/shell";
         const char* argv[2];
@@ -153,6 +155,8 @@ void start_shell()
 
         execve("/bin/shell", argv, envp);
     }
+
+    return r;
 }
 
 int redirect_from(int fd)
@@ -202,7 +206,7 @@ int main(int argc, char** argv)
     out0 = redirect_to(1);
     disp0 = dup(1);
 
-    start_shell();
+    int shell_pid = start_shell();
 
     if (run_dual)
     {
@@ -244,6 +248,12 @@ int main(int argc, char** argv)
         char c; 
         if (read(fd, &c, 1))
         {
+            if (c == TERMINATE)
+            {
+                kill(shell_pid, 2);
+                continue;
+            }
+
             if (c == ESC)
             {
                 // fprintf(disp, "\x1B[31mESC\x1B[0m\n", c);

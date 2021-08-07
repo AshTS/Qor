@@ -9,6 +9,8 @@ pub enum SignalType
     SIGTERM,
     SIGSTOP,
     SIGCONT,
+    SIGKILL,
+    SIGINT
 }
 
 /// POSIX Signal
@@ -33,8 +35,10 @@ impl POSIXSignal
             {
                 SignalType::SIGTRAP => SignalDisposition::Core,
                 SignalType::SIGTERM => SignalDisposition::Terminate,
+                SignalType::SIGKILL => SignalDisposition::Terminate,
                 SignalType::SIGSTOP => SignalDisposition::Stop,
                 SignalType::SIGCONT => SignalDisposition::Continue,
+                SignalType::SIGINT => SignalDisposition::Terminate,
             }
         }
     }

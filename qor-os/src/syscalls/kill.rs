@@ -9,6 +9,8 @@ pub fn syscall_kill(proc: &mut super::Process, pid: usize, signal: usize) -> usi
     // Convert the signal to the kernel's representation
     let sig_type = match signal
     {
+        2 => SignalType::SIGINT,
+        9 => SignalType::SIGKILL,
         15 => SignalType::SIGTERM,
         _ => { kwarnln!("Unknown signal {}", signal); return usize::MAX }
     };
