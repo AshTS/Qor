@@ -9,3 +9,5 @@ pub mod stats;
 pub mod signals;
 
 mod pipe;
+
+pub type PID = u16;

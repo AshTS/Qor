@@ -24,6 +24,8 @@ mod open;
 mod pause;
 mod pipe;
 mod read;
+mod sigaction;
+mod sigreturn;
 mod wait;
 mod write;
 
@@ -66,6 +68,18 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         11 =>
         {
             munmap::syscall_munmap(proc, arg0, arg1)
+        },
+        // sigaction Syscall
+        13 =>
+        {
+            sigaction::syscall_sigaction(proc, arg0, arg1, arg2);
+            0
+        },
+        // sigreturn Syscall
+        15 =>
+        {
+            sigreturn::syscall_sigreturn(proc);
+            0
         },
         // ioctl Syscall
         16 =>

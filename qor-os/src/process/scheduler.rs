@@ -8,12 +8,14 @@ use alloc::collections::BTreeMap;
 
 static mut GLOBAL_PROC_MANAGER: Option<ProcessManager> = None;
 
+use super::PID;
+
 /// Process Manager
 pub struct ProcessManager
 {
-    current_pid: Option<u16>,
-    max_pid: Option<u16>,
-    pub processes: BTreeMap<u16, Box<Process>>
+    current_pid: Option<PID>,
+    max_pid: Option<PID>,
+    pub processes: BTreeMap<PID, Box<Process>>
 }
 
 impl ProcessManager
@@ -47,7 +49,7 @@ impl ProcessManager
     }
 
     /// Replace a process
-    pub fn replace_process(&mut self, pid: u16, mut proc: Process)
+    pub fn replace_process(&mut self, pid: PID, mut proc: Process)
     {
         kdebugln!(Processes, "Replacing process with PID {}", pid);
         assert!(self.processes.contains_key(&pid));
@@ -58,13 +60,13 @@ impl ProcessManager
     }
 
     /// Get a reference to a process by pid
-    pub fn get_process_by_pid(&self, pid: u16) -> Option<&Box<Process>>
+    pub fn get_process_by_pid(&self, pid: PID) -> Option<&Box<Process>>
     {
         self.processes.get(&pid)
     }
 
     /// Get a mutable reference to a process by pid
-    pub fn get_process_by_pid_mut(&mut self, pid: u16) -> Option<&mut Box<Process>>
+    pub fn get_process_by_pid_mut(&mut self, pid: PID) -> Option<&mut Box<Process>>
     {
         self.processes.get_mut(&pid)
     }
@@ -108,7 +110,7 @@ impl ProcessManager
     }
 
     /// Schedule the next process by returning a pid
-    pub fn pid_of_next(&mut self) -> u16
+    pub fn pid_of_next(&mut self) -> PID
     {
         if let Some(pid) = self.current_pid
         {
@@ -124,7 +126,7 @@ impl ProcessManager
                 step_pid = (step_pid + 1) % (highest + 1);
 
                 let mut children = None;
-                let mut adoption_data: Option<(u16, Vec<u16>)> = None;
+                let mut adoption_data: Option<(PID, Vec<PID>)> = None;
 
                 // Check the current step_pid
                 if let Some(proc) = self.get_process_by_pid_mut(step_pid)
@@ -239,7 +241,7 @@ impl ProcessManager
     }
 
     /// Get the scheduling information for the given pid
-    fn get_schedule_info(&self, pid: u16) -> (usize, usize, usize)
+    fn get_schedule_info(&self, pid: PID) -> (usize, usize, usize)
     {
         if let Some(proc) = self.processes.get(&pid)
         {
@@ -254,7 +256,7 @@ impl ProcessManager
     }
 
     /// Send a signal between processes
-    pub fn send_signal(&mut self, dest_pid: u16, signal: POSIXSignal) -> Result<(), ()>
+    pub fn send_signal(&mut self, dest_pid: PID, signal: POSIXSignal) -> Result<(), ()>
     {
         kdebugln!(Signals, "Sending Signal {:?} to PID {}", signal.sig_type, dest_pid);
 
@@ -308,7 +310,7 @@ pub fn get_init_process_mut() -> Option<&'static mut Box<Process>>
 }
 
 /// Replace a running process
-pub fn replace_process(pid: u16, proc: Process)
+pub fn replace_process(pid: PID, proc: Process)
 {
     unsafe 
     {

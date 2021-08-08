@@ -4,7 +4,11 @@ use libutils::paths::OwnedPath;
 use crate::*;
 
 use super::descriptor::*;
+use super::signals::SignalType;
+use super::signals::SignalDisposition;
 use super::stats::*;
+
+use super::PID;
 
 /// Process Data
 pub struct ProcessData
@@ -13,11 +17,12 @@ pub struct ProcessData
     pub mem: Vec<(*mut u8, usize)>,
     pub next_heap: usize,
     pub descriptors: DescriptorTable,
-    pub children: Vec<u16>,
-    pub parent_pid: u16,
+    pub children: Vec<PID>,
+    pub parent_pid: PID,
     pub cwd: OwnedPath,
     pub cmdline_args: Vec<String>,
-    pub mem_stats: MemoryStats
+    pub mem_stats: MemoryStats,
+    pub signal_map: BTreeMap<SignalType, SignalDisposition>
 }
 
 impl ProcessData
@@ -27,6 +32,15 @@ impl ProcessData
     pub unsafe fn new(stack_size: usize, mem_stats: MemoryStats) -> Self
     {
         let descriptors: DescriptorTable = BTreeMap::new();
+        
+        let mut signal_map = BTreeMap::new();
+
+        signal_map.insert(SignalType::SIGTRAP, SignalDisposition::Core);
+        signal_map.insert(SignalType::SIGTERM, SignalDisposition::Terminate);
+        signal_map.insert(SignalType::SIGSTOP, SignalDisposition::Stop);
+        signal_map.insert(SignalType::SIGCONT, SignalDisposition::Continue);
+        signal_map.insert(SignalType::SIGKILL, SignalDisposition::Terminate);
+        signal_map.insert(SignalType::SIGINT, SignalDisposition::Terminate);
 
         Self
         {
@@ -38,7 +52,8 @@ impl ProcessData
             parent_pid: 0,
             cwd: OwnedPath::new("/root/"),
             cmdline_args: Vec::new(),
-            mem_stats
+            mem_stats,
+            signal_map
         }
     }
 
@@ -73,13 +88,13 @@ impl ProcessData
     }
 
     /// Register a child process
-    pub fn register_child(&mut self, child_pid: u16)
+    pub fn register_child(&mut self, child_pid: PID)
     {
         self.children.push(child_pid);
     }
 
     /// Set the parent PID
-    pub fn set_parent(&mut self, parent: u16)
+    pub fn set_parent(&mut self, parent: PID)
     {
         self.parent_pid = parent;
     }

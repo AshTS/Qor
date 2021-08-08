@@ -52,6 +52,19 @@ munmap:
     ecall
     ret
 
+.globl sigaction
+sigaction:
+    li a7, 13
+    ecall
+    ret
+
+.globl sigreturn
+sigreturn:
+    li a7, 15
+    ecall
+    ret
+
+
 .globl ioctl
 ioctl:
     li a7, 16

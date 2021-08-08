@@ -51,5 +51,7 @@ extern unsigned int ioctl(unsigned int fd, unsigned int cmd, unsigned long arg);
 extern unsigned int nanosleep(struct time_repr* req, struct time_repr* rem);
 extern int pause();
 extern int kill(short pid, int signal);
+extern int sigaction(int signal, void* new_action, void* old_action);
+extern void sigreturn();
 
 #endif // _SYSCALLS_H

@@ -1,16 +1,34 @@
-#ifndef _SIGNALS_H
-#define _SIGNALS_H
+use super::super::PID;
 
-#include "types.h"
-
-typedef unsigned long sigset_t;
-
-union sigval
+/// Generic data structure for holding information about a signal
+#[derive(Clone, Copy)]
+pub union SignalValue
 {
-    int     sival_int;    /* Integer value */
-    void   *sival_ptr;    /* Pointer value */
-};
+    pub integer: u32,
+    pub ptr: usize
+}
 
+/// Signal Info Structure
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct SignalInfo
+{
+    pub signal_number: u32,
+    pub error: u32,
+    pub code: u32,
+    pub trap: u32,
+
+    pub pid: PID,
+    pub uid: u16,
+
+    pub status: u32,
+    pub utime: u64,
+    pub stime: u64,
+
+    pub value: SignalValue,
+}
+
+/*
 struct siginfo_t
 {
     int      si_signo;     /* Signal number */
@@ -34,15 +52,16 @@ struct sigaction
     sigset_t   sa_mask;
     int        sa_flags;
     void     (*sa_restorer)(void);
-};
+};*/
 
-#define SIGINT 2
-#define SIGKILL 9
-#define SIGTERM 15
-
-#define SIG_DFL 1
-#define SIG_IGN 2
-
-#define SA_SIGINFO 1
-
-#endif _SIGNALS_H
+/// Signal Action Structure
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SignalAction
+{
+    pub handler_value: usize,
+    pub action_fn_ptr: usize,
+    pub mask: u64,
+    pub flags: u32,
+    pub restoring_addr: usize
+}

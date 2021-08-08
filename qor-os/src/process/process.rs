@@ -16,11 +16,13 @@ use super::signals::*;
 
 use trap::TrapFrame;
 
+use super::PID;
+
 // Global PID counter
-static mut NEXT_PID: u16 = 0;
+static mut NEXT_PID: PID = 0;
 
 /// Get the next PID
-fn next_pid() -> u16
+fn next_pid() -> PID
 {
     unsafe
     {
@@ -65,9 +67,10 @@ pub enum ProcessState
 pub struct Process
 {
     pub frame: *mut TrapFrame,
+    pub backup_frame: *mut TrapFrame,
     pub stack: *mut u8,
     pub program_counter: usize,
-    pub pid: u16,
+    pub pid: PID,
     pub root: *mut PageTable,
     pub state: ProcessState,
     pub data: ProcessData,
@@ -111,13 +114,17 @@ impl Process
     pub fn from_components(entry_point: usize, page_table: *mut PageTable, stack_size: usize, stack_ptr: usize, mem_stats: MemoryStats) -> Self
     {
         let frame = mem::kpalloc(1, "Trap Frame").unwrap() as *mut TrapFrame;
+        let backup_frame = mem::kpalloc(1, "Backup Trap Frame").unwrap() as *mut TrapFrame;
+
         unsafe { frame.write(TrapFrame::new(4)) }
+        unsafe { backup_frame.write(TrapFrame::new(4)) }
 
         // Create the process
         let temp_result = 
             Process
             {
                 frame,
+                backup_frame,
                 stack: stack_ptr as *mut u8,
                 program_counter: entry_point,
                 pid: next_pid(),
@@ -510,13 +517,13 @@ impl Process
     }
 
     /// Register a child with the process
-    pub fn register_child(&mut self, child_pid: u16)
+    pub fn register_child(&mut self, child_pid: PID)
     {
         self.data.register_child(child_pid);
     }
 
     /// Remove a child  process
-    pub fn remove_child(&mut self, child_pid: u16)
+    pub fn remove_child(&mut self, child_pid: PID)
     {
         for i in 0..self.data.children.len()
         {
@@ -529,7 +536,7 @@ impl Process
     }
 
     /// Get a reference to the children pids
-    pub fn get_children(&self) -> &Vec<u16>
+    pub fn get_children(&self) -> &Vec<PID>
     {
         &self.data.children
     }
@@ -611,12 +618,18 @@ impl Process
         total
     }
 
+    /// Get the disposition for a given signal
+    pub fn get_disposition_for_signal(&mut self, signal: SignalType) -> SignalDisposition
+    {
+        *self.data.signal_map.get(&signal).unwrap()
+    }
+
     /// Execute the handler for a signal
     pub fn trigger_signal(&mut self, signal: POSIXSignal)
     {
         kdebug!(Signals, "PID {} got Signal {:?}, ", self.pid, signal.sig_type);
 
-        match signal.disposition
+        match self.get_disposition_for_signal(signal.sig_type)
         {
             SignalDisposition::Terminate =>
             {
@@ -627,6 +640,7 @@ impl Process
             { 
                 kdebugln!(Signals, "Ignoring");
             },
+            SignalDisposition::Handler(_) => todo!(),
             SignalDisposition::Core => todo!(),
             SignalDisposition::Stop =>
             {
@@ -672,6 +686,27 @@ impl Process
 
         result
     }
+
+    /// Swap out the trap frames
+    pub fn swap_frames(&mut self)
+    {
+        core::mem::swap(
+            unsafe { self.frame.as_mut().unwrap() }, 
+            unsafe { self.backup_frame.as_mut().unwrap() })
+    }
+
+    /// Return from a signal handler
+    pub fn return_from_signal(&mut self)
+    {
+        kwarnln!("Returning from signal on PID {}", self.pid);
+        todo!()
+    }
+
+    /// Swap to a signal handler
+    pub fn switch_to_signal_handler(&mut self, addr: usize, signal: POSIXSignal)
+    {
+        todo!()
+    }
 }
 
 impl core::ops::Drop for Process
@@ -709,5 +744,8 @@ impl core::ops::Drop for Process
         
         // Drop the trap frame
         mem::kpfree(self.frame as usize, 1).unwrap();
+
+        // Drop the backup trap frame
+        mem::kpfree(self.backup_frame as usize, 1).unwrap();
     }
 }

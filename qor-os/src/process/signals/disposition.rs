@@ -6,5 +6,6 @@ pub enum SignalDisposition
     Ignore,
     Core,
     Stop,
-    Continue
+    Continue,
+    Handler(usize)
 }

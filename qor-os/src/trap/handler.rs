@@ -78,8 +78,8 @@ pub fn interrupt_handler(interrupt_context: InterruptContext) -> usize
                     proc.pid, 
                             POSIXSignal
                             {
-                                sig_type: SignalType::SIGTERM,
-                                disposition: SignalDisposition::Terminate,
+                                sig_type: SignalType::SIGTRAP,
+                                sending_pid: 0,
                                 dest_pid: proc.pid,
                             }).is_err()
                 {

@@ -1,6 +1,7 @@
 #include "printf.h"
 #include "syscalls.h"
 #include "string.h"
+#include "signals.h"
 
 #include <stdbool.h>
 
@@ -12,6 +13,15 @@ int handle_redirect(char** argv);
 
 int main()
 {
+    // Setup the handler for SIGINT
+    struct sigaction new;
+    struct sigaction old;
+
+    new.sa_flags = 0;
+    new.sa_handler = SIG_IGN;
+
+    sigaction(SIGINT, &new, &old);
+
     char* envp[1];
     envp[0] = 0;
 
