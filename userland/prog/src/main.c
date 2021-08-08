@@ -15,20 +15,6 @@ void* memcpy( void* dest, const void* src, int count )
     return dest;
 }
 
-
-struct rtc_time 
-{
-	int tm_sec;
-	int tm_min;
-	int tm_hour;
-	int tm_mday;
-	int tm_mon;
-	int tm_year;
-	int tm_wday;     /* unused */
-	int tm_yday;     /* unused */
-	int tm_isdst;    /* unused */
-};
-
 int main(int argc, char** argv)
 {
     printf("Sending Signal\n");

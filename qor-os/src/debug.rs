@@ -78,7 +78,7 @@ pub const SCHEDULING: bool = false;
 pub const SCHEDULING: bool = false;
 
 #[cfg(not(test))]
-pub const SIGNALS: bool = false;
+pub const SIGNALS: bool = true;
 #[cfg(test)]
 pub const SIGNALS: bool = false;
 

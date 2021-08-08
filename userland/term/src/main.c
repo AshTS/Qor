@@ -1,6 +1,7 @@
 #include "syscalls.h"
 #include "printf.h"
 #include "string.h"
+#include "signals.h"
 
 #define ESC 27
 #define TERMINATE 3
@@ -250,7 +251,7 @@ int main(int argc, char** argv)
         {
             if (c == TERMINATE)
             {
-                kill(shell_pid, 2);
+                kill(shell_pid, SIGINT);
                 continue;
             }
 
