@@ -155,7 +155,7 @@ Token* parse_next_token(char** text)
         {
             if (**text == 0)
             {
-                printf("Unexpected end of line while parsing!\n");
+                eprintf("Unexpected end of line while parsing!\n");
                 return 0;
             }
 
@@ -180,7 +180,7 @@ Token* parse_next_token(char** text)
                         v = '\t';
                         break;
                     default:
-                        printf("Unknown Escape Sequence `\\%c`\n", **text);
+                        eprintf("Unknown Escape Sequence `\\%c`\n", **text);
                         return 0;
                 }
 
@@ -217,7 +217,7 @@ Token* parse_next_token(char** text)
     }
     else
     {
-        printf("Cannot parse token from `%s`\n", *text);
+        eprintf("Cannot parse token from `%s`\n", *text);
     }
 
     return 0;

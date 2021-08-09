@@ -12,7 +12,7 @@ int main(int argc, char** argv)
         
         if (fd < 0)
         {
-            printf("cat: Cannot open file `%s`\n", argv[i]);
+            eprintf("cat: Cannot open file `%s`\n", argv[i]);
             return -1;
         }
 

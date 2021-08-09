@@ -26,7 +26,7 @@ void load_file(char* name, InterpreterState* state)
 
     if (file < 0)
     {
-        printf("Unable to open file `%s`\n", name);
+        eprintf("Unable to open file `%s`\n", name);
         return;
     }
 
@@ -36,8 +36,6 @@ void load_file(char* name, InterpreterState* state)
     int size = read(file, input_buffer, 4095);
     close(file);
     input_buffer[size] = 0;
-
-    printf("%s\n", input_buffer);
 
     int index = 0;
     int line_start = 0;
@@ -83,7 +81,7 @@ void load_file(char* name, InterpreterState* state)
 
             if (token_index == token_count_max)
             {
-                printf("Too many tokens!\n");
+                eprintf("Too many tokens!\n");
                 return;
             }
 
@@ -114,7 +112,7 @@ void write_file(char* name, InterpreterState* state)
 
     if (file < 0)
     {
-        printf("Unable to open file `%s`\n", name);
+        eprintf("Unable to open file `%s`\n", name);
         return;
     }
 
@@ -192,7 +190,7 @@ int main(int argc, char** argv)
 
             if (token_index == token_count_max)
             {
-                printf("Too many tokens!\n");
+                eprintf("Too many tokens!\n");
                 return -1;
             }
 

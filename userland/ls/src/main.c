@@ -30,7 +30,7 @@ int main(int argc, char** argv)
 
     if (dir_fd == -1)
     {
-        printf("Cannot open directory `%s`\n", dir);
+        eprintf("Cannot open directory `%s`\n", dir);
     }
 
     while (1)
@@ -39,7 +39,7 @@ int main(int argc, char** argv)
 
         if (nread == -1)
         {
-            printf("Error running getdents\n");
+            eprintf("Error running getdents\n");
             return -1;
         }
         else if (nread == 0)

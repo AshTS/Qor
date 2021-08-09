@@ -16,7 +16,7 @@ int main(int argc, char** argv)
 {
     if (argc < 2)
     {
-        printf("%s required atleast one argument, the file to display\n", argv[0]);
+        eprintf("%s required atleast one argument, the file to display\n", argv[0]);
         return -1;
     }
 
@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 
     if (fd == -1)
     {
-        printf("Unable to open file `%s`\n", path);
+        eprintf("Unable to open file `%s`\n", path);
         return -1;
     }
 
@@ -65,7 +65,7 @@ int main(int argc, char** argv)
 
     if (fb_fd == -1)
     {
-        printf("Unable to open /dev/fb0\n");
+        eprintf("Unable to open /dev/fb0\n");
         return -1;
     }
 

@@ -242,7 +242,7 @@ Value get_variable(InterpreterState* state, char* name)
     }
 
     Value v;
-    printf("Could not find variable named `%s`\n", name);
+    eprintf("Could not find variable named `%s`\n", name);
     v.valid = false;
 
     return v;
@@ -280,7 +280,7 @@ bool is_at_eof(Token** line, unsigned int* index, bool display_error)
     {
         if (display_error)
         {
-            printf("Unexpected EOF while parsing\n");
+            eprintf("Unexpected EOF while parsing\n");
         }
 
         return true;
@@ -352,7 +352,7 @@ Value evaluate_expression(InterpreterState* state, Token** line, unsigned int* i
 
             if (!check_token(line[*index], SYMBOL, ")"))
             {
-                printf("Expected ')'\n");
+                eprintf("Expected ')'\n");
                 v.valid = false;
 
                 return v;
@@ -364,7 +364,7 @@ Value evaluate_expression(InterpreterState* state, Token** line, unsigned int* i
         }
         else
         {
-            printf("Unable to parse expression starting with token ");
+            eprintf("Unable to parse expression starting with token ");
             display_token(line[*index]);
             v.valid = false;
 
@@ -398,7 +398,7 @@ Value evaluate_expression(InterpreterState* state, Token** line, unsigned int* i
 
             if (child0.type == STRING || child1.type == STRING)
             {
-                printf("Unable to multiply with strings\n");
+                eprintf("Unable to multiply with strings\n");
                 v.valid = false;
                 return v;
             }
@@ -421,7 +421,7 @@ Value evaluate_expression(InterpreterState* state, Token** line, unsigned int* i
 
             if (child0.type == STRING || child1.type == STRING)
             {
-                printf("Unable to divide with strings\n");
+                eprintf("Unable to divide with strings\n");
                 v.valid = false;
                 return v;
             }
@@ -461,7 +461,7 @@ Value evaluate_expression(InterpreterState* state, Token** line, unsigned int* i
 
             if (child0.type == STRING || child1.type == STRING)
             {
-                printf("Unable to add with strings\n");
+                eprintf("Unable to add with strings\n");
                 v.valid = false;
                 return v;
             }
@@ -484,7 +484,7 @@ Value evaluate_expression(InterpreterState* state, Token** line, unsigned int* i
 
             if (child0.type == STRING || child1.type == STRING)
             {
-                printf("Unable to subtract with strings\n");
+                eprintf("Unable to subtract with strings\n");
                 v.valid = false;
                 return v;
             }
@@ -524,7 +524,7 @@ Value evaluate_expression(InterpreterState* state, Token** line, unsigned int* i
 
             if (child0.type == STRING || child1.type == STRING)
             {
-                printf("Unable to compare strings outside of equality\n");
+                eprintf("Unable to compare strings outside of equality\n");
                 v.valid = false;
                 return v;
             }
@@ -547,7 +547,7 @@ Value evaluate_expression(InterpreterState* state, Token** line, unsigned int* i
 
             if (child0.type == STRING || child1.type == STRING)
             {
-                printf("Unable to compare strings outside of equality\n");
+                eprintf("Unable to compare strings outside of equality\n");
                 v.valid = false;
                 return v;
             }
@@ -570,7 +570,7 @@ Value evaluate_expression(InterpreterState* state, Token** line, unsigned int* i
 
             if (child0.type == STRING || child1.type == STRING)
             {
-                printf("Unable to compare strings outside of equality\n");
+                eprintf("Unable to compare strings outside of equality\n");
                 v.valid = false;
                 return v;
             }
@@ -593,7 +593,7 @@ Value evaluate_expression(InterpreterState* state, Token** line, unsigned int* i
 
             if (child0.type == STRING || child1.type == STRING)
             {
-                printf("Unable to compare strings outside of equality\n");
+                eprintf("Unable to compare strings outside of equality\n");
                 v.valid = false;
                 return v;
             }
@@ -630,7 +630,7 @@ Value evaluate_expression(InterpreterState* state, Token** line, unsigned int* i
             }
             else
             {
-                printf("Unable to compare differing types\n");
+                eprintf("Unable to compare differing types\n");
                 v.valid = false;
                 return v;
             }
@@ -662,7 +662,7 @@ Value evaluate_expression(InterpreterState* state, Token** line, unsigned int* i
             }
             else
             {
-                printf("Unable to compare differing types\n");
+                eprintf("Unable to compare differing types\n");
                 v.valid = false;
                 return v;
             }
@@ -748,7 +748,7 @@ bool interpret(InterpreterState* state, Token** line)
         }
         else
         {
-            printf("Line #%i is too big!", line_number);
+            eprintf("Line #%i is too big!", line_number);
             return false;
         }
 
@@ -788,13 +788,13 @@ bool interpret(InterpreterState* state, Token** line)
     {
         if (line[1] == 0)
         {
-            printf("Goto requires an argument\n");
+            eprintf("Goto requires an argument\n");
             return false;
         }
 
         if (line[1]->type != NUMBER_LITERAL)
         {
-            printf("Goto requires an argument\n");
+            eprintf("Goto requires an argument\n");
             return false;
         }
 
@@ -802,7 +802,7 @@ bool interpret(InterpreterState* state, Token** line)
 
         if (state->current_line >= state->line_count)
         {
-            printf("Jumping out of bounds\n");
+            eprintf("Jumping out of bounds\n");
             return false;
         }
 
@@ -821,7 +821,7 @@ bool interpret(InterpreterState* state, Token** line)
 
         if (!is_at_eof(line, &index, false))
         {
-            printf("Excess tokens after assignment\n");
+            eprintf("Excess tokens after assignment\n");
             return false;
         }
 
@@ -847,7 +847,7 @@ bool interpret(InterpreterState* state, Token** line)
 
         if (!check_token(line[index], IDENTIFIER, "then"))
         {
-            printf("Expected `then`\n");
+            eprintf("Expected `then`\n");
             return false;
         }
 
@@ -867,7 +867,7 @@ bool interpret(InterpreterState* state, Token** line)
         }
         else
         {
-            printf("Value given to if statement must be a number\n");
+            eprintf("Value given to if statement must be a number\n");
             return false;
         }
 

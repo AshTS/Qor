@@ -24,7 +24,7 @@ int main()
 
     if (proc_fd < 0)
     {
-        printf("Unable to open /proc\n");
+        eprintf("Unable to open /proc\n");
         return -1;
     }
 
@@ -34,7 +34,7 @@ int main()
 
         if (nread == -1)
         {
-            printf("Error running getdents\n");
+            eprintf("Error running getdents\n");
             return -1;
         }
         else if (nread == 0)
@@ -128,7 +128,7 @@ void display_pid(int pid)
 
     if (fd < 0)
     {
-        printf("Unable to open `%s`\n", path);
+        eprintf("Unable to open `%s`\n", path);
         return;
     }
 

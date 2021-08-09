@@ -96,7 +96,7 @@ int main()
 
             if (chdir(path_buffer) == -1)
             {
-                printf("Unable to switch to `%s`\n", path_buffer);
+                eprintf("Unable to switch to `%s`\n", path_buffer);
             }
 
             continue;
@@ -156,7 +156,7 @@ int main()
                 execve(next_buffer, argv, envp);
             }
 
-            printf("Unable to locate executable `%s`\n", buffer);
+            eprintf("Unable to locate executable `%s`\n", buffer);
 
             return -1;
         }
@@ -205,7 +205,7 @@ int handle_redirect(char** argv)
 
             if (fd < 0)
             {
-                printf("Unable to open `%s`\n", argv[i]);
+                eprintf("Unable to open `%s`\n", argv[i]);
 
                 return -1;
             }

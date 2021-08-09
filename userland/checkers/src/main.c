@@ -64,7 +64,7 @@ int main()
         }
         else
         {
-            printf("Bad Move Pos0, Try Again\n");
+            eprintf("Bad Move Pos0, Try Again\n");
             continue;
         }
 
@@ -74,7 +74,7 @@ int main()
         }
         else
         {
-            printf("Bad Move Pos0, Try Again\n");
+            eprintf("Bad Move Pos0, Try Again\n");
             continue;
         }
 
@@ -88,7 +88,7 @@ int main()
         }
         else
         {
-            printf("Bad Move Pos1, Try Again\n");
+            eprintf("Bad Move Pos1, Try Again\n");
             continue;
         }
 
@@ -98,7 +98,7 @@ int main()
         }
         else
         {
-            printf("Bad Move Pos1, Try Again\n");
+            eprintf("Bad Move Pos1, Try Again\n");
             continue;
         }
 
