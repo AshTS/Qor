@@ -192,6 +192,7 @@ int handle_redirect(char** argv)
             if (strcmp(argv[i], ">") == 0)
             {
                 // Found a cheveron
+                argv[i] = 0;
                 next_pipe_out = true;
             }
             else
