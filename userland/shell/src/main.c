@@ -7,9 +7,29 @@
 
 char* PATH = "/bin/";
 
+static int RUNNING_PID = 0;
+static bool WAITING = true;
+
 void display_tag();
 
 int handle_redirect(char** argv);
+
+void handler(int sig, struct siginfo_t *info, void *ucontext)
+{
+    // printf("Got SIGINT\n");
+
+    if (RUNNING_PID > 0)
+    {
+        kill(RUNNING_PID, SIGINT);
+        printf("\n");
+    }
+    else
+    {
+        WAITING = false;
+    }
+
+    sigreturn();
+}
 
 int main()
 {
@@ -17,8 +37,8 @@ int main()
     struct sigaction new;
     struct sigaction old;
 
-    new.sa_flags = 0;
-    new.sa_handler = SIG_IGN;
+    new.sa_flags = SA_SIGINFO;
+    new.sa_sigaction = handler;
 
     sigaction(SIGINT, &new, &old);
 
@@ -32,8 +52,10 @@ int main()
     {
         display_tag();
 
+        WAITING = true;
+
         char buffer[64];
-        while (1)
+        while (WAITING)
         {
             int count = read(0, buffer, 63);
 
@@ -42,6 +64,12 @@ int main()
             buffer[count - 1] = 0;
 
             break;
+        }
+
+        if (!WAITING)
+        {
+            printf("\n");
+            continue;
         }
 
         if (buffer[0] == 'c' && buffer[1] == 'd')
@@ -79,7 +107,9 @@ int main()
             break;
         }
 
-        if (fork() == 0)
+        short pid = fork();
+
+        if (pid == 0)
         {
             int buffer_index = 0;
             int argv_index = 0;
@@ -132,7 +162,9 @@ int main()
         }
         else
         {
+            RUNNING_PID = pid;
             wait(0);
+            RUNNING_PID = 0;
         }
     }
 

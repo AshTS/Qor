@@ -71,6 +71,7 @@ pub fn interrupt_handler(interrupt_context: InterruptContext) -> usize
         },
         default =>
         {
+            kerrorln!("{}", interrupt_context);
             // If the trap occured during a process, report it as a fatal fault
             if let Some(proc) = process::scheduler::current_process()
             {

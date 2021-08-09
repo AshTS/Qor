@@ -102,11 +102,17 @@ impl ProcessManager
     {
         let next_pid = self.pid_of_next();
 
-        self.current_pid = Some(next_pid);
+        self.schedule_pid(next_pid)
+    }
 
-        kdebugln!(Scheduling, "Scheduling PID {}", next_pid);
+    /// Schedule the given pid
+    pub fn schedule_pid(&mut self, pid: PID) -> (usize, usize, usize)
+    {
+        self.current_pid = Some(pid);
 
-        self.get_schedule_info(next_pid)
+        kdebugln!(Scheduling, "Scheduling PID {}", pid);
+
+        self.get_schedule_info(pid)
     }
 
     /// Schedule the next process by returning a pid
@@ -135,7 +141,10 @@ impl ProcessManager
                     {
                         if let Some(sig) = proc.pop_signal()
                         {
-                            proc.trigger_signal(sig);
+                            if proc.trigger_signal(sig)
+                            {
+                                return proc.pid;
+                            }
                         }
                     }
 

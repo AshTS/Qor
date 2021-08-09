@@ -70,6 +70,7 @@ pub struct Process
     pub backup_frame: *mut TrapFrame,
     pub stack: *mut u8,
     pub program_counter: usize,
+    pub backup_program_counter: usize,
     pub pid: PID,
     pub root: *mut PageTable,
     pub state: ProcessState,
@@ -127,6 +128,7 @@ impl Process
                 backup_frame,
                 stack: stack_ptr as *mut u8,
                 program_counter: entry_point,
+                backup_program_counter: 0,
                 pid: next_pid(),
                 root: page_table,
                 state: ProcessState::Running,
@@ -624,8 +626,9 @@ impl Process
         *self.data.signal_map.get(&signal).unwrap()
     }
 
-    /// Execute the handler for a signal
-    pub fn trigger_signal(&mut self, signal: POSIXSignal)
+    /// Execute the handler for a signal, returns true if the process needs to
+    /// be scheduled
+    pub fn trigger_signal(&mut self, signal: POSIXSignal) -> bool
     {
         kdebug!(Signals, "PID {} got Signal {:?}, ", self.pid, signal.sig_type);
 
@@ -640,7 +643,11 @@ impl Process
             { 
                 kdebugln!(Signals, "Ignoring");
             },
-            SignalDisposition::Handler(_) => todo!(),
+            SignalDisposition::Handler(addr) => 
+            {
+                self.switch_to_signal_handler(addr, signal);
+                return true;
+            },
             SignalDisposition::Core => todo!(),
             SignalDisposition::Stop =>
             {
@@ -657,6 +664,8 @@ impl Process
                 }
             },
         }
+
+        false
     }
 
     /// Push a signal to the signal stack
@@ -692,20 +701,41 @@ impl Process
     {
         core::mem::swap(
             unsafe { self.frame.as_mut().unwrap() }, 
-            unsafe { self.backup_frame.as_mut().unwrap() })
+            unsafe { self.backup_frame.as_mut().unwrap() });
+
+        core::mem::swap(
+            &mut self.program_counter,
+            &mut self.backup_program_counter);
     }
 
     /// Return from a signal handler
     pub fn return_from_signal(&mut self)
     {
-        kwarnln!("Returning from signal on PID {}", self.pid);
-        todo!()
+        kdebugln!(Signals, "Returning from signal on PID {}", self.pid);
+        
+        self.swap_frames();
+
+        trap::handler::switch_process();
     }
 
     /// Swap to a signal handler
     pub fn switch_to_signal_handler(&mut self, addr: usize, signal: POSIXSignal)
     {
-        todo!()
+        self.swap_frames();
+
+        self.program_counter = addr;
+        
+        if let Some(frame) = unsafe { self.frame.as_mut() }
+        {
+            frame.regs[10] = signal.sig_type as u32 as usize;
+            frame.regs[2] = unsafe { self.backup_frame.as_mut() }.unwrap().regs[2];
+
+            // TODO: Add the signal info structure
+        }
+        else
+        {
+            panic!("Process PID {} has an invalid trap frame loaded!", self.pid);
+        }
     }
 }
 

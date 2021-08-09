@@ -1,7 +1,6 @@
 use crate::*;
 
 use process::signals::*;
-use process::signals::structs::*;
 
 /// sigaction Syscall
 pub fn syscall_sigaction(proc: &mut super::Process, signal: usize, new_ptr: usize, old_ptr: usize)
@@ -13,16 +12,24 @@ pub fn syscall_sigaction(proc: &mut super::Process, signal: usize, new_ptr: usiz
     {
         let sig = SignalType::number_to_signal(signal);
 
-        kwarnln!("sigaction from PID {}: On Signal {:?}", proc.pid, sig);
+        kdebugln!(Signals, "sigaction from PID {}: On Signal {:?}", proc.pid, sig);
 
-        match new.handler_value
+        if new.flags & 1 > 0
         {
-            0 => {},
-            1 => { return; },
-            2 => { proc.data.signal_map.insert(sig, SignalDisposition::Ignore); return; }
-            _ => todo!()
+            // Set the handler as a function
+            proc.data.signal_map.insert(sig, SignalDisposition::Handler(new.action_fn_ptr));
         }
-
+        else
+        {
+            // Set the handler as a dispoisiton
+            match new.handler_value
+            {
+                0 => {},
+                1 => { return; },
+                2 => { proc.data.signal_map.insert(sig, SignalDisposition::Ignore); return; }
+                _ => todo!()
+            }
+        }
 
         // TODO: We still need to handle writing to the old_ref if it exists
     }
