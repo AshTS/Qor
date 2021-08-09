@@ -2,11 +2,8 @@ Virtual File System
     Optimize read call in file descriptors
 Minix3 File System
     Finalize Writing to files, current implementation maxes out at 1024 bytes
-Syscalls
-    nanosleep
 Processes
     Add segmentation fault display
-    Allow programs to be haulted
 Kernel
     Add Keyboard Driver
     Add Mouse Driver
