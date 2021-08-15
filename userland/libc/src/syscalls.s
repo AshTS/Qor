@@ -154,3 +154,9 @@ mkdir:
     li a7, 83
     ecall
     ret
+
+.globl sync
+sync:
+    li a7, 162
+    ecall
+    ret

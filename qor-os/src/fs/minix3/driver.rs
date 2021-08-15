@@ -499,8 +499,8 @@ impl Minix3Filesystem
         {
             mode,
             nlinks: 1,
-            uid: 0,
-            gid: 0,
+            uid: 1000,
+            gid: 1000,
             size: data.len() as u32,
             atime: 0,
             mtime: 0,
@@ -559,7 +559,21 @@ impl Filesystem for Minix3Filesystem
 
     /// Sync the filesystem with the current disk
     fn sync(&mut self) -> FilesystemResult<()>
-    {
+    {   
+        kdebugln!(Filesystem, "{} Zones Rewritten", self.rewritten.len());
+
+        for (block, data) in &self.rewritten
+        {
+            kdebugln!(Filesystem, "Writing to Block {}", block);
+
+            let ptr = data.as_ptr() as *mut u8;
+
+            self.block_driver.sync_write(ptr, 1024, 1024 * *block as u64);
+        }
+
+        // Clear the rewritten buffer
+        self.rewritten = Vec::new();
+
         Ok(())
     }
 
@@ -680,7 +694,7 @@ impl Filesystem for Minix3Filesystem
     {
         if Some(inode.mount_id) == self.mount_id
         {
-            let file_inode = self.allocate_file(String::new(), 0o777)?;
+            let file_inode = self.allocate_file(String::new(), 0o100777)?;
 
             self.add_directory_entry(inode.inode, file_inode, &name)?;
 
