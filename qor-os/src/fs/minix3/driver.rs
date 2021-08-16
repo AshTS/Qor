@@ -179,7 +179,7 @@ impl Minix3Filesystem
     }
 
     /// Edit an inode
-    fn get_mut_inode(&mut self, inode_number: usize) -> FilesystemResult<&mut Minix3Inode>
+    fn get_mut_inode(&mut self, inode_number: usize) -> FilesystemResult<&'static mut Minix3Inode>
     {
         if let Some(superblock) = self.superblock
         {
@@ -282,8 +282,6 @@ impl Minix3Filesystem
     /// Add a directory entry at the given inode
     fn add_directory_entry_raw(&mut self, inode: usize, entry: Minix3DirEntry) -> FilesystemResult<()>
     {
-        // TODO: Make this able to edit the full zone list
-
         // Get a mutable reference to the inode
         let inode = self.get_mut_inode(inode)?;
 
@@ -293,12 +291,29 @@ impl Minix3Filesystem
         // Increment the size
         inode.size += 64;
 
-        // Get the zone
-        let zone = inode.zones[0];
+        let zone_index = orig_entry_count / 16;
 
-        let buffer = unsafe { core::mem::transmute::<&mut[u8; 1024], &mut[Minix3DirEntry; 16]>(self.get_mut_buffer(zone as usize)?) };
+        if zone_index < 7
+        {
+            if inode.zones[zone_index as usize] == 0
+            {
+                let next = self.next_free_zone()?;
+                self.claim_zone(next)?;
 
-        buffer[orig_entry_count as usize] = entry;
+                inode.zones[zone_index as usize] = next as u32;
+            }
+
+            // Get the zone
+            let zone = inode.zones[zone_index as usize];
+
+            let buffer = unsafe { core::mem::transmute::<&mut[u8; 1024], &mut[Minix3DirEntry; 16]>(self.get_mut_buffer(zone as usize)?) };
+
+            buffer[orig_entry_count as usize % 16] = entry;
+        }
+        else
+        {
+            todo!()
+        }
 
         Ok(())
     }
