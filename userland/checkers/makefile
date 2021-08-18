@@ -18,7 +18,7 @@ LIBS = $(patsubst %,$(LIB_DIR)/%,$(_LIBS))
 _OBJ = main.o board.o
 OBJ = $(patsubst %,$(BUILD_DIR)/%,$(_OBJ))
 
-$(OUTPUT_DIR)/checkers : $(BUILD_DIR) $(OBJ)
+$(OUTPUT_DIR)/checkers : $(BUILD_DIR) $(OBJ) $(LIBS)
 	$(LINK) $(LINKFLAGS) $(OBJ) $(LIBS) -o $@
 
 $(BUILD_DIR)/%.o : $(SRC_DIR)/%.c $(INCLUDES)

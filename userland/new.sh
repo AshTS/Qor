@@ -41,7 +41,7 @@ echo '' >> makefile
 echo '_OBJ = main.o' >> makefile
 echo 'OBJ = $(patsubst %,$(BUILD_DIR)/%,$(_OBJ))' >> makefile
 echo '' >> makefile
-echo '$(OUTPUT_DIR)/'$name' : $(BUILD_DIR) $(OBJ)' >> makefile
+echo '$(OUTPUT_DIR)/'$name' : $(BUILD_DIR) $(OBJ) $(LIBS)' >> makefile
 echo '	$(LINK) $(LINKFLAGS) $(OBJ) $(LIBS) -o $@' >> makefile
 echo '' >> makefile
 echo '$(BUILD_DIR)/%.o : $(SRC_DIR)/%.c $(INCLUDES)' >> makefile
