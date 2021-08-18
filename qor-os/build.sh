@@ -6,7 +6,7 @@ fi
 
 cd ../userland
 
-for i in slib libc term shell prog hello libc-test pwd basic cat ls clear mkdir checkers bmp ps
+for i in slib libc term shell prog hello libc-test pwd basic cat ls clear mkdir checkers bmp ps kill
 do
     cd $i
     make $1
