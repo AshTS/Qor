@@ -743,15 +743,6 @@ impl core::ops::Drop for Process
 {
     fn drop(&mut self) 
     {
-        if let Some(fs) = &mut self.fs_interface
-        {
-            for pid in self.data.descriptors.values()
-            {
-                pid.borrow_mut().close(fs);
-            }
-        }
-       
-
         for i in 0..self.data.stack_size
         {
             let true_stack = unsafe { (*self.root).virt_to_phys(self.stack as usize + mem::PAGE_SIZE * i) }.unwrap();

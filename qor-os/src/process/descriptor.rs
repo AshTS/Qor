@@ -215,6 +215,17 @@ impl FileDescriptor for InodeFileDescriptor
     }
 }
 
+impl core::ops::Drop for InodeFileDescriptor
+{
+    fn drop(&mut self)
+    {
+        if let Some(vfs) = crate::fs::vfs::get_vfs_reference()
+        {
+            self.close(vfs);
+        }
+    }
+}
+
 /// Byte interface wrapper
 pub struct ByteInterfaceDescriptor
 {

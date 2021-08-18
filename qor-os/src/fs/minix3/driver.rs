@@ -179,7 +179,7 @@ impl Minix3Filesystem
     }
 
     /// Edit an inode
-    fn get_mut_inode(&mut self, inode_number: usize) -> FilesystemResult<&'static mut Minix3Inode>
+    fn get_mut_inode(&mut self, inode_number: usize) -> FilesystemResult<& mut Minix3Inode>
     {
         if let Some(superblock) = self.superblock
         {
@@ -212,7 +212,6 @@ impl Minix3Filesystem
         if level == 0
         {
             // Read the block to a buffer
-            kdebugln!(Filesystem, "Reading zone {}, lvl {}", zone, level);
             let data = self.read_block_to_buffer(zone);
 
             // Read byte by byte
@@ -223,7 +222,7 @@ impl Minix3Filesystem
                     *offset -= 1;
                     continue;
                 }
-                
+
                 unsafe { buffer.add(*index).write(*v) };
 
                 *index += 1;
@@ -238,7 +237,6 @@ impl Minix3Filesystem
         else
         {
             // Read the block to a buffer
-            kdebugln!(Filesystem, "Reading zone {}, lvl {}", zone, level);
             let data = unsafe { core::mem::transmute::<[u8; 1024], [u32; 256]>(self.read_block_to_buffer(zone)) };
 
             // Read byte by byte
@@ -283,28 +281,41 @@ impl Minix3Filesystem
     fn add_directory_entry_raw(&mut self, inode: usize, entry: Minix3DirEntry) -> FilesystemResult<()>
     {
         // Get a mutable reference to the inode
-        let inode = self.get_mut_inode(inode)?;
+        let inode_ref = self.get_mut_inode(inode)?;
 
         // Get the original size
-        let orig_entry_count = inode.size / 64;
+        let orig_entry_count = inode_ref.size / 64;
 
         // Increment the size
-        inode.size += 64;
+        inode_ref.size += 64;
 
         let zone_index = orig_entry_count / 16;
 
         if zone_index < 7
         {
-            if inode.zones[zone_index as usize] == 0
+            let next = if inode_ref.zones[zone_index as usize] == 0
             {
                 let next = self.next_free_zone()?;
                 self.claim_zone(next)?;
 
-                inode.zones[zone_index as usize] = next as u32;
+                Some(next as u32)
+            }
+            else
+            {
+                None
+            };
+
+
+            // Get a mutable reference to the inode
+            let inode_ref = self.get_mut_inode(inode)?;
+
+            if let Some(next) = next
+            {
+                inode_ref.zones[zone_index as usize] = next;
             }
 
             // Get the zone
-            let zone = inode.zones[zone_index as usize];
+            let zone = inode_ref.zones[zone_index as usize];
 
             let buffer = unsafe { core::mem::transmute::<&mut[u8; 1024], &mut[Minix3DirEntry; 16]>(self.get_mut_buffer(zone as usize)?) };
 
@@ -340,7 +351,7 @@ impl Minix3Filesystem
     {
         if let Some(superblock) = self.superblock
         {
-            let mut i = 1;
+            let mut i = 0;
 
             let num_blocks = superblock.imap_blocks;
 
@@ -356,7 +367,7 @@ impl Minix3Filesystem
                         continue;
                     }
 
-                    let mut walker = 0x80;
+                    let mut walker = 0x01;
 
                     while walker > 0
                     {
@@ -366,7 +377,7 @@ impl Minix3Filesystem
                         }
 
                         i += 1;
-                        walker >>= 1;
+                        walker <<= 1;
                     }
                 }
             }
@@ -382,7 +393,7 @@ impl Minix3Filesystem
     /// Claim an inode
     fn claim_inode(&mut self, mut inode: usize) -> FilesystemResult<()>
     {
-        inode -= 1;
+        inode -= 0;
 
         let block = 2 + inode / (8 * 1024);
         let byte = (inode / 8) % 1024;
@@ -390,7 +401,7 @@ impl Minix3Filesystem
 
         let buffer = self.get_mut_buffer(block)?;
 
-        buffer[byte] |= 0x80 >> bit;
+        buffer[byte] |= 0x01 << bit;
 
         Ok(())
     }
@@ -398,7 +409,7 @@ impl Minix3Filesystem
     /// Free an inode
     fn free_inode(&mut self, mut inode: usize) -> FilesystemResult<()>
     {
-        inode -= 1;
+        inode -= 0;
 
         let block = 2 + inode / (8 * 1024);
         let byte = (inode / 8) % 1024;
@@ -406,7 +417,7 @@ impl Minix3Filesystem
 
         let buffer = self.get_mut_buffer(block)?;
 
-        buffer[byte] &= !(0x80 >> bit);
+        buffer[byte] &= !(0x01 << bit);
 
         Ok(())
     }
@@ -432,17 +443,17 @@ impl Minix3Filesystem
                         continue;
                     }
 
-                    let mut walker = 0x80;
+                    let mut walker = 0x01;
 
                     while walker > 0
                     {
-                        if *v & walker == 0
+                        if *v & walker == 0 && i as u16 >= superblock.first_data_zone
                         {
                             return Ok(i);
                         }
 
                         i += 1;
-                        walker >>= 1;
+                        walker <<= 1;
                     }
                 }
             }
@@ -466,7 +477,7 @@ impl Minix3Filesystem
 
             let buffer = self.get_mut_buffer(block)?;
 
-            buffer[byte] |= 0x80 >> bit;
+            buffer[byte] |= 0x01 << bit;
 
             Ok(())
         }
@@ -487,7 +498,7 @@ impl Minix3Filesystem
 
             let buffer = self.get_mut_buffer(block)?;
 
-            buffer[byte] &= !(0x80 >> bit);
+            buffer[byte] &= !(0x01 << bit);
 
             Ok(())
         }
@@ -497,16 +508,183 @@ impl Minix3Filesystem
         }
     }
 
+    /// Recursive zone allocation
+    fn recursive_zone_alloc(&mut self, level: usize, remaining: &mut usize) -> FilesystemResult<usize>
+    {
+        if *remaining == 0
+        {
+            return Ok(0);
+        }
+
+        let zone = self.next_free_zone()?;
+        self.claim_zone(zone)?;
+
+        if level > 0
+        {
+            let buffer = self.get_mut_buffer(zone)?;
+            let zones = unsafe { core::mem::transmute::<&mut [u8; 1024], &mut [u32; 256]>(buffer) };
+
+            for z in zones
+            {
+                *z = self.recursive_zone_alloc(level - 1, remaining)? as u32;
+            }
+        }
+        else
+        {
+            *remaining -= 1;
+        }
+
+        Ok(zone)
+    }
+
+    /// Allocate zones
+    fn allocate_zones(&mut self, inode: &mut Minix3Inode, mut count: usize) -> FilesystemResult<()>
+    {
+        // TODO: Make this acknowledge any previously allocated zones, right
+        // now, it assumes zones are free which means there will be a memory
+        // leak if a nonempty file is passed, therefore this check is in place:
+        assert_eq!(inode.zones, [0; 10]);
+
+        for (i, slot) in inode.zones.iter_mut().enumerate()
+        {
+            *slot = self.recursive_zone_alloc(i.max(6) - 6, &mut count)? as u32;
+
+            if count == 0
+            {
+                break;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Recursive copy to zones
+    fn recursive_copy_to_zones(&mut self, zone: usize, level: usize, data: &[u8], index: &mut usize) -> FilesystemResult<()>
+    {
+        if *index >= data.len()
+        {
+            return Ok(());
+        }
+
+        if level == 0
+        {
+            for byte in self.get_mut_buffer(zone)?.iter_mut()
+            {
+                *byte = data[*index];
+
+                *index += 1;
+
+                if *index >= data.len()
+                {
+                    break;
+                }
+            }
+        }
+        else
+        {
+            for slot in unsafe { core::mem::transmute::<[u8; 1024], [u32; 256]>(self.read_block_to_buffer(zone)) }.iter()
+            {
+                self.recursive_copy_to_zones(*slot as usize, level - 1, data, index)?;
+
+                if *index >= data.len()
+                {
+                    break;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Copy data to zones
+    fn copy_to_zones(&mut self, inode: &mut Minix3Inode, data: &[u8]) -> FilesystemResult<()>
+    {
+        let mut index = 0;
+
+        if data.len() == 0
+        {
+            return Ok(())
+        }
+
+        for (i, zone) in inode.zones.iter().enumerate()
+        {
+            self.recursive_copy_to_zones(*zone as usize, i.max(6) - 6, data, &mut index)?;
+
+            if index >= data.len()
+            {
+                break;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Recursive Free Zones
+    fn recursive_free_zones(&mut self, zone: usize, level: usize) -> FilesystemResult<()>
+    {
+        if level == 0
+        {
+            self.free_zone(zone)?;
+        }
+        else
+        {
+            let current = self.read_block_to_buffer(zone);
+            let zone_numbers = unsafe { core::mem::transmute::<[u8; 1024], [u32; 256]>(current) };
+
+            for zone in &zone_numbers
+            {
+                if *zone == 0
+                {
+                    break;
+                }
+
+                self.recursive_free_zones(*zone as usize, level - 1)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Free zones
+    fn free_zones(&mut self, inode: &mut Minix3Inode) -> FilesystemResult<()>
+    {
+        for (i, zone) in inode.zones.iter_mut().enumerate()
+        {
+            if *zone == 0
+            {
+                break;
+            }
+
+            self.recursive_free_zones(*zone as usize, i.max(6) - 6)?;
+            *zone = 0;
+        }
+
+        Ok(())
+    }
+
+    /// Write data to a file
+    fn write_to_file(&mut self, inode_number: usize, data: &[u8]) -> FilesystemResult<()>
+    {
+        let mut inode = self.get_inode(inode_number)?;
+
+        // TODO: This is not as efficent as I would like it to be, it currently
+        // will free and then reallocate zones
+        self.free_zones(&mut inode)?;
+        self.allocate_zones(&mut inode, (data.len() + 1023) / 1024)?;
+        self.copy_to_zones(&mut inode, data)?;
+
+        inode.size = data.len() as u32;
+
+        *(self.get_mut_inode(inode_number)?) = inode;
+
+        Ok(())
+    }
+
     /// Allocate a file
     fn allocate_file(&mut self, data: String, mode: u16) -> FilesystemResult<usize>
     {
-        // TODO: Allow files bigger than 1024 bytes
-
         let next_inode = self.next_free_inode()?;
         self.claim_inode(next_inode)?;
-
-        let next_zone = self.next_free_zone()?;
-        self.claim_zone(next_zone)?;
 
         let inode = self.get_mut_inode(next_inode)?;
 
@@ -516,19 +694,14 @@ impl Minix3Filesystem
             nlinks: 1,
             uid: 1000,
             gid: 1000,
-            size: data.len() as u32,
+            size: 50,
             atime: 0,
             mtime: 0,
             ctime: 0,
-            zones: [next_zone as u32, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            zones: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         };
 
-        let buffer = self.get_mut_buffer(next_zone)?;
-
-        for (i, v) in data.chars().enumerate()
-        {
-            buffer[i] = v as u8;
-        }
+        self.write_to_file(next_inode, data.as_bytes())?;
 
         Ok(next_inode)
     }
@@ -782,15 +955,7 @@ impl Filesystem for Minix3Filesystem
     {
         if Some(inode.mount_id) == self.mount_id
         {
-            let inode = self.get_mut_inode(inode.inode)?;
-            
-            inode.size = data.len() as u32;
-
-            let zone = inode.zones[0];
-
-            self.edit_block_region(zone as usize, 0, &data)?;
-
-            Ok(())
+            self.write_to_file(inode.inode, data)
         }
         else
         {
