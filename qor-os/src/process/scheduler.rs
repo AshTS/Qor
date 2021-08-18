@@ -141,6 +141,11 @@ impl ProcessManager
                     {
                         if let Some(sig) = proc.pop_signal()
                         {
+                            if proc.get_state() == ProcessState::Waiting(process::process::WaitMode::ForSignal)
+                            {
+                                proc.state = ProcessState::Running;
+                            }
+
                             if proc.trigger_signal(sig)
                             {
                                 return proc.pid;
@@ -164,7 +169,7 @@ impl ProcessManager
                                 {
                                     children = Some(proc.get_children().clone())
                                 },
-                                process::process::WaitMode::ForSignal => todo!(),
+                                process::process::WaitMode::ForSignal => {},
                             }
                             
                         },
