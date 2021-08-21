@@ -1,7 +1,6 @@
 Virtual File System
     Optimize read call in file descriptors
 Minix3 File System
-    Finalize Writing to files, current implementation maxes out at 1024 bytes
 Processes
     Add segmentation fault display
 Kernel
