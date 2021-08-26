@@ -4,9 +4,18 @@
 #include "malloc.h"
 
 #define SCALE 1000
-#define RESOLUTION 2500
+#define RESOLUTION 100000
 
-void bezier_draw(int fd, char* color, long* xs, long* ys, int count);
+struct Pixel
+{
+    char r;
+    char g;
+    char b;
+    char a;
+};
+
+
+void bezier_draw(struct Pixel* fb, struct Pixel color, long* xs, long* ys, int count);
 
 long bezier_lerp(long value, long* array, int count);
 
@@ -105,9 +114,18 @@ void display_bezier(long* xs, long* ys, int count)
         return;
     }
 
-    char color[4] = {255, 255, 255, 255};
+    struct Pixel* framebuffer = mmap(0, 640 * 480 * 4, PROT_READ | PROT_WRITE, 0, fb_fd, 0);
 
-    bezier_draw(fb_fd, color, xs, ys, count);
+    struct Pixel color;
+
+    color.r = 255;
+    color.g = 255;
+    color.b = 255;
+    color.r = 255;
+
+    bezier_draw(framebuffer, color, xs, ys, count);
+    
+    munmap(framebuffer, 640 * 480 * 4);
 
     close(fb_fd);
 }
@@ -143,7 +161,7 @@ long bezier_lerp(long value, long* array, int count)
     return result;
 }
 
-void bezier_draw(int fd, char* color, long* xs, long* ys, int count)
+void bezier_draw(struct Pixel* fb, struct Pixel color, long* xs, long* ys, int count)
 {
     for (int i = 0; i < RESOLUTION; i++)
     {
@@ -152,7 +170,6 @@ void bezier_draw(int fd, char* color, long* xs, long* ys, int count)
         int x = (int)bezier_lerp(v, xs, count);
         int y = (int)bezier_lerp(v, ys, count);
 
-        lseek(fd, x * 4 + 640 * 4 * y, SEEK_SET);
-        write(fd, color, 4);
+        fb[x + y * 640] = color;
     }
 }

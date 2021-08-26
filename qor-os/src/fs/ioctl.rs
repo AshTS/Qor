@@ -10,4 +10,5 @@ pub enum IOControlCommand
 
     // Real Time Clock
     RealTimeClockGetTime{response: &'static mut drivers::rtc::RTCTime},
+    RealTimeClockGetTimestamp{response: &'static mut u64},
 }

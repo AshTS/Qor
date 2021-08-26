@@ -48,6 +48,12 @@ impl RealTimeClockDriver
 
                 0
             },
+            IOControlCommand::RealTimeClockGetTimestamp { response } =>
+            {
+                *response = self.get_unix_timestamp_nano();
+
+                0
+            }
 
             _ => usize::MAX
         }

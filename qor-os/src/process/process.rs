@@ -43,6 +43,8 @@ const SEEK_SET: usize = 1;
 const SEEK_CUR: usize = 2;
 const SEEK_END: usize = 4;
 
+const MAP_ANON: usize = 1;
+
 /// Reasons for a process to be waiting
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WaitMode
@@ -350,9 +352,9 @@ impl Process
     }
 
     /// Close a file descriptor
-    pub fn close(&mut self, fd: usize) -> usize
+    pub fn close(&mut self, fd_number: usize) -> usize
     {
-        let v = if let Some(fd) = self.data.descriptors.get_mut(&fd)
+        let v = if let Some(fd) = self.data.descriptors.get_mut(&fd_number)
         {
             fd.borrow_mut().close(self.fs_interface.as_mut().unwrap());
             0
@@ -364,7 +366,7 @@ impl Process
 
         if v == 0
         {
-            self.data.descriptors.remove(&fd);
+            self.data.descriptors.remove(&fd_number);
         }
 
         v
@@ -544,8 +546,13 @@ impl Process
     }
 
     /// Map a region of memory with the given permissions
-    pub fn map(&mut self, length: usize, perm: mem::mmu::PageTableEntryFlags) -> usize
+    pub fn map(&mut self, length: usize, perm: mem::mmu::PageTableEntryFlags, flags: usize, fd: usize, offset: usize) -> usize
     {
+        if offset != 0
+        {
+            todo!()
+        }
+
         // Allocate the memory
         let ptr = mem::kpzalloc(length, "mmap").unwrap();
 
@@ -562,6 +569,23 @@ impl Process
             self.data.next_heap += mem::PAGE_SIZE;
         }
 
+        // If need be, fill the memory
+        if flags & MAP_ANON == 0 && (flags as i64) >= 0
+        {
+            if let Some(fd_obj) = self.data.descriptors.get_mut(&fd)
+            {
+                fd_obj.borrow_mut().seek(offset, process::descriptor::SeekMode::SeekSet);
+                fd_obj.borrow_mut().read(self.fs_interface.as_mut().unwrap(), ptr as *mut u8, 4096 * length);
+
+                self.data.mmapped_files.insert(ptr as *mut u8, fd);
+            }
+            else
+            {
+                kwarnln!("Bad fd {}", fd);
+                return usize::MAX;
+            }
+        }
+
         user_addr
     }
 
@@ -572,13 +596,29 @@ impl Process
         // TODO: Free physical memory here aswell
         // let phys_addr = self.map_mem(addr).unwrap();
 
+        let phys_addr = self.map_mem(addr).unwrap();
+
+        // Check if the mapped region is a file
+        if let Some(fd) = self.data.mmapped_files.get(&(phys_addr as *mut u8))
+        {
+            // TODO: Support offsets
+
+            // If the file still exists, update the cache
+            if let Some(fd_obj) = self.data.descriptors.get_mut(&fd)
+            {
+                fd_obj.borrow_mut().seek(0, process::descriptor::SeekMode::SeekSet);
+                fd_obj.borrow_mut().write(self.fs_interface.as_mut().unwrap(), phys_addr as *mut u8, 4096 * length);
+            }
+
+            // And remove the mapping from the process
+            self.data.mmapped_files.remove(&(phys_addr as *mut u8));
+        }
+
         // Unmap the memory
         for i in 0..(length / mem::PAGE_SIZE)
         {
             unsafe { self.root.as_mut().unwrap() }.unmap(addr + i * mem::PAGE_SIZE, 0);
         }
-
-        self.map_mem(addr).unwrap();
 
         0
     }

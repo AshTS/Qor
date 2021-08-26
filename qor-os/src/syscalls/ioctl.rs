@@ -41,6 +41,10 @@ pub fn syscall_ioctl(proc: &mut super::Process, fd: usize, cmd: usize, args: usi
             0x7009 =>
             {
                 IOControlCommand::RealTimeClockGetTime{ response: map_ptr(proc, args) }
+            },
+            0x70FF =>
+            {
+                IOControlCommand::RealTimeClockGetTimestamp{ response: map_ptr(proc, args) }
             }
 
             default =>

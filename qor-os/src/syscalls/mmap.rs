@@ -12,7 +12,7 @@ const PROT_WRITE: usize = 2;
 const PROT_EXEC: usize = 4;
 
 /// mmap Syscall
-pub fn syscall_mmap(proc: &mut super::Process, _start_ptr: usize, length: usize, prot: usize, _flags: usize, _fd: usize, _offset: usize) -> usize
+pub fn syscall_mmap(proc: &mut super::Process, _start_ptr: usize, length: usize, prot: usize, flags: usize, fd: usize, offset: usize) -> usize
 {
     let mut mem_flags = mem::mmu::PageTableEntryFlags::user();
 
@@ -31,5 +31,5 @@ pub fn syscall_mmap(proc: &mut super::Process, _start_ptr: usize, length: usize,
         mem_flags = mem_flags | mem::mmu::PageTableEntryFlags::readable() | mem::mmu::PageTableEntryFlags::accessed();
     }
 
-    proc.map((length + mem::PAGE_SIZE - 1) / mem::PAGE_SIZE, mem_flags)
+    proc.map((length + mem::PAGE_SIZE - 1) / mem::PAGE_SIZE, mem_flags, flags, fd, offset)
 }

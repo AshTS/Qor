@@ -22,7 +22,8 @@ pub struct ProcessData
     pub cwd: OwnedPath,
     pub cmdline_args: Vec<String>,
     pub mem_stats: MemoryStats,
-    pub signal_map: BTreeMap<SignalType, SignalDisposition>
+    pub signal_map: BTreeMap<SignalType, SignalDisposition>,
+    pub mmapped_files: BTreeMap<*mut u8, usize>
 }
 
 impl ProcessData
@@ -53,7 +54,8 @@ impl ProcessData
             cwd: OwnedPath::new("/root/"),
             cmdline_args: Vec::new(),
             mem_stats,
-            signal_map
+            signal_map,
+            mmapped_files: BTreeMap::new()
         }
     }
 

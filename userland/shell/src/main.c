@@ -9,10 +9,14 @@ char* PATH = "/bin/";
 
 static int RUNNING_PID = 0;
 static bool WAITING = true;
+static bool IS_TIMING = false;
 
 void display_tag();
 
 int handle_redirect(char** argv);
+
+int run_exec(char* exec, char** argv, char** envp);
+int run_exec_time(char* exec, char** argv, char** envp);
 
 void handler(int sig, struct siginfo_t *info, void *ucontext)
 {
@@ -27,6 +31,8 @@ void handler(int sig, struct siginfo_t *info, void *ucontext)
     {
         WAITING = false;
     }
+
+    IS_TIMING = false;
 
     sigreturn();
 }
@@ -72,7 +78,7 @@ int main()
             continue;
         }
 
-        if (buffer[0] == 'c' && buffer[1] == 'd')
+        if (buffer[0] == 'c' && buffer[1] == 'd' && buffer[2] == ' ')
         {
             char path_buffer[32];
 
@@ -102,69 +108,41 @@ int main()
             continue;
         }
 
+        bool do_time = false;
+
+        if (buffer[0] == 't' && buffer[1] == 'i' && buffer[2] == 'm' && buffer[3] == 'e' && buffer[4] == ' ')
+        {
+            strcpy(buffer, &buffer[5]);
+            do_time = true;
+        }
+
         if (strcmp("quit", buffer) == 0)
         {
             break;
         }
 
-        short pid = fork();
+        int buffer_index = 0;
+        int argv_index = 0;
+        argv[0] = buffer;
 
-        if (pid == 0)
+        while (buffer[buffer_index] != 0)
         {
-            int buffer_index = 0;
-            int argv_index = 0;
-            argv[0] = buffer;
-
-            while (buffer[buffer_index] != 0)
+            if (buffer[buffer_index] == ' ')
             {
-                if (buffer[buffer_index] == ' ')
-                {
-                    buffer[buffer_index] = 0;
-                    argv_index++;
-                    argv[argv_index] = &buffer[buffer_index + 1];
-                }
-                buffer_index++;
+                buffer[buffer_index] = 0;
+                argv_index++;
+                argv[argv_index] = &buffer[buffer_index + 1];
             }
+            buffer_index++;
+        }
 
-            handle_redirect(argv);
-
-            execve(argv[0], argv, envp);
-
-            if (argv[0][0] != '/')
-            {
-                char next_buffer[128];
-
-                int i = 0;
-
-                while (PATH[i] != 0)
-                {
-                    next_buffer[i] = PATH[i];
-                    i++;
-                }
-
-                int j = 0;
-
-                while (argv[0][j] != 0)
-                {
-                    next_buffer[i] = argv[0][j];
-                    i++;
-                    j++;
-                }
-
-                next_buffer[i] = 0;
-
-                execve(next_buffer, argv, envp);
-            }
-
-            eprintf("Unable to locate executable `%s`\n", buffer);
-
-            return -1;
+        if (do_time)
+        {
+            run_exec_time(argv[0], argv, envp);
         }
         else
         {
-            RUNNING_PID = pid;
-            wait(0);
-            RUNNING_PID = 0;
+            run_exec(argv[0], argv, envp);
         }
     }
 
@@ -216,4 +194,88 @@ int handle_redirect(char** argv)
             return fd;
         }
     }
+}
+
+
+int run_exec(char* exec, char** argv, char** envp)
+{
+    short pid = fork();
+
+    if (pid == 0)
+    {
+        // handle_redirect(argv);
+        execve(argv[0], argv, envp);
+
+        if (argv[0][0] != '/')
+        {
+            char next_buffer[128];
+
+            int i = 0;
+
+            while (PATH[i] != 0)
+            {
+                next_buffer[i] = PATH[i];
+                i++;
+            }
+
+            int j = 0;
+
+            while (argv[0][j] != 0)
+            {
+                next_buffer[i] = argv[0][j];
+                i++;
+                j++;
+            }
+
+            next_buffer[i] = 0;
+
+            execve(next_buffer, argv, envp);
+        }
+
+        eprintf("Unable to locate executable `%s`\n", argv);
+
+        return -1;
+    }
+    else
+    {
+        RUNNING_PID = pid;
+        wait(0);
+        RUNNING_PID = 0;
+
+        return 0;
+    }
+}
+
+
+int run_exec_time(char* exec, char** argv, char** envp)
+{
+
+    IS_TIMING = true;
+    unsigned long start;
+    unsigned long end;
+
+    int fd = open("/dev/rtc0", O_RDONLY);
+
+    if (fd < 0)
+    {
+        eprintf("Unable to open /dev/rtc0\n");
+        return -1;
+    }
+
+    ioctl(fd, RTC_RD_TIMESTAMP, &start);
+
+    for (int i = 0; i < 10; IS_TIMING && i++)
+    {
+        if (run_exec(exec, argv, envp) < 0)
+        {
+            return -1;
+        }
+    }
+    IS_TIMING = false;
+
+    ioctl(fd, RTC_RD_TIMESTAMP, &end);
+    
+    int avg = (end - start) / 10 / 1000000;
+
+    printf("Average Runtime: %i ms\n", avg);
 }

@@ -10,6 +10,7 @@
 #define MAP_PRIVATE 0
 
 #define MAP_ANONYMOUS 1
+#define MAP_ANON MAP_ANONYMOUS
 
 #define O_RDONLY 1
 #define O_WRONLY 2
@@ -22,6 +23,9 @@
 #define SEEK_SET 1
 #define SEEK_CUR 2
 #define SEEK_END 4
+
+#define RTC_RD_TIME      0x7009
+#define RTC_RD_TIMESTAMP 0x70FF
 
 struct time_repr
 {
