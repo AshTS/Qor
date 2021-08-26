@@ -3,6 +3,7 @@ Virtual File System
 Minix3 File System
 Processes
     Add segmentation fault display
+    Rewrite Process Structure, it is a bit of a mess
 Kernel
     Add Keyboard Driver
     Add Mouse Driver
