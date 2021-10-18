@@ -117,7 +117,8 @@ execve:
 exit:
     li a7, 60
     ecall
-    ret
+    exit_loop:
+    j exit_loop
 
 .globl wait
 wait:
