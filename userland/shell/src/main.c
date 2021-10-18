@@ -136,6 +136,8 @@ int main()
             buffer_index++;
         }
 
+        argv[++argv_index] = 0;
+
         if (do_time)
         {
             run_exec_time(argv[0], argv, envp);
@@ -232,9 +234,9 @@ int run_exec(char* exec, char** argv, char** envp)
             execve(next_buffer, argv, envp);
         }
 
-        eprintf("Unable to locate executable `%s`\n", argv);
+        eprintf("Unable to locate executable `%s`\n", argv[0]);
 
-        return -1;
+        exit(-1);
     }
     else
     {
