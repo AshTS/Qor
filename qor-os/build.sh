@@ -6,9 +6,10 @@ fi
 
 cd ../userland
 
-for i in slib libc term shell prog hello libc-test pwd basic cat ls clear mkdir checkers bmp ps kill
+for i in slib libc term shell prog hello libc-test pwd basic cat ls clear mkdir checkers bmp ps kill fractal
 do
     cd $i
+    echo "Building " $i
     make $1
     cd ..
 done
