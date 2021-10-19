@@ -15,15 +15,15 @@ struct Pixel
 
 struct Complex
 {
-    long real;
-    long imag;
+    float real;
+    float imag;
 };
 
 char check_pixel(int x, int y, int zoom);
 
 struct Complex iterate(struct Complex z, struct Complex c);
 
-long mag2(struct Complex z);
+float mag2(struct Complex z);
 
 int main()
 {
@@ -70,13 +70,13 @@ char check_pixel(int x, int y, int zoom)
 {
     struct Complex z;
 
-    z.real = 0;
-    z.imag = 0;
+    z.real = 0.0;
+    z.imag = 0.0;
 
     struct Complex c;
 
-    c.real = (x - 320) * PREC / 200 / zoom + CENTER_X;
-    c.imag = (y - 240) * PREC / 200 / zoom + CENTER_Y;
+    c.real = (x - 320) / 200.0 / zoom - 0.75;
+    c.imag = (y - 240) / 200.0 / zoom;
 
     char val = 255;
 
@@ -84,7 +84,7 @@ char check_pixel(int x, int y, int zoom)
     {
         z = iterate(z, c);
 
-        if (mag2(z) > 4 * PREC)
+        if (mag2(z) > 4.0)
         {
             break;
         }
@@ -99,8 +99,8 @@ struct Complex iterate(struct Complex z, struct Complex c)
 {
     struct Complex sqr;
 
-    sqr.real = (z.real * z.real - z.imag * z.imag) / PREC;
-    sqr.imag = (z.real * z.imag * 2) / PREC;
+    sqr.real = (z.real * z.real - z.imag * z.imag);
+    sqr.imag = (z.real * z.imag * 2);
 
     sqr.real += c.real;
     sqr.imag += c.imag;
@@ -109,7 +109,7 @@ struct Complex iterate(struct Complex z, struct Complex c)
 }
 
 
-long mag2(struct Complex z)
+float mag2(struct Complex z)
 {
-    return (z.imag * z.imag + z.real * z.real) / PREC;
+    return (z.imag * z.imag + z.real * z.real);
 }
