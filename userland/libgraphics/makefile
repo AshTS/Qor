@@ -1,24 +1,24 @@
 CC = clang
-CFLAGS = --target=riscv64 -march=rv64gc -mno-relax
+CFLAGS = --target=riscv64 -march=rv64gc -mno-relax -fPIC
 INCLUDE = -isystem ../include
 
 LINK = ld.lld
-LINKFLAGS =
+LINKFLAGS = -r
 
-INCLUDES = ../include/printf.h ../include/syscalls.h ../include/string.h ../include/malloc.h
+INCLUDES = ../include/syscalls.h ../include/libgraphics.h
 
 LIB_DIR = ../bin
 OUTPUT_DIR = ../bin
 BUILD_DIR = build
 SRC_DIR = src
 
-_LIBS = slib libc libgraphics
+_LIBS = 
 LIBS = $(patsubst %,$(LIB_DIR)/%,$(_LIBS))
 
 _OBJ = main.o
 OBJ = $(patsubst %,$(BUILD_DIR)/%,$(_OBJ))
 
-$(OUTPUT_DIR)/prog : $(BUILD_DIR) $(OBJ) $(LIBS)
+$(OUTPUT_DIR)/libgraphics : $(BUILD_DIR) $(OBJ) $(LIBS)
 	$(LINK) $(LINKFLAGS) $(OBJ) $(LIBS) -o $@
 
 $(BUILD_DIR)/%.o : $(SRC_DIR)/%.c $(INCLUDES)
