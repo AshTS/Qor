@@ -75,3 +75,30 @@ int compute_location(int x, int y)
 {
     return 640 * y + x;
 }
+
+int run_shader(struct Pixel (shader)(int, int))
+{
+    if (init_framebuffer() < 0)
+    {
+        return -1;
+    }
+
+    struct Pixel* framebuffer = get_framebuffer();
+    if (framebuffer == 0)
+    {
+        return -1;
+    }
+
+    for (int x = 0; x < 640; x++)
+    {
+        for (int y = 0; y < 480; y++)
+        {
+            framebuffer[compute_location(x, y)] = shader(x, y);
+        }
+    }
+
+    if (close_framebuffer() < 0)
+    {
+        return -1;
+    }
+}

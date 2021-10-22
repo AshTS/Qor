@@ -1,5 +1,5 @@
 CC = clang
-CFLAGS = --target=riscv64 -march=rv64gc -mno-relax
+CFLAGS = --target=riscv64 -march=rv64gc -mno-relax -O3
 INCLUDE = -isystem ../include
 
 LINK = ld.lld

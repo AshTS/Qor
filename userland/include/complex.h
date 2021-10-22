@@ -7,36 +7,36 @@ struct Complex
     float imag;
 };
 
-struct Complex add(struct Complex a, struct Complex b)
+struct Complex cadd(struct Complex a, struct Complex b)
 {
     return (struct Complex){.real = a.real + b.real, .imag = a.imag + b.imag};
 }
 
-struct Complex sub(struct Complex a, struct Complex b)
+struct Complex csub(struct Complex a, struct Complex b)
 {
     return (struct Complex){.real = a.real - b.real, .imag = a.imag - b.imag};
 }
 
-struct Complex mult(struct Complex a, struct Complex b)
+struct Complex cmult(struct Complex a, struct Complex b)
 {
     return (struct Complex){.real = a.real * b.real - a.imag * b.imag, .imag = a.real * b.imag + a.imag * b.real};
 }
 
-struct Complex conj(struct Complex a)
+struct Complex cconj(struct Complex a)
 {
     return (struct Complex){.real = a.real, .imag = -a.imag};
 }
 
-float abs2(struct Complex a)
+float cabs2(struct Complex a)
 {
     return a.real * a.real + a.imag * a.imag;
 }
 
-struct Complex div(struct Complex a, struct Complex b)
+struct Complex cdiv(struct Complex a, struct Complex b)
 {
-    float v = abs2(b);
+    float v = cabs2(b);
 
-    a = mult(a, conj(b));
+    a = cmult(a, cconj(b));
 
     a.real /= v;
     a.imag /= v;
@@ -44,7 +44,7 @@ struct Complex div(struct Complex a, struct Complex b)
     return a;
 }
 
-struct Complex scale(struct Complex a, float scale)
+struct Complex cscale(struct Complex a, float scale)
 {
     a.imag *= scale;
     a.real *= scale;

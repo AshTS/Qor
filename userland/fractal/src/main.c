@@ -5,18 +5,20 @@
 #define CENTER (struct Complex){.real = -0.75, .imag = 0.0}
 
 void libgraphics_error();
-struct Pixel shader(int x, int y, int m_or_n);
 
 struct Complex point_to_complex(int x, int y, struct Complex center);
 
-struct Pixel mandelbrot(struct Complex c);
-struct Pixel newton(struct Complex c, 
-                    struct Complex (func)(struct Complex), 
-                    struct Complex (deriv)(struct Complex), 
-                    struct Complex zeros[], int zero_count,
-                    int iterations);
+struct Pixel mandelbrot_shader(int x, int y);
+struct Pixel newton_shader(int x, int y);
 
 void help();
+
+struct Complex f(struct Complex z);
+struct Complex d(struct Complex z);
+
+static struct Complex zeros[3];
+static int zero_count;
+static int iterations;
 
 int main(int argc, char** argv)
 {
@@ -29,35 +31,33 @@ int main(int argc, char** argv)
 
     int m_or_n = argv[1][1] == 'm';
 
-    // Attempt to initialize the framebuffer, otherwise display the error and
-    // return
-    if (init_framebuffer() < 0)
+    int ret_val;
+
+
+    // Attempt to run the proper shader
+    if (m_or_n)
     {
-        libgraphics_error();
-        return -1;
+        printf("Mandelbrot\n");
+        
+        ret_val = run_shader(mandelbrot_shader);
+    }
+    else
+    {
+        printf("Newton\n");
+
+        float sqrt3d2 = 0.86602540378;
+
+        zeros[0] = (struct Complex){.real = 1.0, .imag = 0.0};
+        zeros[1] = (struct Complex){.real = -0.5, .imag = sqrt3d2};
+        zeros[2] = (struct Complex){.real = -0.5, .imag = -sqrt3d2};
+
+        iterations = 6;
+
+        ret_val = run_shader(newton_shader);
     }
 
-    // Attempt to get the framebuffer
-    struct Pixel* framebuffer = get_framebuffer();
-
-    // Make sure the framebuffer exists, otherwise display the error and return
-    if (framebuffer == 0)
-    {
-        libgraphics_error();
-        return -1;
-    }
-
-    // Loop over every pixel and request its color from the 'shader'
-    for (int x = 0; x < 640; x++)
-    {
-        for (int y = 0; y < 480; y++)
-        {
-            framebuffer[compute_location(x, y)] = shader(x, y, m_or_n);
-        }
-    }
-
-    // Attempt to close the framebuffer, otherwise display the error and return
-    if (close_framebuffer() < 0)
+    // Display the error and exit if an error was found
+    if (ret_val < 0)
     {
         libgraphics_error();
         return -1;
@@ -92,57 +92,38 @@ void libgraphics_error()
 // f(z) = z^3 - 1
 struct Complex f(struct Complex z)
 {
-    return sub(mult(z, mult(z, z)), (struct Complex){.real = 1.0, .imag = 0.0});
+    return csub(cmult(z, cmult(z, z)), (struct Complex){.real = 1.0, .imag = 0.0});
 }
 
 // f'(z) = 3z^2
 struct Complex d(struct Complex z)
 {
-    return scale(mult(z, z), 3);
+    return cscale(cmult(z, z), 3);
 }
 
-// Shader function, maps an (x, y) pair to a color
-struct Pixel shader(int x, int y, int m_or_n)
-{
-    struct Complex c = point_to_complex(x, y, CENTER);
-    
-    if (m_or_n)
-    {
-        return mandelbrot(c);
-    }
-    else
-    {
-        float sqrt3d2 = 0.86602540378;
-
-        struct Complex zeros[3] = {(struct Complex){.real = 1.0, .imag = 0.0},
-                                (struct Complex){.real = -0.5, .imag = sqrt3d2},
-                                (struct Complex){.real = -0.5, .imag = -sqrt3d2}};
-
-        return newton(c, f, d, zeros, 3, 10);
-    }
-}
 
 // Convert an (x, y) point to a complex number for the shader
 struct Complex point_to_complex(int x, int y, struct Complex center)
 {
-    return add(center, (struct Complex){.real = (float)(x - 320) / 200.0, .imag = (float)(y - 240) / 200.0});
+    return cadd(center, (struct Complex){.real = (float)(x - 320) / 200.0, .imag = (float)(y - 240) / 200.0});
 }
 
 // Mandelbrot set shader
-struct Pixel mandelbrot(struct Complex c)
+struct Pixel mandelbrot_shader(int x, int y)
 {
+    struct Complex c = point_to_complex(x, y, CENTER);
     struct Complex z = (struct Complex){.real = 0.0, .imag = 0.0};
 
     char val = 255;
 
     while (val > 0)
     {
-        if (abs2(z) > 4.0)
+        if (cabs2(z) > 4.0)
         {
             break;
         }
 
-        z = add(mult(z, z), c);
+        z = cadd(cmult(z, z), c);
         val -= 1;
     }
 
@@ -150,12 +131,9 @@ struct Pixel mandelbrot(struct Complex c)
 }
 
 // Newton Fractal
-struct Pixel newton(struct Complex c, 
-                    struct Complex (func)(struct Complex), 
-                    struct Complex (deriv)(struct Complex), 
-                    struct Complex zeros[], int zero_count,
-                    int iterations)
+struct Pixel newton_shader(int x, int y)
 {
+    struct Complex c = point_to_complex(x, y, CENTER);
     static struct Pixel colors[6] = {(struct Pixel){.r = 255, .g = 128, .b = 128, .a = 255}, 
                                      (struct Pixel){.r = 128, .g = 255, .b = 128, .a = 255}, 
                                      (struct Pixel){.r = 128, .g = 128, .b = 255, .a = 255}, 
@@ -165,15 +143,15 @@ struct Pixel newton(struct Complex c,
 
     for (int i = 0; i < iterations; i++)
     {
-        c = sub(c, div(func(c), deriv(c)));
+        c = csub(c, cdiv(f(c), d(c)));
     }
 
-    float best_dist = abs2(sub(c, zeros[0]));
+    float best_dist = cabs2(csub(c, zeros[0]));
     int best = 0;
 
     for (int i = 1; i < zero_count; i++)
     {
-        float dist = abs2(sub(c, zeros[i]));
+        float dist = cabs2(csub(c, zeros[i]));
 
         if (dist < best_dist)
         {
