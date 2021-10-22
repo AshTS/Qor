@@ -72,6 +72,11 @@ int main()
             break;
         }
 
+        if (buffer[0] == 0)
+        {
+            continue;
+        }
+
         if (!WAITING)
         {
             printf("\n");
@@ -130,13 +135,22 @@ int main()
             if (buffer[buffer_index] == ' ')
             {
                 buffer[buffer_index] = 0;
-                argv_index++;
+
+                if (*argv[argv_index] != 0)
+                {
+                    argv_index++;
+                }
                 argv[argv_index] = &buffer[buffer_index + 1];
             }
             buffer_index++;
         }
 
         argv[++argv_index] = 0;
+
+        if (*argv[0] == 0)
+        {
+            continue;
+        }
 
         if (do_time)
         {
