@@ -173,6 +173,33 @@ int fprintf(int fd, const char* data, ...)
                 }
                 next_format_specifier = false;
             }
+            else if (c == 'x')
+            {
+                unsigned int i = va_arg(args, unsigned int);
+
+                unsigned int counter = 1;
+                while (counter <= i / 16)
+                {
+                    counter *= 16;
+                }
+
+                while (counter >= 1)
+                {
+                    char digit = (i / counter) % 16;
+
+                    if (digit < 10)
+                    {
+                        printf_helper(buffer, &index, '0' + digit, fd);
+                    }
+                    else
+                    {
+                        printf_helper(buffer, &index, 'A' + (digit - 10), fd);
+                    }
+                    
+                    counter /= 16;
+                }
+                next_format_specifier = false;
+            }
             else if (c == 's')
             {
                 const char* s = va_arg(args, const char*);
@@ -347,6 +374,33 @@ int sprintf(char* dest, const char* data, ...)
                 sprintf_helper(buffer, &index, 'x', &dest);
 
                 unsigned long counter = 1;
+                while (counter <= i / 16)
+                {
+                    counter *= 16;
+                }
+
+                while (counter >= 1)
+                {
+                    char digit = (i / counter) % 16;
+
+                    if (digit < 10)
+                    {
+                        sprintf_helper(buffer, &index, '0' + digit, &dest);
+                    }
+                    else
+                    {
+                        sprintf_helper(buffer, &index, 'A' + (digit - 10), &dest);
+                    }
+                    
+                    counter /= 16;
+                }
+                next_format_specifier = false;
+            }
+            else if (c == 'x')
+            {
+                unsigned int i = va_arg(args, unsigned int);
+
+                unsigned int counter = 1;
                 while (counter <= i / 16)
                 {
                     counter *= 16;
