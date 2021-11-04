@@ -12,7 +12,7 @@ OUTPUT_DIR = ../bin
 BUILD_DIR = build
 SRC_DIR = src
 
-_LIBS = slib libc libelf
+_LIBS = slib libcold libelf
 LIBS = $(patsubst %,$(LIB_DIR)/%,$(_LIBS))
 
 _OBJ = main.o

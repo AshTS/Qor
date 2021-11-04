@@ -14,14 +14,14 @@ then
   echo "Building LibC"
   make $1
 
-  cp bin/libc ../userland/bin/libc2
+  cp bin/libc ../userland/bin/libc
 fi
 
 cp include/* ../userland/include/libc/ -r
 
 cd ../userland
 
-for i in slib libc libgraphics libelf term shell prog hello libc-test pwd basic cat ls clear mkdir checkers bmp ps kill fractal readelf
+for i in slib libcold libgraphics libelf term shell prog hello libc-test pwd basic cat ls clear mkdir checkers bmp ps kill fractal readelf
 do
     cd $i
     make $1 -q
