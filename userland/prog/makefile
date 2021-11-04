@@ -5,14 +5,14 @@ INCLUDE = -isystem ../include
 LINK = ld.lld
 LINKFLAGS =
 
-INCLUDES = ../include/printf.h ../include/syscalls.h ../include/string.h ../include/malloc.h
+INCLUDES = ../include/printf.h ../include/libc/stdarg.h
 
 LIB_DIR = ../bin
 OUTPUT_DIR = ../bin
 BUILD_DIR = build
 SRC_DIR = src
 
-_LIBS = slib libc libgraphics
+_LIBS = slib libc2
 LIBS = $(patsubst %,$(LIB_DIR)/%,$(_LIBS))
 
 _OBJ = main.o
