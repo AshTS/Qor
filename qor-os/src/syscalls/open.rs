@@ -27,6 +27,6 @@ pub fn syscall_open(proc: &mut super::Process, path_ptr: usize, flags: usize, _c
     match proc.open(&expanded_path, flags)
     {
         Ok(v) => v,
-        Err(_) => 0xFFFFFFFFFFFFFFFF
+        Err(_) => errno::ENOENT
     }
 }

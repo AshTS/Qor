@@ -32,6 +32,7 @@ use alloc::prelude::v1::*;
 mod asm;
 mod debug;
 mod drivers;
+mod errno;
 mod fs;
 mod mem;
 mod kprint;
