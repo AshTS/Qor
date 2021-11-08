@@ -1,5 +1,5 @@
 #include "libgraphics.h"
-#include "syscalls.h"
+#include "libc/sys/syscalls.h"
 
 static int FRAME_BUFFER_FD = -1;
 static struct Pixel* frame_buffer = 0;
@@ -106,4 +106,16 @@ int run_individual_shader(struct Pixel (shader)(int, int))
             framebuffer[compute_location(x, y)] = shader(x, y);
         }
     }
+}
+
+int flush_framebuffer()
+{
+    if (verify_framebuffer() < 0)
+    {
+        return -1;
+    }
+
+    ioctl(FRAME_BUFFER_FD, FB_FLUSH, 0);
+
+    return 0;
 }

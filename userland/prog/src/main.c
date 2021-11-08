@@ -1,7 +1,10 @@
 #include "libc/string.h"
-#include "libc/assert.h"
+#include "libc/stdio.h"
+
+#include "libc/sys/syscalls.h"
 
 #include "libgraphics.h"
+#include "time.h"
 
 #define MAX(a, b) ((a) < (b) ? (b) : (a))
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
@@ -10,24 +13,22 @@
 #define PI2 PI / 2.0
 #define PI4 PI / 4.0
 
+#define ABS(a) ((a) < 0 ? (-(a)) : (a))
+
 #define ITER(i) i
 
-float scale = 100.0;
-float offset = 0.0;
+int rand_mem = PI * 0xFFFFFFFF;
+float scale = 200.0;
 
 struct Pixel grid_shader(int x, int y);
-float function(float x);
-float function2(float x);
-int float_to_int_y(float y);
-
-void plot_x(int i, struct Pixel* buffer, float f(float), struct Pixel color);
+int rand();
 
 int main(int argc, char** argv)
 {
-    while (1)
-    {
-        init_framebuffer();
+    init_framebuffer();
 
+    for (int c = 0; c < 1000; c++)
+    {
         // run_individual_shader(grid_shader);
 
         struct Pixel* buffer = get_framebuffer();
@@ -37,32 +38,41 @@ int main(int argc, char** argv)
             return -1;
         }
 
-        for (int i = 0; i < 640; i++)
-        {
-            plot_x(i, buffer, function, COLOR_RED);
-            // plot_x(i, buffer, function2, COLOR_BLUE);
-        }
+        int x = rand() % 640;
+        int y = rand() % 480;
 
-        close_framebuffer();
-        
-        offset += 0.05;
+        if (x < 0) { x = -x; }
+        if (y < 0) { y = -y; }
+
+        printf("x: %i, y: %i\n", x, y);
+
+        buffer[compute_location(x, y)] = COLOR_WHITE;
+
+        flush_framebuffer();
     }
+
+    close_framebuffer();
 }
 
-void plot_x(int i, struct Pixel* buffer, float f(float), struct Pixel color)
+int rand()
 {
-    int y0 = float_to_int_y(f(((float)i - 0.5 - 320.0) / scale));
-    int y1 = float_to_int_y(f(((float)i + 0.5 - 320.0) / scale));
+    int fd = open("/dev/rtc0", O_RDONLY);
 
-    for (int y = MIN(y0, y1); y <= MAX(y0, y1); y++)
+    if (fd < 0)
     {
-        if (y < 0 || y >= 480)
-        {
-            continue;
-        }
-
-        buffer[compute_location(i, y)] = color;
+        printf("Unable to open /dev/rtc0\n");
+        return -1;
     }
+
+    unsigned long data;
+
+    ioctl(fd, RTC_RD_TIMESTAMP, &data);
+
+    close(fd);
+
+    rand_mem ^= data >> 2;
+
+    return rand_mem;
 }
 
 struct Pixel grid_shader(int x, int y)
@@ -80,195 +90,4 @@ struct Pixel grid_shader(int x, int y)
     }
 
     return COLOR_BLACK;
-}
-
-double cos(double x)
-{
-    if (x < 0.0)
-    {
-        return cos(-x);
-    }
-
-    if (x > PI)
-    {
-        int n = x / PI;
-
-        if (n % 2 == 0)
-        {
-            return cos(x - (double)n*PI);
-        }
-        else
-        {
-            return -cos(x - (double)n*PI);
-        }
-    }
-
-    if (x > PI2)
-    {
-        return -cos(PI - x);
-    }
-
-    int iterations = 9;
-
-    if (x < 1.4e-5)
-    {
-        iterations = 1;
-    }
-    else if (x < 0.00026)
-    {
-        iterations = 2;
-    }
-    else if (x < 0.0247)
-    {
-        iterations = 3;
-    }
-    else if (x < 0.093)
-    {
-        iterations = 4;
-    }
-    else if (x < 0.22)
-    {
-        iterations = 5;
-    }
-    else if (x < 0.417)
-    {
-        iterations = 6;
-    }
-    else if (x < 0.684)
-    {
-        iterations = 7;
-    }
-    else if (x < 1.36)
-    {
-        iterations = 8;
-    }
-
-    double result = 1.0;
-    double running = x * x / 2.0;
-
-    for (int i = 0; i < ITER(iterations); i++)
-    {
-        if (i % 2 == 0)
-        {
-            result -= running;
-        }
-        else
-        {
-            result += running;
-        }
-
-        running *= x * x;
-        running /= (double)(2 * (i + 1) + 1);
-        running /= (double)(2 * (i + 1) + 2);
-    }
-
-    return result;
-}
-
-double sin(double x)
-{
-    if (x < 0.0)
-    {
-        return -sin(-x);
-    }
-
-    if (x > PI)
-    {
-        int n = x / PI;
-
-        if (n % 2 == 0)
-        {
-            return sin(x - (double)n*PI);
-        }
-        else
-        {
-            return -sin(x-(double)n*PI);
-        }
-    }
-
-    if (x > PI2)
-    {
-        return sin(PI - x);
-    }
-
-    int iterations = 11;
-
-    if (x < 2.6e-8)
-    {
-        iterations = 1;
-    }
-    else if (x < 0.0003653)
-    {
-        iterations = 2;
-    }
-    else if (x < 0.0098)
-    {
-        iterations = 3;
-    }
-    else if (x < 0.05)
-    {
-        iterations = 4;
-    }
-    else if (x < 0.15)
-    {
-        iterations = 5;
-    }
-    else if (x < 0.315)
-    {
-        iterations = 6;
-    }
-    else if (x < 0.55) 
-    {
-        iterations = 7;
-    }
-    else if (x < 0.82)
-    {
-        iterations = 8;
-    }
-    else if (x < 1.1985)
-    {
-        iterations = 9;
-    }
-    else if (x < 1.56)
-    {
-        iterations = 10;
-    }
-
-    double result = 0.0;
-    double running = x;
-
-    for (int i = 0; i < ITER(iterations); i++)
-    {
-        if (i % 2 == 0)
-        {
-            result += running;
-        }
-        else
-        {
-            result -= running;
-        }
-
-        running *= x * x;
-        running /= (double)(2 * (i + 1));
-        running /= (double)(2 * (i + 1) + 1);
-    }
-
-    return result;
-}
-
-float function(float x)
-{
-    // return sin(2.0*x * PI) + cos(2.0 * x * PI + offset) + sin(3.0 * x * PI);
-    // return (x - 1.0 / (1.0 + offset)) * (x + offset) * (x - offset);
-
-    //return sin(cos(x + offset) * PI + cos(offset*x));
-
-    return sin(3.0 * offset);
-}
-
-
-
-int float_to_int_y(float y)
-{
-    return 240 - (y * scale);
 }

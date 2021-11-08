@@ -42,5 +42,6 @@ int compute_location(int x, int y);
 
 int run_shader(struct Pixel (shader)(int, int));
 int run_individual_shader(struct Pixel (shader)(int, int));
+int flush_framebuffer();
 
 #endif // _LIBGRAPHICS_H
