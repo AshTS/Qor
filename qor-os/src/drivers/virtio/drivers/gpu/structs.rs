@@ -92,6 +92,12 @@ impl Framebuffer
     {
         (self.width, self.height)
     }
+
+    /// Get the pointer to the frame buffer
+    pub fn get_pointer(&self) -> *mut Pixel
+    {
+        self.data
+    }
 }
 
 #[repr(C)]

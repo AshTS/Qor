@@ -36,6 +36,10 @@ pub fn syscall_ioctl(proc: &mut super::Process, fd: usize, cmd: usize, args: usi
             {
                 IOControlCommand::FrameBufferGetFixedInfo{ response: map_ptr(proc, args) }
             },
+            0x46FF =>
+            {
+                IOControlCommand::FrameBufferFlush
+            },
 
             // Real Time Clock
             0x7009 =>

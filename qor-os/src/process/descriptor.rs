@@ -37,6 +37,12 @@ pub trait FileDescriptor
     {
         offset
     }
+
+    /// Attempt to use an underlying buffer for an mmap
+    fn get_buffer(&self) -> Option<*mut u8>
+    {
+        None
+    }
 }
 
 /// Null File Descriptor
@@ -398,5 +404,10 @@ impl FileDescriptor for BufferDescriptor
     fn get_inode(&mut self) -> Option<FilesystemIndex>
     {
         Some(self.inode)
+    }
+
+    fn get_buffer(&self) -> Option<*mut u8>
+    {
+        self.buffer.get_buffer()
     }
 }

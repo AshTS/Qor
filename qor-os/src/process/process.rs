@@ -554,7 +554,29 @@ impl Process
         }
 
         // Allocate the memory
-        let ptr = mem::kpzalloc(length, "mmap").unwrap();
+        let mut ptr_op = None;
+
+        if flags & MAP_ANON == 0 && (flags as i64) >= 0
+        {
+            if let Some(fd_obj) = self.data.descriptors.get_mut(&fd)
+            {
+                if let Some(b) = fd_obj.borrow().get_buffer()
+                {
+                    ptr_op = Some(b);
+                }
+            }
+        }
+
+        let ptr;
+
+        if let Some(p) = ptr_op
+        {
+            ptr = p as usize;
+        }
+        else
+        {
+            ptr = mem::kpzalloc(length, "mmap").unwrap();
+        }
 
         self.data.mem_stats.resident += length;
 
@@ -574,9 +596,12 @@ impl Process
         {
             if let Some(fd_obj) = self.data.descriptors.get_mut(&fd)
             {
-                fd_obj.borrow_mut().seek(offset, process::descriptor::SeekMode::SeekSet);
-                fd_obj.borrow_mut().read(self.fs_interface.as_mut().unwrap(), ptr as *mut u8, 4096 * length);
-
+                if ptr_op.is_none()
+                {
+                    fd_obj.borrow_mut().seek(offset, process::descriptor::SeekMode::SeekSet);
+                    fd_obj.borrow_mut().read(self.fs_interface.as_mut().unwrap(), ptr as *mut u8, 4096 * length);
+                }
+                
                 self.data.mmapped_files.insert(ptr as *mut u8, fd);
             }
             else
@@ -595,6 +620,8 @@ impl Process
         // Convert the user address to a physical address
         let phys_addr = self.map_mem(addr).unwrap();
 
+        let mut should_free = true;
+
         // Check if the mapped region is a file
         if let Some(fd) = self.data.mmapped_files.get(&(phys_addr as *mut u8))
         {
@@ -603,8 +630,15 @@ impl Process
             // If the file still exists, update the cache
             if let Some(fd_obj) = self.data.descriptors.get_mut(&fd)
             {
-                fd_obj.borrow_mut().seek(0, process::descriptor::SeekMode::SeekSet);
-                fd_obj.borrow_mut().write(self.fs_interface.as_mut().unwrap(), phys_addr as *mut u8, 4096 * length);
+                if fd_obj.borrow().get_buffer().is_some()
+                {
+                    should_free = false;
+                }
+                else
+                {
+                    fd_obj.borrow_mut().seek(0, process::descriptor::SeekMode::SeekSet);
+                    fd_obj.borrow_mut().write(self.fs_interface.as_mut().unwrap(), phys_addr as *mut u8, 4096 * length);
+                }
             }
 
             // And remove the mapping from the process
@@ -618,7 +652,26 @@ impl Process
         }
 
         // Free the memory
-        mem::kpfree(phys_addr, length / mem::PAGE_SIZE).unwrap();
+        if should_free
+        {
+            mem::kpfree(phys_addr, length / mem::PAGE_SIZE).unwrap();
+        }
+
+        // Remove the mapping entry
+        let mut index = None;
+        for (i, mapping) in self.data.mem.iter().enumerate()
+        {
+            if mapping.0 as usize == phys_addr
+            {
+                index = Some(i);
+                break;
+            }
+        }
+
+        if let Some(index) = index
+        {
+            self.data.mem.remove(index);
+        }
 
         0
     }

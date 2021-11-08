@@ -476,6 +476,13 @@ impl GenericGraphics
                     };
                 0
             },
+            IOControlCommand::FrameBufferFlush =>
+            {
+                let (w, h) = self.driver.frame_buffer.get_size();
+                self.driver.invalidate(0, 0, w, h);
+
+                0
+            }
 
             _ => usize::MAX
         }
@@ -533,5 +540,10 @@ impl BufferInterface for GenericGraphics
     {
         let (w, h) = self.driver.frame_buffer.get_size();
         self.driver.invalidate(0, 0, w, h)
+    }
+
+    fn get_buffer(&self) -> Option<*mut u8>
+    {
+        Some(self.driver.frame_buffer.get_pointer() as *mut u8)
     }
 }

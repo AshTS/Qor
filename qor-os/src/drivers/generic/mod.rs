@@ -29,4 +29,7 @@ pub trait BufferInterface
 
     /// Flush the memory (send an update to wherever it is pointing)
     fn flush(&mut self);
+
+    /// Attempt to access an underlying buffer for mmap
+    fn get_buffer(&self) -> Option<*mut u8>;
 }
