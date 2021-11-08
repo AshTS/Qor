@@ -240,7 +240,7 @@ void free(void *ptr)
     MallocChunk *walk = (MallocChunk *)heap_table;
     MallocChunk *first = 0;
     unsigned int count = 0;
-    unsigned int expected_next = 0;
+    void* expected_next = 0;
 
     while (walk != 0 && (void *)walk - (void *)heap_table < heap_table_size)
     {

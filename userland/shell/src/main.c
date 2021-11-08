@@ -210,6 +210,8 @@ int handle_redirect(char** argv)
             return fd;
         }
     }
+
+    return 0;
 }
 
 
@@ -220,7 +222,7 @@ int run_exec(char* exec, char** argv, char** envp)
     if (pid == 0)
     {
         // handle_redirect(argv);
-        execve(argv[0], argv, envp);
+        execve(argv[0], (const char**)argv, (const char**)envp);
 
         if (argv[0][0] != '/')
         {
@@ -245,7 +247,7 @@ int run_exec(char* exec, char** argv, char** envp)
 
             next_buffer[i] = 0;
 
-            execve(next_buffer, argv, envp);
+            execve(next_buffer, (const char**)argv, (const char**)envp);
         }
 
         eprintf("Unable to locate executable `%s`\n", argv[0]);
@@ -278,7 +280,7 @@ int run_exec_time(char* exec, char** argv, char** envp)
         return -1;
     }
 
-    ioctl(fd, RTC_RD_TIMESTAMP, &start);
+    ioctl(fd, RTC_RD_TIMESTAMP, (unsigned long)&start);
 
     for (int i = 0; i < 10; IS_TIMING && i++)
     {
@@ -289,9 +291,11 @@ int run_exec_time(char* exec, char** argv, char** envp)
     }
     IS_TIMING = false;
 
-    ioctl(fd, RTC_RD_TIMESTAMP, &end);
+    ioctl(fd, RTC_RD_TIMESTAMP, (unsigned long)&end);
     
     int avg = (end - start) / 10 / 1000000;
 
     printf("Average Runtime: %i ms\n", avg);
+
+    return 0;
 }

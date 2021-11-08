@@ -57,57 +57,57 @@ int main(int argc, char** argv)
     {
         struct SectionHeader* sect = get_section_header(elf_file, i);
 
-        sprintf(buffer, "  [%i]\0", i);
+        sprintf(buffer, "  [%i]", i);
         tabulate(buffer, 5, true, ' ');
 
-        sprintf(buffer, "  %s\0", get_section_name(elf_file, i));
+        sprintf(buffer, "  %s", get_section_name(elf_file, i));
         tabulate(buffer, 18, true, ' ');
 
-        sprintf(buffer, "  %s\0    ", section_type_str(sect->sh_type));
+        sprintf(buffer, "  %s    ", section_type_str(sect->sh_type));
         tabulate(buffer, 19, true, ' ');
 
         long addr = sect->sh_addr;
-        sprintf(buffer, "%x\0", (int)(addr >> 32));
+        sprintf(buffer, "%x", (int)(addr >> 32));
         tabulate(buffer, 8, false, '0');
-        sprintf(buffer, "%x\0", (int)(addr));
+        sprintf(buffer, "%x", (int)(addr));
         tabulate(buffer, 8, false, '0');
 
         printf("  ");
 
         int offset = sect->sh_offset;
-        sprintf(buffer, "%x\0", offset);
+        sprintf(buffer, "%x", offset);
         tabulate(buffer, 8, false, '0');
         
         printf("\n       ");
 
         long size = sect->sh_size;
-        sprintf(buffer, "%x\0", (int)(size >> 32));
+        sprintf(buffer, "%x", (int)(size >> 32));
         tabulate(buffer, 8, false, '0');
-        sprintf(buffer, "%x\0", (int)(size));
+        sprintf(buffer, "%x", (int)(size));
         tabulate(buffer, 8, false, '0');
 
         printf("  ");
 
         long entsize = sect->sh_entsize;
-        sprintf(buffer, "%x\0", (int)(entsize >> 32));
+        sprintf(buffer, "%x", (int)(entsize >> 32));
         tabulate(buffer, 8, false, '0');
-        sprintf(buffer, "%x\0", (int)(entsize));
+        sprintf(buffer, "%x", (int)(entsize));
         tabulate(buffer, 8, false, '0');
 
         // TODO: Add flags, skipping for now
         printf("        ");
 
-        sprintf(buffer, "%x\0", sect->sh_link);
+        sprintf(buffer, "%x", sect->sh_link);
         tabulate(buffer, 4, false, ' ');
 
         printf("  ");
 
-        sprintf(buffer, "%x\0", sect->sh_info);
+        sprintf(buffer, "%x", sect->sh_info);
         tabulate(buffer, 4, false, ' ');
 
         printf("  ");
 
-        sprintf(buffer, "%x\0\n", sect->sh_addralign);
+        sprintf(buffer, "%x\n", (unsigned int)sect->sh_addralign);
         tabulate(buffer, 4, false, ' ');
 
         printf("\n");

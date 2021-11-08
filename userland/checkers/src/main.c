@@ -1,5 +1,7 @@
 #include "printf.h"
 #include "board.h"
+#include "string.h"
+#include "malloc.h"
 
 struct Result
 {
@@ -7,7 +9,7 @@ struct Result
     int score;
 };
 
-void* memcpy( void* dest, const void* src, int count )
+void* memcpy( void* dest, const void* src, unsigned long count )
 {
     for (int i = 0; i < count; i++)
     {

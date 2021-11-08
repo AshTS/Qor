@@ -66,7 +66,7 @@ int rand()
 
     unsigned long data;
 
-    ioctl(fd, RTC_RD_TIMESTAMP, &data);
+    ioctl(fd, RTC_RD_TIMESTAMP, (unsigned long)&data);
 
     close(fd);
 

@@ -15,7 +15,7 @@ char* strchr(const char* s, int c)
     {
         if (*s == cmp)
         {
-            return s;
+            return (char*)s;
         }
 
         s++;

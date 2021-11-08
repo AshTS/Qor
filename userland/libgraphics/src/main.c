@@ -89,6 +89,8 @@ int run_shader(struct Pixel (shader)(int, int))
     {
         return -1;
     }
+
+    return 0;
 }
 
 int run_individual_shader(struct Pixel (shader)(int, int))
@@ -106,6 +108,8 @@ int run_individual_shader(struct Pixel (shader)(int, int))
             framebuffer[compute_location(x, y)] = shader(x, y);
         }
     }
+    
+    return 0;
 }
 
 int flush_framebuffer()
