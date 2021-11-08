@@ -8,6 +8,7 @@
 
 #define COLOR_BLACK (struct Pixel){.r=0, .g=0, .b=0, .a=255}
 #define COLOR_WHITE (struct Pixel){.r=255, .g=255, .b=255, .a=255}
+#define COLOR_GREY (struct Pixel){.r=128, .g=128, .b=128, .a=255}
 #define COLOR_RED (struct Pixel){.r=255, .g=0, .b=0, .a=255}
 #define COLOR_GREEN (struct Pixel){.r=0, .g=255, .b=0, .a=255}
 #define COLOR_BLUE (struct Pixel){.r=0, .g=0, .b=255, .a=255}
@@ -40,5 +41,6 @@ struct Pixel* get_framebuffer();
 int compute_location(int x, int y);
 
 int run_shader(struct Pixel (shader)(int, int));
+int run_individual_shader(struct Pixel (shader)(int, int));
 
 #endif // _LIBGRAPHICS_H
