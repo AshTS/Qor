@@ -593,9 +593,6 @@ impl Process
     pub fn unmap(&mut self, addr: usize, length: usize) -> usize
     {
         // Convert the user address to a physical address
-        // TODO: Free physical memory here aswell
-        // let phys_addr = self.map_mem(addr).unwrap();
-
         let phys_addr = self.map_mem(addr).unwrap();
 
         // Check if the mapped region is a file
@@ -619,6 +616,9 @@ impl Process
         {
             unsafe { self.root.as_mut().unwrap() }.unmap(addr + i * mem::PAGE_SIZE, 0);
         }
+
+        // Free the memory
+        mem::kpfree(phys_addr, length / mem::PAGE_SIZE).unwrap();
 
         0
     }
