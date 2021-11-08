@@ -113,6 +113,6 @@ pub fn syscall_execve(proc: &mut super::Process, path_ptr: usize, argv_ptr: usiz
     }
     else
     {
-        0xFFFFFFFFFFFFFFFF
+        errno::ENOENT // File not found
     }
 }

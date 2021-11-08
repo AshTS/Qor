@@ -34,25 +34,25 @@ pub fn syscall_getdents(proc: &mut super::Process, fd: usize, buffer_ptr: usize,
 
     let mut amount_written = 0;
 
-    if let Some(entries) = proc.get_dir_entries(fd)
+    match proc.get_dir_entries(fd)
     {
-        for entry in entries
+        Ok(entries) =>
         {
-            let length = 8 + 8 + 2 + entry.name.len() + 1;
-            if amount_written + length >= size
+            for entry in entries
             {
-                break;
+                let length = 8 + 8 + 2 + entry.name.len() + 1;
+                if amount_written + length >= size
+                {
+                    break;
+                }
+
+                let size = write_dir_entry(buffer_ptr + amount_written, entry.index.inode as usize, amount_written, &entry.name);
+
+                amount_written += size;
             }
 
-            let size = write_dir_entry(buffer_ptr + amount_written, entry.index.inode as usize, amount_written, &entry.name);
-
-            amount_written += size;
+            amount_written
         }
-
-        amount_written
-    }
-    else
-    {
-        usize::MAX
+        Err(e) => e
     }
 }

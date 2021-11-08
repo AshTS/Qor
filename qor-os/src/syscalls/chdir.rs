@@ -48,11 +48,11 @@ pub fn syscall_chdir(proc: &mut super::Process, path_ptr: usize) -> usize
         }
         else
         {
-            usize::MAX
+            errno::EFAULT // Path points outside of addressable area
         }
     }
     else
     {
-        usize::MAX
+        errno::ENOENT // No entry - Directory not found
     }
 }

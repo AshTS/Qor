@@ -1,7 +1,7 @@
 #ifndef _PRINTF_H
 #define _PRINTF_H
 
-#include <stdarg.h>
+#include <libc/stdarg.h>
 #include "syscalls.h"
 
 extern int fprintf(int fd, const char* data, ...);

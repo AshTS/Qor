@@ -1,11 +1,11 @@
 CC = clang
 CFLAGS = --target=riscv64 -march=rv64gc -mno-relax
-INCLUDE = -isystem ../include
+INCLUDE = 
 
 LINK = ld.lld
 LINKFLAGS = -r
 
-INCLUDES = ../include/syscalls.h ../include/printf.h ../include/string.h ../include/malloc.h
+INCLUDES = 
 
 LIB_DIR = ../bin
 OUTPUT_DIR = ../bin

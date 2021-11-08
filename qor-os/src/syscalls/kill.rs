@@ -12,7 +12,7 @@ pub fn syscall_kill(proc: &mut super::Process, pid: usize, signal: usize) -> usi
         2 => SignalType::SIGINT,
         9 => SignalType::SIGKILL,
         15 => SignalType::SIGTERM,
-        _ => { kwarnln!("Unknown signal {}", signal); return usize::MAX }
+        _ => { kwarnln!("Unknown signal {}", signal); return errno::EINVAL }
     };
 
     kdebugln!(Syscalls, "PID {} Sending Signal {:?} to PID {}", proc.pid, sig_type, pid);
@@ -21,7 +21,7 @@ pub fn syscall_kill(proc: &mut super::Process, pid: usize, signal: usize) -> usi
         pid as u16, 
         POSIXSignal::new(pid as u16, proc.pid, sig_type)).is_err()
     {
-        usize::MAX
+        errno::ESRCH // Bad pid
     }
     else
     {

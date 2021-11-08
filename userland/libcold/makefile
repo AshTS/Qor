@@ -18,7 +18,7 @@ LIBS = $(patsubst %,$(LIB_DIR)/%,$(_LIBS))
 _OBJ = syscalls.o malloc.o printf.o string.o
 OBJ = $(patsubst %,$(BUILD_DIR)/%,$(_OBJ))
 
-$(OUTPUT_DIR)/libc : $(BUILD_DIR) $(OBJ) $(LIBS)
+$(OUTPUT_DIR)/libcold : $(BUILD_DIR) $(OBJ) $(LIBS)
 	$(LINK) $(LINKFLAGS) $(OBJ) $(LIBS) -o $@
 
 $(BUILD_DIR)/%.o : $(SRC_DIR)/%.c $(INCLUDES)

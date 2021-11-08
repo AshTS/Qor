@@ -332,7 +332,7 @@ impl Process
         }
         else
         {
-            0xFFFFFFFFFFFFFFFF
+            errno::EBADF
         }
     }
 
@@ -347,7 +347,7 @@ impl Process
         }
         else
         {
-            0xFFFFFFFFFFFFFFFF
+            errno::EBADF
         }
     }
 
@@ -361,7 +361,7 @@ impl Process
         }
         else
         {
-            0xFFFFFFFFFFFFFFFF
+            errno::EBADF // Bad file descriptor
         };
 
         if v == 0
@@ -442,7 +442,7 @@ impl Process
         }
         else
         {
-            usize::MAX
+            errno::EBADF // Bad file descriptor
         }
     }
 
@@ -469,7 +469,7 @@ impl Process
         }
         else
         {
-            usize::MAX
+            errno::EBADF // Bad File descriptor
         }
     }
 
@@ -582,7 +582,7 @@ impl Process
             else
             {
                 kwarnln!("Bad fd {}", fd);
-                return usize::MAX;
+                return errno::EBADF; // Bad file descriptor
             }
         }
 
@@ -593,9 +593,6 @@ impl Process
     pub fn unmap(&mut self, addr: usize, length: usize) -> usize
     {
         // Convert the user address to a physical address
-        // TODO: Free physical memory here aswell
-        // let phys_addr = self.map_mem(addr).unwrap();
-
         let phys_addr = self.map_mem(addr).unwrap();
 
         // Check if the mapped region is a file
@@ -620,11 +617,14 @@ impl Process
             unsafe { self.root.as_mut().unwrap() }.unmap(addr + i * mem::PAGE_SIZE, 0);
         }
 
+        // Free the memory
+        mem::kpfree(phys_addr, length / mem::PAGE_SIZE).unwrap();
+
         0
     }
 
     /// Get directory entries for the given file descriptor
-    pub fn get_dir_entries(&mut self, fd: usize) -> Option<Vec<DirectoryEntry>>
+    pub fn get_dir_entries(&mut self, fd: usize) -> Result<Vec<DirectoryEntry>, usize>
     {
         let inode = if let Some(desc) = self.data.descriptors.get_mut(&fd)
         {
@@ -634,17 +634,17 @@ impl Process
             }
             else
             {
-                return None;
+                return Err(errno::ENOENT); // File not found
             }
         }
         else
         {
-            return None;
+            return Err(errno::EBADF); // Bad file descriptor
         };
 
         self.ensure_fs();
 
-        Some(self.fs_interface.as_mut().unwrap().get_dir_entries(inode).unwrap())
+        Ok(self.fs_interface.as_mut().unwrap().get_dir_entries(inode).unwrap())
     }
 
     /// Get the total memory held by the process in pages

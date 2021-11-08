@@ -288,7 +288,7 @@ void free(void *ptr)
     flush_helper(&count, &first);
 }
 
-#ifdef DEBUG
+#ifdef MALLOC_DEBUG
 void dump()
 {
     if (heap_table == 0)
