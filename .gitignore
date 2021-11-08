@@ -3,3 +3,4 @@ userland/bin/*
 userland/*/build
 qor-os/hdd.dsk
 libutils/target
+.vscode/*
