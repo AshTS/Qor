@@ -105,7 +105,7 @@ def build():
 def update_headers():
     print("Updating Headers")
 
-    run_command("cp libc/include qor-userland/include/libc -r", shell=True, cwd=cwd).check_returncode()
+    run_command("cp libc/include/* qor-userland/include/libc/ -r", shell=True, cwd=cwd).check_returncode()
 
 def mount_disk():
     run_command("sudo losetup /dev/loop11 qor-os/hdd.dsk; sudo mount /dev/loop11 /mnt", show=True, shell=True).check_returncode()

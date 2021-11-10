@@ -3,5 +3,8 @@
         "--target",
         "riscv64gc-unknown-none-elf"
     ],
-    "rust-analyzer.checkOnSave.allTargets": false
+    "rust-analyzer.checkOnSave.allTargets": false,
+    "C_Cpp.default.systemIncludePath": [
+        "/home/carter/Desktop/Programming/Rust/qor/qor-userland/include"
+    ]
 }
