@@ -14,7 +14,7 @@ then
   echo "Building LibC"
   make $1
 
-  cp bin/libc ../userland/bin/libc
+  cp bin/libc.a ../userland/bin/libc.a
 fi
 
 cp include/* ../userland/include/libc/ -r

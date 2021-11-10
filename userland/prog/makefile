@@ -3,7 +3,7 @@ CFLAGS = --target=riscv64 -march=rv64gc -mno-relax -g
 INCLUDE = -isystem ../include
 
 LINK = ld.lld
-LINKFLAGS =
+LINKFLAGS = --gc-sections
 
 INCLUDES = ../include/printf.h ../include/libc/stdarg.h
 
@@ -12,7 +12,7 @@ OUTPUT_DIR = ../bin
 BUILD_DIR = build
 SRC_DIR = src
 
-_LIBS = slib libc libgraphics
+_LIBS = slib libc.a libgraphics
 LIBS = $(patsubst %,$(LIB_DIR)/%,$(_LIBS))
 
 _OBJ = main.o
