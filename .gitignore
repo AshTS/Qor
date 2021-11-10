@@ -1,6 +1,6 @@
 qor-os/target
-userland/bin/*
-userland/*/build
+userland__/bin/*
+userland__/*/build
 qor-os/hdd.dsk
 libutils/target
 .vscode/*

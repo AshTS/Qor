@@ -1,7 +1,7 @@
 #! /usr/bin/bash
-if test ! -d ../userland/bin
+if test ! -d ../userland__/bin
 then
-  mkdir ../userland/bin
+  mkdir ../userland__/bin
 fi
 
 echo "Building Userland Programs..."
@@ -14,12 +14,12 @@ then
   echo "Building LibC"
   make $1
 
-  cp bin/libc.a ../userland/bin/libc.a
+  cp bin/libc.a ../userland__/bin/libc.a
 fi
 
-cp include/* ../userland/include/libc/ -r
+cp include/* ../userland__/include/libc/ -r
 
-cd ../userland
+cd ../userland__
 
 for i in slib libcold libgraphics libelf term shell prog hello libc-test pwd basic cat ls clear mkdir checkers bmp ps kill fractal readelf
 do
@@ -39,8 +39,8 @@ sudo losetup /dev/loop11 hdd.dsk
 
 sudo mount /dev/loop11 /mnt
 sudo rm -rf /mnt/*
-sudo cp -r ../userland/bin/ /mnt/bin/
-sudo cp -r ../userland/root/ /mnt/
+sudo cp -r ../userland__/bin/ /mnt/bin/
+sudo cp -r ../userland__/root/ /mnt/
 
 sudo sync /mnt
 

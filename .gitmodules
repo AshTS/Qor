@@ -4,3 +4,6 @@
 [submodule "libc"]
 	path = libc
 	url = https://github.com/CarterTS/QorLibC
+[submodule "qor-userland"]
+	path = qor-userland
+	url = https://github.com/CarterTS/QorUserland
