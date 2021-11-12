@@ -149,7 +149,6 @@ if __name__ == "__main__":
         build()
         update_disk()
     elif subcommand == "build":
-        update_headers()
         build()
         update_disk()
     elif subcommand == "update":

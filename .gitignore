@@ -3,5 +3,5 @@ userland__/bin/*
 userland__/*/build
 qor-os/hdd.dsk
 libutils/target
-.vscode/*
 *.diff
+.vscode/settings.json

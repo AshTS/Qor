@@ -5,6 +5,10 @@
     ],
     "rust-analyzer.checkOnSave.allTargets": false,
     "C_Cpp.default.systemIncludePath": [
-        "/home/carter/Desktop/Programming/Rust/qor/qor-userland/include"
-    ]
+        "/home/carter/Desktop/Programming/Rust/qor/qor-userland/include",
+        "/home/carter/Desktop/Programming/Rust/qor/libc/include"
+    ],
+    "files.associations": {
+        "stdlib.h": "c"
+    }
 }
