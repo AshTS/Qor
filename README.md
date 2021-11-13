@@ -2,6 +2,8 @@
 
 Basic kernel written in Rust for RISC-V, following the tutorial by Stephen Marz [RISC-V OS using Rust](https://osblog.stephenmarz.com/index.html).
 
+Stored in seperate repositories are the [libc implementation](https://github.com/CarterTS/QorLibC) and the [userland programs](https://github.com/CarterTS/QorUserland)
+
 ## Install
 
 1. Clone the repository and all submodules
@@ -16,7 +18,7 @@ Basic kernel written in Rust for RISC-V, following the tutorial by Stephen Marz 
 
 ### First Time Execution
 
-Before the first execution, the hard disk must be created using:
+Before the first execution, the hard disk must be created using the following in the `qor-os` directory:
 
 ```
 fallocate -l 32M hdd.dsk
@@ -25,11 +27,11 @@ sudo mkfs.minix -3 /dev/loop11
 sudo losetup -d /dev/loop11
 ```
 
-The userland programs must also be built before the first execution, to do so run `./build.sh` in the `qor-os` directory.
+The userland programs must also be built before the first execution, to do so run `./build.py rebuild` in the root directory.
 
 ## Usage
 
-To start the kernel, run `cargo run --release` in the `qor-os` directory.
+To start the kernel, run `./build.py run` in the root directory.
 
 
 ## License from Tutorial
