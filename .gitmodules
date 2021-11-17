@@ -4,6 +4,8 @@
 [submodule "libc"]
 	path = libc
 	url = https://github.com/CarterTS/QorLibC
+	branch = main
 [submodule "qor-userland"]
 	path = qor-userland
 	url = https://github.com/CarterTS/QorUserland
+	branch = main
