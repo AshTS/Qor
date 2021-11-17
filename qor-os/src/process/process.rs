@@ -49,6 +49,7 @@ const MAP_ANON: usize = 1;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WaitMode
 {
+    // Pointer to return code
     ForChild,
     ForSignal
 }
@@ -78,7 +79,8 @@ pub struct Process
     pub state: ProcessState,
     pub data: ProcessData,
     pub fs_interface: Option<&'static mut fs::vfs::FilesystemInterface>,
-    pub signals: [Option<POSIXSignal>; 4]
+    pub signals: [Option<POSIXSignal>; 4],
+    pub exit_code: u32,
 } 
 
 impl Process
@@ -136,7 +138,8 @@ impl Process
                 state: ProcessState::Running,
                 data: unsafe { ProcessData::new(stack_size, mem_stats) },
                 fs_interface: None,
-                signals: [None, None, None, None]
+                signals: [None, None, None, None],
+                exit_code: 0
             };
 
         // Update the stack pointer
@@ -249,6 +252,7 @@ impl Process
         kdebugln!(Processes, "Killing PID {} with exit code: {}", self.pid, value);
 
         self.state = ProcessState::Zombie;
+        self.exit_code = value as u32;
     }
 
     /// Initialize the file system
@@ -730,7 +734,7 @@ impl Process
             SignalDisposition::Terminate =>
             {
                 kdebugln!(Signals, "Terminating");
-                self.kill(usize::MAX)
+                self.kill(128 + signal.sig_type as usize)
             },
             SignalDisposition::Ignore =>
             { 

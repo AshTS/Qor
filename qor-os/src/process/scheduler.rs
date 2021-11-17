@@ -167,7 +167,7 @@ impl ProcessManager
                             {
                                 process::process::WaitMode::ForChild => 
                                 {
-                                    children = Some(proc.get_children().clone())
+                                    children = Some(proc.get_children().clone());
                                 },
                                 process::process::WaitMode::ForSignal => {},
                             }
@@ -214,6 +214,12 @@ impl ProcessManager
 
                     if let Some(stopped) = stopped_pid
                     {
+                        let exit_code = self.get_process_by_pid(stopped).unwrap().exit_code;
+                        if let Some(return_code_listener) = self.get_process_by_pid_mut(step_pid).unwrap().data.return_code_listener.as_mut()
+                        {
+                            **return_code_listener = exit_code;
+                        }
+
                         self.get_process_by_pid_mut(step_pid).unwrap().remove_child(stopped);
                         unsafe { self.get_process_by_pid_mut(step_pid).unwrap().frame.as_mut().unwrap() }.regs[10] = stopped as usize;
                         self.get_process_by_pid_mut(step_pid).unwrap().state = ProcessState::Running;

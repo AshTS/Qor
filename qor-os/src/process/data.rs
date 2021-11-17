@@ -23,7 +23,8 @@ pub struct ProcessData
     pub cmdline_args: Vec<String>,
     pub mem_stats: MemoryStats,
     pub signal_map: BTreeMap<SignalType, SignalDisposition>,
-    pub mmapped_files: BTreeMap<*mut u8, usize>
+    pub mmapped_files: BTreeMap<*mut u8, usize>,
+    pub return_code_listener: Option<&'static mut u32>
 }
 
 impl ProcessData
@@ -55,7 +56,8 @@ impl ProcessData
             cmdline_args: Vec::new(),
             mem_stats,
             signal_map,
-            mmapped_files: BTreeMap::new()
+            mmapped_files: BTreeMap::new(),
+            return_code_listener: None
         }
     }
 
