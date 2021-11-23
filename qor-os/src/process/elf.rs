@@ -71,6 +71,7 @@ pub struct Segment
     fsize: usize,
     msize: usize,
     flags: mem::mmu::PageTableEntryFlags,
+    align: usize,
 }
 
 
@@ -163,7 +164,8 @@ pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: PathBuffer, 
                 flags,
                 msize: header.memsz,
                 fsize: header.filesz,
-                f_offset: header.off
+                f_offset: header.off,
+                align: header.align
             }
         )
     }
@@ -174,7 +176,7 @@ pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: PathBuffer, 
     // Map the segments
     for segment in segments
     {
-        let poff = segment.f_offset & (mem::PAGE_SIZE - 1);
+        let poff = segment.f_offset & (segment.align - 1);
 
         let num_pages = (segment.msize + poff + mem::PAGE_SIZE - 1) / mem::PAGE_SIZE;
         let phys_ptr = mem::kpzalloc(num_pages, "ELF Segment").unwrap() as *mut u8;
