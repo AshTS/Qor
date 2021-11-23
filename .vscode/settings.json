@@ -9,6 +9,8 @@
         "/home/carter/Desktop/Programming/Rust/qor/libc/include"
     ],
     "files.associations": {
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "syscalls.h": "c",
+        "riscv.h": "c"
     }
 }

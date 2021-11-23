@@ -108,10 +108,10 @@ def update_headers():
     run_command("cp libc/include/* qor-userland/include/libc/ -r", shell=True, cwd=cwd).check_returncode()
 
 def mount_disk():
-    run_command("sudo losetup /dev/loop11 qor-os/hdd.dsk; sudo mount /dev/loop11 /mnt", show=True, shell=True).check_returncode()
+    run_command("sudo losetup /dev/loop16 qor-os/hdd.dsk; sudo mount /dev/loop16 /mnt", show=True, shell=True).check_returncode()
 
 def unmount_disk():
-    run_command("sudo sync /mnt; sudo umount /mnt; sudo losetup -d /dev/loop11", show=True, shell=True).check_returncode()
+    run_command("sudo sync /mnt; sudo umount /mnt; sudo losetup -d /dev/loop16", show=True, shell=True).check_returncode()
 
 def update_disk():
     print("Copying files to Disk")
@@ -120,6 +120,9 @@ def update_disk():
 
     try:
         run_command("sudo mkdir /mnt/lib", shell=True, hide=True)
+        run_command("sudo mkdir /mnt/root", shell=True, hide=True)
+
+        run_command("sudo cp qor-userland/root/* /mnt/root/", shell=True, hide=True).check_returncode()
 
         for entry in binaries:
             run_command("sudo cp " + entry["bin-path"] + " /mnt" + entry["output-path"], shell=True).check_returncode()
