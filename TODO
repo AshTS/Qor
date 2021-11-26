@@ -1,6 +1,7 @@
 Virtual File System
     Optimize read call in file descriptors
 Minix3 File System
+    Filesystem calls sometimes brick filesystem
 Processes
     Add segmentation fault display
     Rewrite Process Structure, it is a bit of a mess
@@ -8,5 +9,8 @@ Kernel
     Add Keyboard Driver
     Add Mouse Driver
 Shell
+    Flush stdin at end of execution
     Add Pipe
     Add Chevrons
+LibC
+    Run initialization Functions

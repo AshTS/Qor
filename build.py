@@ -90,6 +90,9 @@ def clean():
         clean_path("/" + entry["make-path"], entry["name"])
 
 def build():
+    print("Ensuring Directories Exist")
+        run_command("sudo mkdir qor-userland/lib", shell=True, hide=True)
+
     print("Building Binaries")
 
     for entry in binaries:
@@ -105,6 +108,7 @@ def build():
 def update_headers():
     print("Updating Headers")
 
+    run_command("sudo mkdir qor-userland/include/libc", shell=True, hide=True)
     run_command("cp libc/include/* qor-userland/include/libc/ -r", shell=True, cwd=cwd).check_returncode()
 
 def mount_disk():
@@ -121,6 +125,7 @@ def update_disk():
     try:
         run_command("sudo mkdir /mnt/lib", shell=True, hide=True)
         run_command("sudo mkdir /mnt/root", shell=True, hide=True)
+        run_command("sudo mkdir /mnt/bin", shell=True, hide=True)
 
         run_command("sudo cp qor-userland/root/* /mnt/root/", shell=True, hide=True).check_returncode()
 
