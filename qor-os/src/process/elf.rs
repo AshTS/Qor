@@ -71,7 +71,7 @@ pub struct Segment
     fsize: usize,
     msize: usize,
     flags: mem::mmu::PageTableEntryFlags,
-    align: usize,
+    align: usize
 }
 
 
