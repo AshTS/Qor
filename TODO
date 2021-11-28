@@ -15,3 +15,5 @@ Shell
 LibC
     Run initialization Functions
 Userland
+    ed
+        Loading files sometimes drops bytes
