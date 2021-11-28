@@ -281,6 +281,7 @@ impl Filesystem for FilesystemInterface
                     {
                         found = true;
                         index = entry.index;
+                        break;
                     }
                 }
 

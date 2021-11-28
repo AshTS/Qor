@@ -91,7 +91,7 @@ def clean():
 
 def build():
     print("Ensuring Directories Exist")
-        run_command("sudo mkdir qor-userland/lib", shell=True, hide=True)
+    run_command("sudo mkdir qor-userland/lib", shell=True, hide=True)
 
     print("Building Binaries")
 
