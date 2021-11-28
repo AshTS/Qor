@@ -449,7 +449,6 @@ impl Minix3Filesystem
                     {
                         if *v & walker == 0 && i as u16 >= superblock.first_data_zone + 500
                         {
-                            kwarnln!("Free Zone: {}", i);
                             return Ok(i);
                         }
 
