@@ -9,7 +9,7 @@ Stored in seperate repositories are the [libc implementation](https://github.com
 1. Clone the repository and all submodules
 2. Navigate to the `qemu` directory
 3. Create a new directory called `build` and navigate there
-4. Run `../configure --target-list=riscv64-softmmu && make`
+4. Run `../configure --target-list=riscv64-softmmu --enable-sdl && make`
 5. Install qemu to your path
 6. Navigate to the `qor-os` directory
 8. Run `rustup override set nightly-2021-03-09` to set the Rust compiler version
