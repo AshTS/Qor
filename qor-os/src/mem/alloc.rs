@@ -628,6 +628,12 @@ unsafe impl core::alloc::GlobalAlloc for GlobalAllocator
     }
 }
 
+pub fn debug_print_layout()
+{
+    let ptr = KERNEL_HEAP_POINTER.load(core::sync::atomic::Ordering::SeqCst);
+    unsafe { ptr.as_mut().unwrap().display_node_list() };
+}
+
 /// Allocation error handler
 #[alloc_error_handler]
 pub fn alloc_error(l: core::alloc::Layout) -> ! {

@@ -6,10 +6,33 @@ use process::descriptor::*;
 
 use fs::structures::FilesystemIndex;
 
+/// Device Directory Enumeration
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DeviceDirectories
+{
+    Root,
+    PseudoTerminalSecondaries
+}
+
+pub const PSUEDO_TERMINAL_FLAG: usize = 1 << (16 + 1);
+
+impl core::fmt::Display for DeviceDirectories
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+    {
+        match self
+        {
+            DeviceDirectories::Root => write!(f, "root"),
+            DeviceDirectories::PseudoTerminalSecondaries => write!(f, "pts"),
+        }
+    }
+}
+
 /// DeviceFile object
 pub struct DeviceFile
 {
     pub name: &'static str,
+    pub directory: DeviceDirectories,
     desc_const: Box<dyn Fn(FilesystemIndex) -> Box<dyn FileDescriptor>>,
     io_ctl: Box<dyn Fn(IOControlCommand) -> usize>
 }
@@ -22,7 +45,17 @@ impl DeviceFile
     {
         Self
         {
-            name, desc_const, io_ctl
+            name, desc_const, io_ctl, directory: DeviceDirectories::Root
+        }
+    }
+
+    /// Create a new device file in a sub directory
+    pub fn new_in_dir(name: &'static str, desc_const: Box<dyn Fn(FilesystemIndex) -> Box<dyn FileDescriptor>>,
+               io_ctl: Box<dyn Fn(IOControlCommand) -> usize>, directory: DeviceDirectories) -> Self
+    {
+        Self
+        {
+            name, desc_const, io_ctl, directory
         }
     }
 
@@ -37,6 +70,16 @@ impl DeviceFile
     {
         (self.io_ctl)(cmd)
     }
+}
+
+/// Return all available device directories for the system
+pub fn get_device_directories() -> Vec<DeviceDirectories>
+{
+    let mut result: Vec<DeviceDirectories> = Vec::new();
+
+    result.push(DeviceDirectories::PseudoTerminalSecondaries);
+
+    result
 }
 
 /// Return all available device files for the system
@@ -70,13 +113,24 @@ pub fn get_device_files() -> Vec<DeviceFile>
                 ));
     }
 
-    // /dev/tty0 : UART Port
+    // /dev/uart0 : UART Port
+    result.push(
+        DeviceFile::new(
+            "uart0",
+            Box::new(
+                |inode| Box::new(
+                    ByteInterfaceDescriptor::new(drivers::get_uart_driver(), inode)
+                )),
+                Box::new( |_| usize::MAX)
+            ));
+
+    // /dev/tty0 : Teletype connected to the UART port
     result.push(
         DeviceFile::new(
             "tty0",
             Box::new(
                 |inode| Box::new(
-                    ByteInterfaceDescriptor::new(drivers::get_uart_driver(), inode)
+                    super::tty::TeletypeSecondaryDescriptor::new(drivers::get_uart_driver(), inode)
                 )),
                 Box::new( |_| usize::MAX)
             ));

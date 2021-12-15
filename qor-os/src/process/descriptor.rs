@@ -43,6 +43,12 @@ pub trait FileDescriptor
     {
         None
     }
+
+    /// Check for available data
+    fn check_available(&self) -> bool
+    {
+        true
+    }
 }
 
 /// Null File Descriptor

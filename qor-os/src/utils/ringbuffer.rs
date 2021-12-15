@@ -67,6 +67,12 @@ impl ByteRingBuffer
             Some(self.data[self.end])
         }
     }
+
+    /// Return true if the buffer is empty
+    pub fn is_empty(&self) -> bool
+    {
+        self.start == self.end
+    }
 }
 
 /// Ring Buffer Test

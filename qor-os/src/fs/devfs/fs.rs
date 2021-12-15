@@ -16,7 +16,8 @@ pub struct DevFilesystem
 {
     mount_id: Option<usize>,
     vfs: Option<&'static mut crate::fs::vfs::FilesystemInterface>,
-    devices: Vec<DeviceFile>
+    devices: Vec<DeviceFile>,
+    directories: Vec<DeviceDirectories>
 }
 
 impl DevFilesystem
@@ -28,8 +29,63 @@ impl DevFilesystem
         {
             mount_id: None,
             vfs: None,
-            devices: Vec::new()
+            devices: Vec::new(),
+            directories: Vec::new(),
         }
+    }
+
+    /// Get directory entries for a given directory
+    pub fn get_directory_entries_for(&self, mount_id: usize, directory: DeviceDirectories) -> Vec<DirectoryEntry>
+    {
+        let mut result = Vec::new();
+
+        // Construct the loop back and parent entries
+        let loopback = DirectoryEntry{
+            index: FilesystemIndex { mount_id, inode: 1},
+            name: String::from("."),
+            entry_type: DirectoryEntryType::Directory,
+        };
+
+        let parent = DirectoryEntry{
+            index: FilesystemIndex { mount_id, inode: 1},
+            name: String::from(".."),
+            entry_type: DirectoryEntryType::Directory,
+        };
+
+        result.push(loopback);
+        result.push(parent);
+
+        for (i, dev) in self.devices.iter().enumerate()
+        {
+            if dev.directory != directory { continue; }
+
+            let dir_ent = DirectoryEntry
+                {
+                    index: FilesystemIndex { mount_id, inode: i + 2 + self.directories.len()},
+                    name: String::from(dev.name),
+                    entry_type: DirectoryEntryType::CharDevice,
+                };
+
+            result.push(dir_ent);
+        }
+
+        // Specific cases for getting the entries in a directory
+        if directory == DeviceDirectories::PseudoTerminalSecondaries
+        {
+            for index in super::tty::get_open_pseudo_terminal_indexes()
+            {
+                let dir_ent = DirectoryEntry
+                {
+                    index: FilesystemIndex { mount_id, inode: PSUEDO_TERMINAL_FLAG | index},
+                    name: format!("{}", index),
+                    entry_type: DirectoryEntryType::CharDevice,
+                };
+
+                result.push(dir_ent);
+            }
+        }
+
+        result
     }
 }
 
@@ -39,6 +95,9 @@ impl Filesystem for DevFilesystem
     {
         // Set up the devices available on the system
         self.devices = get_device_files();
+
+        // Set up the device directories
+        self.directories = get_device_directories();
 
         Ok(())
     }
@@ -103,39 +162,31 @@ impl Filesystem for DevFilesystem
         {
             if inode.inode == 1
             {
-                let mut result = Vec::new();
+                let mut result = self.get_directory_entries_for(inode.mount_id, DeviceDirectories::Root);
 
-                // Construct the loop back and parent entries
-                let loopback = DirectoryEntry{
-                    index: FilesystemIndex { mount_id: inode.mount_id, inode: 1},
-                    name: String::from("."),
-                    entry_type: DirectoryEntryType::Directory,
-                };
-
-                let parent = DirectoryEntry{
-                    index: FilesystemIndex { mount_id: inode.mount_id, inode: 1},
-                    name: String::from(".."),
-                    entry_type: DirectoryEntryType::Directory,
-                };
-
-                result.push(loopback);
-                result.push(parent);
-
-                for (i, dev) in self.devices.iter().enumerate()
+                for (i, dir) in self.directories.iter().enumerate()
                 {
                     let dir_ent = DirectoryEntry
-                        {
-                            index: FilesystemIndex { mount_id: inode.mount_id, inode: i + 2},
-                            name: String::from(dev.name),
-                            entry_type: DirectoryEntryType::CharDevice,
-                        };
+                    {
+                        index: FilesystemIndex { mount_id: inode.mount_id, inode: i + 2},
+                        name: format!("{}", dir),
+                        entry_type: DirectoryEntryType::CharDevice,
+                    };
 
-                    result.push(dir_ent);
+                result.push(dir_ent);
                 }
 
                 Ok(result)
             }
-            else if inode.inode < 2 + self.devices.len()
+            else if inode.inode < 2 + self.directories.len()
+            {
+                Ok(self.get_directory_entries_for(inode.mount_id, self.directories[inode.inode - 2]))
+            }
+            else if inode.inode < 2 + self.directories.len() + self.devices.len()
+            {
+                Err(FilesystemError::INodeIsNotADirectory)
+            }
+            else if inode.inode & PSUEDO_TERMINAL_FLAG > 0
             {
                 Err(FilesystemError::INodeIsNotADirectory)
             }
@@ -176,7 +227,8 @@ impl Filesystem for DevFilesystem
     {
         if Some(inode.mount_id) == self.mount_id
         {
-            if inode.inode < 4
+            if inode.inode < self.directories.len() + self.devices.len() ||
+                inode.inode & PSUEDO_TERMINAL_FLAG > 0
             {
                 Ok(Vec::new())
             }
@@ -237,9 +289,17 @@ impl Filesystem for DevFilesystem
                     1 => Ok(Box::new(InodeFileDescriptor::new(vfs, inode, mode).unwrap())),
                     default =>
                     {
-                        if default > 1 && default < 2 + self.devices.len()
+                        if default > 1 && default < 2 + self.directories.len()
                         {
-                            Ok(self.devices[default - 2].make_descriptor(inode))
+                            Ok(Box::new(InodeFileDescriptor::new(vfs, inode, mode).unwrap()))
+                        }
+                        else if default >= 2 + self.directories.len() && default < 2 + self.directories.len() + self.devices.len()
+                        {
+                            Ok(self.devices[default - 2 - self.directories.len()].make_descriptor(inode))
+                        }
+                        else if default & PSUEDO_TERMINAL_FLAG > 0
+                        {
+                            super::tty::get_pseudo_terminal_secondary_file_descriptor(default & ((1 << 16) - 1), inode)
                         }
                         else
                         {

@@ -111,3 +111,25 @@ switch_to_user:
     .endr
 
     mret
+
+.globl asm_wait_for_int
+asm_wait_for_int:
+    csrw satp, a0
+
+    # Set up supervisor mode
+    li t0, (1 << 11) | (1 << 5)
+    csrw mstatus, t0
+
+    # Set the mret address to _start_wfi_loop
+    la t1, _start_wfi_loop
+    csrw mepc, t1
+
+    # Enable Interrupts
+    li t3, (1 << 3) | (1 << 8) | (1 << 7) | (1 << 11)
+    csrw mie, t3
+
+    # If the function returns, just keep waiting
+    la ra, _start_wfi_loop
+    
+    # Jump to _start_wfi_loop
+    mret

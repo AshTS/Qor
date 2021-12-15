@@ -78,6 +78,11 @@ impl FileDescriptor for ReadPipeDescriptor
     {
         None
     }
+
+    fn check_available(&self) -> bool
+    {
+        !self.buffer.borrow_mut().is_empty()
+    }
 }
 
 /// Create a new pipe pair
@@ -88,7 +93,6 @@ pub fn new_pipe() -> (ReadPipeDescriptor, WritePipeDescriptor)
         alloc::sync::Arc::new(
             core::cell::RefCell::new(
                 buffer));
-
     (
         ReadPipeDescriptor { buffer: wrapped_buffer.clone() },
         WritePipeDescriptor { buffer: wrapped_buffer.clone() }

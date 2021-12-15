@@ -169,6 +169,16 @@ impl ProcessManager
                                 {
                                     children = Some(proc.get_children().clone());
                                 },
+                                process::process::WaitMode::ForIO((fd, count, buffer)) =>
+                                {
+                                    if proc.check_available(fd)
+                                    {
+                                        let length = proc.read(fd, buffer, count);
+                                        unsafe { proc.frame.as_mut().unwrap().regs[10] = length; }
+
+                                        break;
+                                    }
+                                }
                                 process::process::WaitMode::ForSignal => {},
                             }
                             
@@ -379,4 +389,15 @@ extern "C"
 pub fn schedule_jump(data: (usize, usize, usize)) -> !
 {
     unsafe { switch_to_user(data.0, data.1, data.2) }
+}
+
+extern "C"
+{
+    pub fn asm_wait_for_int() -> !;
+}
+
+/// Wait until an interrupt is recieved
+pub fn wait_for_int() -> !
+{
+    unsafe { asm_wait_for_int() }
 }

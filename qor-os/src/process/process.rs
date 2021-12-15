@@ -51,7 +51,8 @@ pub enum WaitMode
 {
     // Pointer to return code
     ForChild,
-    ForSignal
+    ForSignal,
+    ForIO((usize, usize, *mut u8))
 }
 
 /// Process State Enumeration
@@ -296,7 +297,7 @@ impl Process
             {
                 if (mode & O_EXCL) > 0
                 {
-                    return Ok(usize::MAX);
+                    return Ok(errno::EEXIST);
                 }
 
                 inode_result
@@ -305,7 +306,7 @@ impl Process
             {
                 if (mode & O_CREAT) == 0
                 {
-                    return Ok(usize::MAX);
+                    return Ok(errno::ENOENT);
                 }
 
                 let (path, name) = path.split_last();
@@ -315,14 +316,8 @@ impl Process
                 vfs.create_file(dest_inode, name.to_string())?
             };
 
-        if let Ok(fd) = vfs.open_fd(inode, mode)
-        {
-            Ok(self.add_descriptor(fd))
-        }
-        else
-        {
-            Ok(usize::MAX)
-        }
+        let fd = vfs.open_fd(inode, mode)?;
+        Ok(self.add_descriptor(fd))
     }
 
     /// Read from a file descriptor
@@ -337,6 +332,21 @@ impl Process
         else
         {
             errno::EBADF
+        }
+    }
+
+    /// Check for data available on a file descriptor
+    pub fn check_available(&mut self, fd: usize) -> bool
+    {
+        self.ensure_fs();
+
+        if let Some(fd) = self.data.descriptors.get_mut(&fd)
+        {
+            fd.borrow_mut().check_available()
+        }
+        else
+        {
+            false
         }
     }
 

@@ -6,3 +6,4 @@ pub mod fs;
 pub use fs::*;
 
 mod devices;
+pub mod tty;

@@ -1,10 +1,14 @@
 //! Driver for a MMIO UART Interface
 
 use crate::*;
+use crate::fs::devfs::tty::TeletypeDevice;
+use crate::utils::ByteRingBuffer;
 
 use super::generic::ByteInterface;
 use super::mmio;
 use super::generic;
+
+use crate::fs::devfs::tty::TeletypeSettings;
 
 /// Safety: if the base address is a vaild base address for a UART driver,
 /// this will perform as expected.
@@ -60,7 +64,9 @@ unsafe fn write_byte(base: usize, data: u8)
 pub struct UARTDriver
 {
     base: usize,
-    buffer: utils::ByteRingBuffer
+    input_buffer: ByteRingBuffer,
+    line_buffer: ByteRingBuffer,
+    terminal_settings: crate::fs::devfs::tty::TeletypeSettings
 }
 
 impl UARTDriver
@@ -73,7 +79,9 @@ impl UARTDriver
         Self
         {
             base,
-            buffer: utils::ByteRingBuffer::new()
+            input_buffer: ByteRingBuffer::new(),
+            line_buffer: ByteRingBuffer::new(),
+            terminal_settings: crate::fs::devfs::tty::TeletypeSettings::new()
         }
     }
 
@@ -95,7 +103,7 @@ impl UARTDriver
         // satisfied, this is safe
         if let Some(byte) = unsafe { read_byte(self.base) }
         {
-            self.buffer.enqueue_byte(byte);
+            self.tty_push_byte(byte);
         }
     }
 }
@@ -105,7 +113,7 @@ impl generic::ByteInterface for UARTDriver
     /// Read a byte from the UART
     fn read_byte(&mut self) -> Option<u8>
     {
-        self.buffer.dequeue_byte()
+        self.line_buffer.dequeue_byte()
 
         // unsafe { read_byte(self.base) }
     }
@@ -133,5 +141,66 @@ impl core::fmt::Write for UARTDriver
         }
 
         Ok(())
+    }
+}
+
+impl crate::fs::devfs::tty::TeletypeDevice for UARTDriver
+{
+    fn tty_read_byte(&mut self) -> Option<u8>
+    {
+        self.read_byte()
+    }
+
+    fn tty_write_byte(&mut self, byte: u8)
+    {
+        self.write_byte(byte);
+    }
+
+    fn tty_close(&mut self)
+    {
+        // Nothing to do here, this tty can't be closed
+    }
+
+    fn tty_push_byte(&mut self, byte: u8)
+    {
+        self.input_buffer.enqueue_byte(byte);
+
+        self.handle_input(byte);
+
+        if byte == 0xD
+        {
+            while let Some(b) = self.input_buffer.dequeue_byte()
+            {
+                self.line_buffer.enqueue_byte(b);
+            }
+        }
+    }
+
+    fn tty_pop_byte(&mut self) -> Option<u8>
+    {
+        // Not needed for UART, as whenever a byte is written to the tty, it
+        // immediately moves that byte on to the UART port
+        unimplemented!()
+    }
+
+    fn get_tty_settings(&self) -> TeletypeSettings
+    {
+        self.terminal_settings
+    }
+
+    fn set_tty_settings(&mut self, settings: TeletypeSettings)
+    {
+        self.terminal_settings = settings;
+    }
+
+    fn backspace(&mut self) -> bool
+    {
+        self.input_buffer.pop_byte(); // Skip the backspace which was already enqueued
+        self.input_buffer.pop_byte().is_some()
+    }
+
+    fn bytes_available(&self) -> bool
+    {
+        !self.line_buffer.is_empty()
     }
 }
