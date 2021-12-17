@@ -36,9 +36,9 @@ pub fn syscall_execve(proc: &mut super::Process, path_ptr: usize, argv_ptr: usiz
 
     let mut argv_vals = Vec::with_capacity(argv_vecs.len());
 
-    for v in &argv_vecs
+    for v in argv_vecs
     {
-        argv_vals.push(v.as_slice());
+        argv_vals.push(unsafe { String::from_utf8_unchecked(v) });
     }
 
     
@@ -68,9 +68,9 @@ pub fn syscall_execve(proc: &mut super::Process, path_ptr: usize, argv_ptr: usiz
 
     let mut envp_vals = Vec::with_capacity(envp_vecs.len());
 
-    for v in &envp_vecs
+    for v in envp_vecs
     {
-        envp_vals.push(v.as_slice());
+        envp_vals.push(unsafe { String::from_utf8_unchecked(v) });
     }
 
     // Ensure the filesystem has been initialized
@@ -97,14 +97,14 @@ pub fn syscall_execve(proc: &mut super::Process, path_ptr: usize, argv_ptr: usiz
     }
      
     // Create a process from an elf file
-    if let Ok(mut new_proc) = process::elf::load_elf(proc.fs_interface.as_mut().unwrap(), &OwnedPath::new(path), Vec::new())
+    if let Ok(mut new_proc) = process::loading::load_process(proc.fs_interface.as_mut().unwrap(), &OwnedPath::new(path), &mut argv_vals, &mut envp_vals)
     // if true
     {
         new_proc.data.descriptors = proc.data.descriptors.clone();
 
         new_proc.data.cwd = proc.data.cwd.clone();
 
-        new_proc.set_arguments(argv_vals.as_slice(), envp_vals.as_slice());
+        new_proc.set_arguments(&argv_vals, &envp_vals);
 
         process::scheduler::replace_process(proc.pid, new_proc);
         

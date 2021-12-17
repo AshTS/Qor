@@ -2,6 +2,8 @@
 
 use crate::*;
 
+use super::loading;
+
 use fs::fstrait::Filesystem;
 
 use alloc::vec::Vec;
@@ -10,15 +12,6 @@ use libutils::paths::PathBuffer;
 use super::process::Process;
 
 use super::stats::MemoryStats;
-
-/// Elf Loading Error
-#[derive(Debug, Clone)]
-pub enum ElfLoadError
-{
-    ReadError(fs::structures::FilesystemError),
-    NotAnELF,
-    BadFormat(String)
-}
 
 /// Elf Header Structure
 #[repr(C)]
@@ -76,13 +69,9 @@ pub struct Segment
 
 
 /// Load a file from a file interface and convert it to a process
-pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: PathBuffer, args: Vec<String>) -> Result<Process, ElfLoadError>
+pub fn load_elf(file_data: Vec<u8>, path: PathBuffer, args: &Vec<String>, envp: &Vec<String>) -> Result<Process, loading::ProcessLoadError>
 {
     kdebugln!(Elf, "Loading ELF File `{}`", path);
-
-    // Open the file
-    let index = interface.path_to_inode(path).map_err(|e| ElfLoadError::ReadError(e))?;
-    let file_data = interface.read_inode(index).map_err(|e| ElfLoadError::ReadError(e))?;
 
     let mut text_size = 0;
     let mut data_size = 0;
@@ -90,7 +79,7 @@ pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: PathBuffer, 
     // Verify it is an elf file
     if file_data[0..4] != [0x7F, 'E' as u8, 'L' as u8, 'F' as u8]
     {
-        return Err(ElfLoadError::NotAnELF)
+        return Err(loading::ProcessLoadError::NotAnELF)
     }
 
     // Get an instance of the Elf Header
@@ -99,13 +88,13 @@ pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: PathBuffer, 
     // Verify the elf is a 64 bit elf file
     if elf_header.ident_class != 2
     {
-        return Err(ElfLoadError::BadFormat(String::from("ELF File is a 32-bit ELF File")));
+        return Err(loading::ProcessLoadError::BadFormat(String::from("ELF File is a 32-bit ELF File")));
     }
 
     // Verify the elf is a risc-v elf file
     if elf_header.e_machine != 0xF3
     {
-        return Err(ElfLoadError::BadFormat(String::from("ELF File is not a RISCV ELF File")));
+        return Err(loading::ProcessLoadError::BadFormat(String::from("ELF File is not a RISCV ELF File")));
     }
 
     // Extract the program headers
@@ -215,18 +204,9 @@ pub fn load_elf(interface: &mut fs::vfs::FilesystemInterface, path: PathBuffer, 
         mem_stats);
 
     let mut full_arguments = vec![path.as_str().to_string()];
-
     full_arguments.extend_from_slice(&args);
-    let mut raw_args = Vec::new();
 
-    for arg in &mut full_arguments
-    {
-        arg.push('\0');
-
-        raw_args.push(arg.as_bytes());
-    }
-
-    proc.set_arguments(&raw_args, &[]);
+    proc.set_arguments(&full_arguments, envp);
 
     proc.data.fill_command_line_args(full_arguments);
 

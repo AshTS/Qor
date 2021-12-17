@@ -149,8 +149,30 @@ impl Process
         temp_result
     }
 
+    /// Set the environment arguments
+    pub fn set_environment(&mut self, envp: &[&[u8]])
+    {
+        let mut envp_addrs = Vec::with_capacity(envp.len());
+        
+        // Write the environment variables
+        for s in envp
+        {
+            envp_addrs.push(self.push_buffer(s));
+        }
+
+        // Write envp
+        let mut ptr = self.push(0usize);
+        for v in envp_addrs.iter().rev()
+        {
+            ptr = self.push(*v);
+        }
+
+        // Set envp
+        unsafe { self.frame.as_mut().unwrap() }.regs[12] = ptr;
+    }
+
     /// Set the command line and environment arguments
-    pub fn set_arguments(&mut self, args: &[&[u8]], envp: &[&[u8]])
+    pub fn set_arguments(&mut self, args: &[String], envp: &[String])
     {
         // Set argc
         unsafe { self.frame.as_mut().unwrap() }.regs[10] = args.len();
@@ -163,8 +185,8 @@ impl Process
         // Write the arguments
         for s in args
         {
-            args_to_store.push(unsafe { String::from_utf8_unchecked(Vec::from(*s)) });
-            arg_addrs.push(self.push_buffer(s));
+            args_to_store.push(s.clone());
+            arg_addrs.push(self.push_buffer(s.as_bytes()));
         }
 
         // Write the argument array
@@ -180,7 +202,7 @@ impl Process
         // Write the environment variables
         for s in envp
         {
-            envp_addrs.push(self.push_buffer(s));
+            envp_addrs.push(self.push_buffer(s.as_bytes()));
         }
 
         // Write envp

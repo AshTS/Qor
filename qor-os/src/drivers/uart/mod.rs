@@ -163,7 +163,14 @@ impl crate::fs::devfs::tty::TeletypeDevice for UARTDriver
 
     fn tty_push_byte(&mut self, byte: u8)
     {
-        self.input_buffer.enqueue_byte(byte);
+        if byte == 0xD
+        {
+            self.input_buffer.enqueue_byte(0xA);
+        }
+        else
+        {
+            self.input_buffer.enqueue_byte(byte);
+        }
 
         self.handle_input(byte);
 
