@@ -135,8 +135,8 @@ fn kmain()
 
     let elf_proc = process::loading::load_process(
         &mut vfs, 
-        &OwnedPath::new("/bin/term"), 
-        &mut vec![String::from("/dev/tty0")],
+        &OwnedPath::new("/bin/init"), 
+        &mut Vec::new(),
         &mut Vec::new()).unwrap();
     process::scheduler::get_init_process_mut().unwrap().register_child(elf_proc.pid);
 
