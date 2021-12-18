@@ -124,10 +124,9 @@ def update_disk():
 
     try:
         run_command("sudo mkdir /mnt/lib", shell=True, hide=True)
-        run_command("sudo mkdir /mnt/root", shell=True, hide=True)
         run_command("sudo mkdir /mnt/bin", shell=True, hide=True)
 
-        run_command("sudo cp qor-userland/root/* /mnt/root/", shell=True, hide=True).check_returncode()
+        run_command("sudo cp -r qor-userland/root/* /mnt", shell=True, hide=True).check_returncode()
 
         for entry in binaries:
             run_command("sudo cp " + entry["bin-path"] + " /mnt" + entry["output-path"], shell=True).check_returncode()

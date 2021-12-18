@@ -52,7 +52,7 @@ impl ProcessData
             descriptors: descriptors,
             children: Vec::new(),
             parent_pid: 0,
-            cwd: OwnedPath::new("/root/"),
+            cwd: OwnedPath::new("/home/root/"),
             cmdline_args: Vec::new(),
             mem_stats,
             signal_map,
