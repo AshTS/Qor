@@ -111,15 +111,19 @@ impl InodeFileDescriptor
             inode,
             index: 0,
             data: Vec::new(),
-            is_write: mode & O_WRONLY > 0,
+            is_write: mode & (O_WRONLY | O_APPEND) > 0,
             is_read: mode & O_RDONLY > 0
         };
 
-        if (temp.is_read || (mode & O_APPEND) > 0) && (mode & O_TRUNC) == 0
+        if temp.is_read || (((mode & O_APPEND) > 0) && (mode & O_TRUNC) == 0)
         {
             if let Ok(data) = fs.read_inode(temp.inode)
             {
                 temp.data = data;
+                if ((mode & O_APPEND) > 0) && (mode & O_TRUNC) == 0
+                {
+                    temp.index = temp.data.len();
+                }
             }
             else
             {
