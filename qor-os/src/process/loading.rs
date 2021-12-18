@@ -10,8 +10,6 @@ use libutils::paths::{PathBuffer, OwnedPath};
 
 use super::process::Process;
 
-use super::stats::MemoryStats;
-
 /// Process Loading Error
 #[derive(Debug, Clone)]
 pub enum ProcessLoadError
