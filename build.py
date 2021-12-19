@@ -123,6 +123,7 @@ def update_disk():
     mount_disk();
 
     try:
+        run_command("sudo rm -rf /mnt/*", shell=True, hide=True)
         run_command("sudo mkdir /mnt/lib", shell=True, hide=True)
         run_command("sudo mkdir /mnt/bin", shell=True, hide=True)
 
