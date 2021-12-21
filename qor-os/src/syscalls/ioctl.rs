@@ -58,7 +58,15 @@ pub fn syscall_ioctl(proc: &mut super::Process, fd: usize, cmd: usize, args: usi
             },
             0x5402 =>
             {
-                IOControlCommand::TeletypeSetSettings{ response: map_ptr(proc, args) }
+                IOControlCommand::TeletypeSetSettingsNoWait{ response: map_ptr(proc, args) }
+            }
+            0x5403 =>
+            {
+                IOControlCommand::TeletypeSetSettingsDrain{ response: map_ptr(proc, args) }
+            }
+            0x5404 =>
+            {
+                IOControlCommand::TeletypeSetSettingsFlush{ response: map_ptr(proc, args) }
             }
 
             default =>

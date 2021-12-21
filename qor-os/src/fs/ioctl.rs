@@ -16,5 +16,7 @@ pub enum IOControlCommand
 
     // TTY
     TeletypeGetSettings{response: &'static mut fs::devfs::tty::TeletypeSettings},
-    TeletypeSetSettings{response: &'static mut fs::devfs::tty::TeletypeSettings},
+    TeletypeSetSettingsNoWait{response: &'static mut fs::devfs::tty::TeletypeSettings},
+    TeletypeSetSettingsDrain{response: &'static mut fs::devfs::tty::TeletypeSettings},
+    TeletypeSetSettingsFlush{response: &'static mut fs::devfs::tty::TeletypeSettings},
 }

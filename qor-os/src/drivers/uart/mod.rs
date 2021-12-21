@@ -210,4 +210,10 @@ impl crate::fs::devfs::tty::TeletypeDevice for UARTDriver
     {
         !self.line_buffer.is_empty()
     }
+
+    fn flush_tty(&mut self)
+    {
+        while let Some(_) = self.input_buffer.pop_byte() {}
+        while let Some(_) = self.line_buffer.pop_byte() {}
+    }
 }

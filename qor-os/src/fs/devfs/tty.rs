@@ -101,6 +101,8 @@ pub trait TeletypeDevice
         }
     }
 
+    fn flush_tty(&mut self);
+
     fn exec_ioctl(&mut self, cmd: IOControlCommand) -> usize
     {
         match cmd
@@ -110,8 +112,21 @@ pub trait TeletypeDevice
                 *response = self.get_tty_settings();
                 0
             },
-            IOControlCommand::TeletypeSetSettings { response } => 
+            IOControlCommand::TeletypeSetSettingsNoWait { response } => 
             {
+                self.set_tty_settings(*response);
+                0
+            },
+            IOControlCommand::TeletypeSetSettingsDrain { .. } => 
+            {
+                todo!();
+                // self.set_tty_settings(*response);
+                // 0
+            },
+            IOControlCommand::TeletypeSetSettingsFlush { response } => 
+            {
+                self.flush_tty();
+
                 self.set_tty_settings(*response);
                 0
             }
