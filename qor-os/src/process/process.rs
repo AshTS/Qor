@@ -485,6 +485,8 @@ impl Process
     /// Run an ioctl command
     pub fn exec_ioctl(&mut self, fd: usize, cmd: fs::ioctl::IOControlCommand) -> usize
     {
+        self.ensure_fs();
+
         if let Some(fd) = self.data.descriptors.get_mut(&fd)
         {
             if let Some(inode) = fd.borrow_mut().get_inode()

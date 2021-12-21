@@ -1,5 +1,6 @@
 use crate::*;
 
+#[derive(Debug)]
 /// ioctl Commands
 pub enum IOControlCommand
 {
@@ -12,4 +13,8 @@ pub enum IOControlCommand
     // Real Time Clock
     RealTimeClockGetTime{response: &'static mut drivers::rtc::RTCTime},
     RealTimeClockGetTimestamp{response: &'static mut u64},
+
+    // TTY
+    TeletypeGetSettings{response: &'static mut fs::devfs::tty::TeletypeSettings},
+    TeletypeSetSettings{response: &'static mut fs::devfs::tty::TeletypeSettings},
 }

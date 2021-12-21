@@ -6,6 +6,8 @@ use process::descriptor::*;
 
 use fs::structures::FilesystemIndex;
 
+use super::tty::TeletypeDevice;
+
 /// Device Directory Enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeviceDirectories
@@ -121,7 +123,7 @@ pub fn get_device_files() -> Vec<DeviceFile>
                 |inode| Box::new(
                     ByteInterfaceDescriptor::new(drivers::get_uart_driver(), inode)
                 )),
-                Box::new( |_| usize::MAX)
+                Box::new( |_| { usize::MAX })
             ));
 
     // /dev/tty0 : Teletype connected to the UART port
@@ -132,7 +134,7 @@ pub fn get_device_files() -> Vec<DeviceFile>
                 |inode| Box::new(
                     super::tty::TeletypeSecondaryDescriptor::new(drivers::get_uart_driver(), inode)
                 )),
-                Box::new( |_| usize::MAX)
+                Box::new( |cmd| { drivers::get_uart_driver().exec_ioctl(cmd) } )
             ));
 
     // /dev/null : Null Descriptor

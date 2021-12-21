@@ -1,8 +1,11 @@
 use crate::*;
+use crate::fs::ioctl::IOControlCommand;
 
 use super::super::structures::*;
 
 use crate::process::descriptor::*;
+
+use super::tty_consts::*;
 
 /// Get the file descriptor for the pseudo terminal secondary with the given
 /// index
@@ -41,7 +44,7 @@ impl TeletypeSettings
             input_flags: 0,
             output_flags: 0,
             control_flags: 0,
-            local_flags: 0,
+            local_flags: ECHO,
             line_discipline: 0,
             control_characters: [0; 32],
             input_speed: 0,
@@ -67,25 +70,52 @@ pub trait TeletypeDevice
 
     fn handle_input(&mut self, byte: u8)
     {
-        let _settings = self.get_tty_settings();
+        let settings = self.get_tty_settings();
 
         if byte >= 0x20 && byte < 0x7F
         {
-            self.tty_write_byte(byte)
+            if settings.local_flags & ECHO > 0
+            {
+                self.tty_write_byte(byte)
+            }
         }
         else if byte == 0x7F
         {
             if self.backspace()
             {
-                self.tty_write_byte(0x08);
-                self.tty_write_byte(0x20);
-                self.tty_write_byte(0x08);
+                if settings.local_flags & ECHO > 0
+                {
+                    self.tty_write_byte(0x08);
+                    self.tty_write_byte(0x20);
+                    self.tty_write_byte(0x08);
+                }
             }
         }
         else if byte == 0xD
         {
-            self.tty_write_byte(0xA);
-            self.tty_write_byte(0xD);
+            if settings.local_flags & ECHO > 0
+            {
+                self.tty_write_byte(0xA);
+                self.tty_write_byte(0xD);
+            }
+        }
+    }
+
+    fn exec_ioctl(&mut self, cmd: IOControlCommand) -> usize
+    {
+        match cmd
+        {
+            IOControlCommand::TeletypeGetSettings { response } => 
+            {
+                *response = self.get_tty_settings();
+                0
+            },
+            IOControlCommand::TeletypeSetSettings { response } => 
+            {
+                self.set_tty_settings(*response);
+                0
+            }
+            _ => crate::errno::ENOIOCTLCMD
         }
     }
 }

@@ -49,6 +49,16 @@ pub fn syscall_ioctl(proc: &mut super::Process, fd: usize, cmd: usize, args: usi
             0x70FF =>
             {
                 IOControlCommand::RealTimeClockGetTimestamp{ response: map_ptr(proc, args) }
+            },
+
+            // Teletype
+            0x5401 =>
+            {
+                IOControlCommand::TeletypeGetSettings{ response: map_ptr(proc, args) }
+            },
+            0x5402 =>
+            {
+                IOControlCommand::TeletypeSetSettings{ response: map_ptr(proc, args) }
             }
 
             default =>
