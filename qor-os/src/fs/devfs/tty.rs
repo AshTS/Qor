@@ -42,7 +42,7 @@ impl TeletypeSettings
     pub const fn new() -> Self
     {
         Self {
-            input_flags: 0,
+            input_flags: IXON,
             output_flags: 0,
             control_flags: 0,
             local_flags: ECHO | ICANON | ISIG,
@@ -72,6 +72,26 @@ pub trait TeletypeDevice
     fn handle_input(&mut self, byte: u8) -> bool
     {
         let settings = self.get_tty_settings();
+
+        if settings.input_flags & IXON > 0
+        {
+            if byte == 17
+            {
+                self.set_paused_state(false);
+                return true;
+            }
+        }
+
+        if self.get_paused_state() { return true; }
+
+        if settings.input_flags & IXON > 0
+        {
+            if byte == 19
+            {
+                self.set_paused_state(true);
+                return true;
+            }
+        }
 
         if settings.local_flags & ISIG > 0
         {
@@ -134,6 +154,9 @@ pub trait TeletypeDevice
 
     fn get_foreground_process_group(&self) -> PID;
     fn set_foreground_process_group(&mut self, pgid: PID);
+
+    fn get_paused_state(&self) -> bool;
+    fn set_paused_state(&mut self, state: bool);
 
     fn exec_ioctl(&mut self, cmd: IOControlCommand) -> usize
     {

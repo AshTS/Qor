@@ -71,6 +71,7 @@ pub struct UARTDriver
     line_buffer: ByteRingBuffer,
     terminal_settings: crate::fs::devfs::tty::TeletypeSettings,
     fgpgid: PID,
+    tty_paused: bool
 }
 
 impl UARTDriver
@@ -86,7 +87,8 @@ impl UARTDriver
             input_buffer: ByteRingBuffer::new(),
             line_buffer: ByteRingBuffer::new(),
             terminal_settings: crate::fs::devfs::tty::TeletypeSettings::new(),
-            fgpgid: 0
+            fgpgid: 0,
+            tty_paused: false
         }
     }
 
@@ -250,5 +252,15 @@ impl crate::fs::devfs::tty::TeletypeDevice for UARTDriver
     fn set_foreground_process_group(&mut self, pgid: PID)
     {
         self.fgpgid = pgid;
+    }
+
+    fn get_paused_state(&self) -> bool
+    {
+        self.tty_paused
+    }
+
+    fn set_paused_state(&mut self, state: bool)
+    {
+        self.tty_paused = state;
     }
 }
