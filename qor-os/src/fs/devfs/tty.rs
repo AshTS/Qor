@@ -43,7 +43,7 @@ impl TeletypeSettings
     {
         Self {
             input_flags: IXON | ICRNL,
-            output_flags: 0,
+            output_flags: OPOST,
             control_flags: 0,
             local_flags: ECHO | ICANON | ISIG | IEXTEN,
             line_discipline: 0,
@@ -157,8 +157,7 @@ pub trait TeletypeDevice
         {
             if settings.local_flags & ECHO > 0
             {
-                self.tty_write_byte(0xA);
-                self.tty_write_byte(0xD);
+                self.tty_write_byte(0x0A);
             }
         }
         

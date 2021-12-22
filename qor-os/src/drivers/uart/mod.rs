@@ -169,7 +169,15 @@ impl crate::fs::devfs::tty::TeletypeDevice for UARTDriver
 
     fn tty_write_byte(&mut self, byte: u8)
     {
-        self.write_byte(byte);
+        if self.terminal_settings.output_flags & OPOST > 0 && byte == 0xA
+        {
+            self.write_byte(byte);
+            self.write_byte(0x0D);
+        }
+        else
+        {
+            self.write_byte(byte);
+        }
     }
 
     fn tty_close(&mut self)
