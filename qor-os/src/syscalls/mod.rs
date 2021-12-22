@@ -13,6 +13,7 @@ mod exit;
 mod fork;
 mod getcwd;
 mod getdents;
+mod getpid;
 mod ioctl;
 mod kill;
 mod lseek;
@@ -111,6 +112,11 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         35 =>
         {
             nanosleep::syscall_nanosleep(proc, arg0, arg1)
+        },
+        // getpid Syscall
+        39 =>
+        {
+            getpid::syscall_getpid(proc)
         },
         // Fork Syscall
         57 =>
