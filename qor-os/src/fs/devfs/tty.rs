@@ -1,4 +1,5 @@
 use crate::*;
+use crate::process::signals::*;
 use crate::fs::ioctl::IOControlCommand;
 
 use super::super::structures::*;
@@ -71,6 +72,30 @@ pub trait TeletypeDevice
     fn handle_input(&mut self, byte: u8)
     {
         let settings = self.get_tty_settings();
+
+        if settings.local_flags & ISIG > 0
+        {
+            if byte == 3
+            {
+                if crate::process::scheduler::get_process_manager().as_mut().unwrap().send_signal_group(
+                    self.get_foreground_process_group(),
+                    0,
+                    POSIXSignal::new(0, 0, SignalType::SIGINT)).is_err()
+                {
+                    kwarnln!("TTY Couldn't send SIGINT to PGID {}", self.get_foreground_process_group());
+                }
+            }
+            else if byte == 26
+            {
+                if crate::process::scheduler::get_process_manager().as_mut().unwrap().send_signal_group(
+                    self.get_foreground_process_group(),
+                    0,
+                    POSIXSignal::new(0, 0, SignalType::SIGSTOP)).is_err()
+                {
+                    kwarnln!("TTY Couldn't send SIGSTOP to PGID {}", self.get_foreground_process_group());
+                }
+            }
+        }
 
         if byte >= 0x20 && byte < 0x7F
         {
