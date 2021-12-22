@@ -179,12 +179,14 @@ impl crate::fs::devfs::tty::TeletypeDevice for UARTDriver
 
     fn tty_push_byte(&mut self, byte: u8)
     {
+        let settings = self.get_tty_settings();
+
         if self.handle_input(byte)
         {
             return;
         }
 
-        if byte == 0xD
+        if byte == 0xD && settings.input_flags & ICRNL > 0
         {
             self.input_buffer.enqueue_byte(0xA);
         }
@@ -193,7 +195,7 @@ impl crate::fs::devfs::tty::TeletypeDevice for UARTDriver
             self.input_buffer.enqueue_byte(byte);
         }
 
-        if self.get_tty_settings().local_flags & ICANON > 0
+        if settings.local_flags & ICANON > 0
         {
             if byte == 0xD
             {

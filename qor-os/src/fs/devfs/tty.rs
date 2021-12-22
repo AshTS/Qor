@@ -42,7 +42,7 @@ impl TeletypeSettings
     pub const fn new() -> Self
     {
         Self {
-            input_flags: IXON,
+            input_flags: IXON | ICRNL,
             output_flags: 0,
             control_flags: 0,
             local_flags: ECHO | ICANON | ISIG | IEXTEN,
@@ -153,7 +153,7 @@ pub trait TeletypeDevice
                 }
             }
         }
-        else if byte == 0xD
+        else if byte == 0xD && settings.input_flags & ICRNL > 0
         {
             if settings.local_flags & ECHO > 0
             {
