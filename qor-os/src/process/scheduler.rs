@@ -301,6 +301,7 @@ impl ProcessManager
     /// Send a signal to the parent process' group
     pub fn send_signal_group(&mut self, group: PID, source_pid: PID, signal: POSIXSignal) -> Result<(), ()>
     {
+        kdebugln!(Signals, "Sending Signal {:?} to Group {}", signal.sig_type, group);
         let mut pids = Vec::new();
 
         for proc in self.processes.values_mut()

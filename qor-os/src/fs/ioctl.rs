@@ -1,5 +1,7 @@
 use crate::*;
 
+use crate::process::PID;
+
 #[derive(Debug)]
 /// ioctl Commands
 pub enum IOControlCommand
@@ -19,4 +21,6 @@ pub enum IOControlCommand
     TeletypeSetSettingsNoWait{response: &'static mut fs::devfs::tty::TeletypeSettings},
     TeletypeSetSettingsDrain{response: &'static mut fs::devfs::tty::TeletypeSettings},
     TeletypeSetSettingsFlush{response: &'static mut fs::devfs::tty::TeletypeSettings},
+    TeletypeGetProcessGroup{response: &'static mut PID},
+    TeletypeSetProcessGroup{response: &'static mut PID},
 }

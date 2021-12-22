@@ -68,6 +68,14 @@ pub fn syscall_ioctl(proc: &mut super::Process, fd: usize, cmd: usize, args: usi
             {
                 IOControlCommand::TeletypeSetSettingsFlush{ response: map_ptr(proc, args) }
             }
+            0x540F =>
+            {
+                IOControlCommand::TeletypeGetProcessGroup{ response: map_ptr(proc, args) }
+            }
+            0x5410 =>
+            {
+                IOControlCommand::TeletypeSetProcessGroup{ response: map_ptr(proc, args) }
+            }
 
             default =>
                 {

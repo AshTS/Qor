@@ -45,7 +45,7 @@ impl TeletypeSettings
             input_flags: 0,
             output_flags: 0,
             control_flags: 0,
-            local_flags: ECHO | ICANON,
+            local_flags: ECHO | ICANON | ISIG,
             line_discipline: 0,
             control_characters: [0; 32],
             input_speed: 0,
@@ -69,7 +69,7 @@ pub trait TeletypeDevice
 
     fn backspace(&mut self) -> bool;
 
-    fn handle_input(&mut self, byte: u8)
+    fn handle_input(&mut self, byte: u8) -> bool
     {
         let settings = self.get_tty_settings();
 
@@ -84,6 +84,7 @@ pub trait TeletypeDevice
                 {
                     kwarnln!("TTY Couldn't send SIGINT to PGID {}", self.get_foreground_process_group());
                 }
+                return true;
             }
             else if byte == 26
             {
@@ -94,6 +95,7 @@ pub trait TeletypeDevice
                 {
                     kwarnln!("TTY Couldn't send SIGSTOP to PGID {}", self.get_foreground_process_group());
                 }
+                return true;
             }
         }
 
@@ -124,6 +126,8 @@ pub trait TeletypeDevice
                 self.tty_write_byte(0xD);
             }
         }
+        
+        false
     }
 
     fn flush_tty(&mut self);
@@ -156,6 +160,17 @@ pub trait TeletypeDevice
                 self.flush_tty();
 
                 self.set_tty_settings(*response);
+                0
+            }
+            IOControlCommand::TeletypeGetProcessGroup {response } =>
+            {
+                *response = self.get_foreground_process_group();
+                0
+            }
+            IOControlCommand::TeletypeSetProcessGroup { response } => 
+            {
+                kwarnln!("Setting process group to {}", response);
+                self.set_foreground_process_group(*response);
                 0
             }
             _ => crate::errno::ENOIOCTLCMD
