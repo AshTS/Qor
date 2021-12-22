@@ -45,7 +45,7 @@ impl TeletypeSettings
             input_flags: IXON,
             output_flags: 0,
             control_flags: 0,
-            local_flags: ECHO | ICANON | ISIG,
+            local_flags: ECHO | ICANON | ISIG | IEXTEN,
             line_discipline: 0,
             control_characters: [0; 32],
             input_speed: 0,
@@ -73,6 +73,12 @@ pub trait TeletypeDevice
     {
         let settings = self.get_tty_settings();
 
+        if settings.local_flags & IEXTEN > 0 && self.get_preserve_next_state() && (settings.input_flags & IXON == 0 || !self.get_paused_state())
+        {
+            self.set_preserve_next_state(false);
+            return false;
+        }
+
         if settings.input_flags & IXON > 0
         {
             if byte == 17
@@ -82,13 +88,22 @@ pub trait TeletypeDevice
             }
         }
 
-        if self.get_paused_state() { return true; }
+        if self.get_paused_state() && settings.input_flags & IXON > 0 { return true; }
 
         if settings.input_flags & IXON > 0
         {
             if byte == 19
             {
                 self.set_paused_state(true);
+                return true;
+            }
+        }
+
+        if settings.local_flags & IEXTEN > 0
+        {
+            if byte == 22
+            {
+                self.set_preserve_next_state(true);
                 return true;
             }
         }
@@ -157,6 +172,9 @@ pub trait TeletypeDevice
 
     fn get_paused_state(&self) -> bool;
     fn set_paused_state(&mut self, state: bool);
+
+    fn get_preserve_next_state(&self) -> bool;
+    fn set_preserve_next_state(&mut self, state: bool);
 
     fn exec_ioctl(&mut self, cmd: IOControlCommand) -> usize
     {
