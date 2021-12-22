@@ -104,6 +104,8 @@ pub fn syscall_execve(proc: &mut super::Process, path_ptr: usize, argv_ptr: usiz
 
         new_proc.data.cwd = proc.data.cwd.clone();
 
+        new_proc.data.process_group_id = proc.data.process_group_id;
+
         new_proc.set_arguments(&argv_vals, &envp_vals);
 
         process::scheduler::replace_process(proc.pid, new_proc);

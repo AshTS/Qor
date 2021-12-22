@@ -3,7 +3,7 @@ use crate::fs::ioctl::IOControlCommand;
 
 use super::super::structures::*;
 
-use crate::process::descriptor::*;
+use crate::process::{descriptor::*, PID};
 
 use super::tty_consts::*;
 
@@ -102,6 +102,9 @@ pub trait TeletypeDevice
     }
 
     fn flush_tty(&mut self);
+
+    fn get_foreground_process_group(&self) -> PID;
+    fn set_foreground_process_group(&mut self, pgid: PID);
 
     fn exec_ioctl(&mut self, cmd: IOControlCommand) -> usize
     {

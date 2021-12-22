@@ -125,6 +125,8 @@ impl Process
         unsafe { frame.write(TrapFrame::new(4)) }
         unsafe { backup_frame.write(TrapFrame::new(4)) }
 
+        let pid = next_pid();
+
         // Create the process
         let temp_result = 
             Process
@@ -134,10 +136,10 @@ impl Process
                 stack: stack_ptr as *mut u8,
                 program_counter: entry_point,
                 backup_program_counter: 0,
-                pid: next_pid(),
+                pid: pid,
                 root: page_table,
                 state: ProcessState::Running,
-                data: unsafe { ProcessData::new(stack_size, mem_stats) },
+                data: unsafe { ProcessData::new(stack_size, mem_stats, pid) },
                 fs_interface: None,
                 signals: [None, None, None, None],
                 exit_code: 0
@@ -538,6 +540,8 @@ impl Process
         temp.data.cwd = self.data.cwd.clone();
 
         temp.data.cmdline_args = self.data.cmdline_args.clone();
+
+        temp.data.process_group_id = self.data.process_group_id;
 
         self.register_child(temp.pid);
 

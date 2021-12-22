@@ -2,6 +2,7 @@
 
 use crate::*;
 use crate::fs::devfs::tty::TeletypeDevice;
+use crate::process::PID;
 use crate::utils::ByteRingBuffer;
 
 use super::generic::ByteInterface;
@@ -68,7 +69,8 @@ pub struct UARTDriver
     base: usize,
     input_buffer: ByteRingBuffer,
     line_buffer: ByteRingBuffer,
-    terminal_settings: crate::fs::devfs::tty::TeletypeSettings
+    terminal_settings: crate::fs::devfs::tty::TeletypeSettings,
+    fgpgid: PID,
 }
 
 impl UARTDriver
@@ -83,7 +85,8 @@ impl UARTDriver
             base,
             input_buffer: ByteRingBuffer::new(),
             line_buffer: ByteRingBuffer::new(),
-            terminal_settings: crate::fs::devfs::tty::TeletypeSettings::new()
+            terminal_settings: crate::fs::devfs::tty::TeletypeSettings::new(),
+            fgpgid: 0
         }
     }
 
@@ -234,5 +237,15 @@ impl crate::fs::devfs::tty::TeletypeDevice for UARTDriver
     {
         while let Some(_) = self.input_buffer.pop_byte() {}
         while let Some(_) = self.line_buffer.pop_byte() {}
+    }
+
+    fn get_foreground_process_group(&self) -> PID
+    {
+        self.fgpgid
+    }
+
+    fn set_foreground_process_group(&mut self, pgid: PID)
+    {
+        self.fgpgid = pgid;
     }
 }

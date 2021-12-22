@@ -19,6 +19,7 @@ pub struct ProcessData
     pub descriptors: DescriptorTable,
     pub children: Vec<PID>,
     pub parent_pid: PID,
+    pub process_group_id: PID,
     pub cwd: OwnedPath,
     pub cmdline_args: Vec<String>,
     pub mem_stats: MemoryStats,
@@ -31,7 +32,7 @@ impl ProcessData
 {
     /// Initialize a fresh process data
     /// Safety: The mem_ptr must be valid or zero
-    pub unsafe fn new(stack_size: usize, mem_stats: MemoryStats) -> Self
+    pub unsafe fn new(stack_size: usize, mem_stats: MemoryStats, pgid: PID) -> Self
     {
         let descriptors: DescriptorTable = BTreeMap::new();
         
@@ -52,6 +53,7 @@ impl ProcessData
             descriptors: descriptors,
             children: Vec::new(),
             parent_pid: 0,
+            process_group_id: pgid,
             cwd: OwnedPath::new("/home/root/"),
             cmdline_args: Vec::new(),
             mem_stats,
