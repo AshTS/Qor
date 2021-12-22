@@ -10,6 +10,8 @@ use super::generic;
 
 use crate::fs::devfs::tty::TeletypeSettings;
 
+use crate::fs::devfs::tty_consts::*;
+
 /// Safety: if the base address is a vaild base address for a UART driver,
 /// this will perform as expected.
 unsafe fn init(base: usize)
@@ -113,7 +115,14 @@ impl generic::ByteInterface for UARTDriver
     /// Read a byte from the UART
     fn read_byte(&mut self) -> Option<u8>
     {
-        self.line_buffer.dequeue_byte()
+        if self.get_tty_settings().local_flags & ICANON > 0
+        {
+            self.line_buffer.dequeue_byte()
+        }
+        else
+        {
+            self.input_buffer.dequeue_byte()
+        }
 
         // unsafe { read_byte(self.base) }
     }
@@ -174,11 +183,14 @@ impl crate::fs::devfs::tty::TeletypeDevice for UARTDriver
 
         self.handle_input(byte);
 
-        if byte == 0xD
+        if self.get_tty_settings().local_flags & ICANON > 0
         {
-            while let Some(b) = self.input_buffer.dequeue_byte()
+            if byte == 0xD
             {
-                self.line_buffer.enqueue_byte(b);
+                while let Some(b) = self.input_buffer.dequeue_byte()
+                {
+                    self.line_buffer.enqueue_byte(b);
+                }
             }
         }
     }
@@ -208,7 +220,14 @@ impl crate::fs::devfs::tty::TeletypeDevice for UARTDriver
 
     fn bytes_available(&self) -> bool
     {
-        !self.line_buffer.is_empty()
+        if self.get_tty_settings().local_flags & ICANON > 0
+        {
+            !self.line_buffer.is_empty()
+        }
+        else
+        {
+            !self.input_buffer.is_empty()
+        }
     }
 
     fn flush_tty(&mut self)

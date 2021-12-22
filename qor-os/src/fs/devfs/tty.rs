@@ -24,16 +24,16 @@ pub fn get_open_pseudo_terminal_indexes() -> Vec<usize>
 #[derive(Debug, Clone, Copy)]
 pub struct TeletypeSettings
 {
-    input_flags: u32,
-    output_flags: u32,
-    control_flags: u32,
-    local_flags: u32,
+    pub input_flags: u32,
+    pub output_flags: u32,
+    pub control_flags: u32,
+    pub local_flags: u32,
 
-    line_discipline: u8,
-    control_characters: [u8; 32],
+    pub line_discipline: u8,
+    pub control_characters: [u8; 32],
     
-    input_speed: u32,
-    output_speed: u32
+    pub input_speed: u32,
+    pub output_speed: u32
 }
 
 impl TeletypeSettings
@@ -44,7 +44,7 @@ impl TeletypeSettings
             input_flags: 0,
             output_flags: 0,
             control_flags: 0,
-            local_flags: ECHO,
+            local_flags: ECHO | ICANON,
             line_discipline: 0,
             control_characters: [0; 32],
             input_speed: 0,
