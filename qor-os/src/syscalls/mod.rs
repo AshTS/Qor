@@ -25,6 +25,7 @@ mod open;
 mod pause;
 mod pipe;
 mod read;
+mod setpgid;
 mod sigaction;
 mod sigreturn;
 mod sync;
@@ -165,6 +166,11 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         83 =>
         {
             mkdir::syscall_mkdir(proc, arg0, arg1)
+        },
+        // setpgid Syscall
+        109 =>
+        {
+            setpgid::syscall_setpgid(proc, arg0, arg1)
         },
         // Sync Syscall
         162 =>

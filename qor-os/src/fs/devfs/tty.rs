@@ -169,7 +169,6 @@ pub trait TeletypeDevice
             }
             IOControlCommand::TeletypeSetProcessGroup { response } => 
             {
-                kwarnln!("Setting process group to {}", response);
                 self.set_foreground_process_group(*response);
                 0
             }
