@@ -1,8 +1,12 @@
 use crate::*;
+use crate::process::signals::*;
+use crate::fs::ioctl::IOControlCommand;
 
 use super::super::structures::*;
 
-use crate::process::descriptor::*;
+use crate::process::{descriptor::*, PID};
+
+use super::tty_consts::*;
 
 /// Get the file descriptor for the pseudo terminal secondary with the given
 /// index
@@ -21,16 +25,16 @@ pub fn get_open_pseudo_terminal_indexes() -> Vec<usize>
 #[derive(Debug, Clone, Copy)]
 pub struct TeletypeSettings
 {
-    input_flags: u32,
-    output_flags: u32,
-    control_flags: u32,
-    local_flags: u32,
+    pub input_flags: u32,
+    pub output_flags: u32,
+    pub control_flags: u32,
+    pub local_flags: u32,
 
-    line_discipline: u8,
-    control_characters: [u8; 32],
+    pub line_discipline: u8,
+    pub control_characters: [u8; 32],
     
-    input_speed: u32,
-    output_speed: u32
+    pub input_speed: u32,
+    pub output_speed: u32
 }
 
 impl TeletypeSettings
@@ -38,10 +42,10 @@ impl TeletypeSettings
     pub const fn new() -> Self
     {
         Self {
-            input_flags: 0,
-            output_flags: 0,
+            input_flags: IXON | ICRNL,
+            output_flags: OPOST,
             control_flags: 0,
-            local_flags: 0,
+            local_flags: ECHO | ICANON | ISIG | IEXTEN,
             line_discipline: 0,
             control_characters: [0; 32],
             input_speed: 0,
@@ -65,27 +69,150 @@ pub trait TeletypeDevice
 
     fn backspace(&mut self) -> bool;
 
-    fn handle_input(&mut self, byte: u8)
+    fn handle_input(&mut self, byte: u8) -> bool
     {
-        let _settings = self.get_tty_settings();
+        let settings = self.get_tty_settings();
+
+        if settings.local_flags & IEXTEN > 0 && self.get_preserve_next_state() && (settings.input_flags & IXON == 0 || !self.get_paused_state())
+        {
+            self.set_preserve_next_state(false);
+            return false;
+        }
+
+        if settings.input_flags & IXON > 0
+        {
+            if byte == 17
+            {
+                self.set_paused_state(false);
+                return true;
+            }
+        }
+
+        if self.get_paused_state() && settings.input_flags & IXON > 0 { return true; }
+
+        if settings.input_flags & IXON > 0
+        {
+            if byte == 19
+            {
+                self.set_paused_state(true);
+                return true;
+            }
+        }
+
+        if settings.local_flags & IEXTEN > 0
+        {
+            if byte == 22
+            {
+                self.set_preserve_next_state(true);
+                return true;
+            }
+        }
+
+        if settings.local_flags & ISIG > 0
+        {
+            if byte == 3
+            {
+                if crate::process::scheduler::get_process_manager().as_mut().unwrap().send_signal_group(
+                    self.get_foreground_process_group(),
+                    0,
+                    POSIXSignal::new(0, 0, SignalType::SIGINT)).is_err()
+                {
+                    kwarnln!("TTY Couldn't send SIGINT to PGID {}", self.get_foreground_process_group());
+                }
+                return true;
+            }
+            else if byte == 26
+            {
+                if crate::process::scheduler::get_process_manager().as_mut().unwrap().send_signal_group(
+                    self.get_foreground_process_group(),
+                    0,
+                    POSIXSignal::new(0, 0, SignalType::SIGSTOP)).is_err()
+                {
+                    kwarnln!("TTY Couldn't send SIGSTOP to PGID {}", self.get_foreground_process_group());
+                }
+                return true;
+            }
+        }
 
         if byte >= 0x20 && byte < 0x7F
         {
-            self.tty_write_byte(byte)
+            if settings.local_flags & ECHO > 0
+            {
+                self.tty_write_byte(byte)
+            }
         }
         else if byte == 0x7F
         {
             if self.backspace()
             {
-                self.tty_write_byte(0x08);
-                self.tty_write_byte(0x20);
-                self.tty_write_byte(0x08);
+                if settings.local_flags & ECHO > 0
+                {
+                    self.tty_write_byte(0x08);
+                    self.tty_write_byte(0x20);
+                    self.tty_write_byte(0x08);
+                }
             }
         }
-        else if byte == 0xD
+        else if byte == 0xD && settings.input_flags & ICRNL > 0
         {
-            self.tty_write_byte(0xA);
-            self.tty_write_byte(0xD);
+            if settings.local_flags & ECHO > 0
+            {
+                self.tty_write_byte(0x0A);
+            }
+        }
+        
+        false
+    }
+
+    fn flush_tty(&mut self);
+
+    fn get_foreground_process_group(&self) -> PID;
+    fn set_foreground_process_group(&mut self, pgid: PID);
+
+    fn get_paused_state(&self) -> bool;
+    fn set_paused_state(&mut self, state: bool);
+
+    fn get_preserve_next_state(&self) -> bool;
+    fn set_preserve_next_state(&mut self, state: bool);
+
+    fn exec_ioctl(&mut self, cmd: IOControlCommand) -> usize
+    {
+        match cmd
+        {
+            IOControlCommand::TeletypeGetSettings { response } => 
+            {
+                *response = self.get_tty_settings();
+                0
+            },
+            IOControlCommand::TeletypeSetSettingsNoWait { response } => 
+            {
+                self.set_tty_settings(*response);
+                0
+            },
+            IOControlCommand::TeletypeSetSettingsDrain { .. } => 
+            {
+                todo!();
+                // self.set_tty_settings(*response);
+                // 0
+            },
+            IOControlCommand::TeletypeSetSettingsFlush { response } => 
+            {
+                self.flush_tty();
+
+                self.set_tty_settings(*response);
+                0
+            }
+            IOControlCommand::TeletypeGetProcessGroup {response } =>
+            {
+                *response = self.get_foreground_process_group();
+                0
+            }
+            IOControlCommand::TeletypeSetProcessGroup { response } => 
+            {
+                self.set_foreground_process_group(*response);
+                0
+            }
+            _ => crate::errno::ENOIOCTLCMD
         }
     }
 }

@@ -123,3 +123,5 @@ pub const ENOTNAM: usize = (-118 as isize) as usize; /* Not a XENIX named type f
 pub const ENAVAIL: usize = (-119 as isize) as usize; /* No XENIX semaphores available */
 pub const EISNAM: usize = (-120 as isize) as usize; /* Is a named type file */
 pub const EREMOTEIO: usize = (-121 as isize) as usize; /* Remote I/O error */
+
+pub const ENOIOCTLCMD: usize = (-515 as isize) as usize; /* No ioctl command */

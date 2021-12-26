@@ -13,6 +13,7 @@ mod exit;
 mod fork;
 mod getcwd;
 mod getdents;
+mod getpid;
 mod ioctl;
 mod kill;
 mod lseek;
@@ -24,6 +25,7 @@ mod open;
 mod pause;
 mod pipe;
 mod read;
+mod setpgid;
 mod sigaction;
 mod sigreturn;
 mod sync;
@@ -112,6 +114,11 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         {
             nanosleep::syscall_nanosleep(proc, arg0, arg1)
         },
+        // getpid Syscall
+        39 =>
+        {
+            getpid::syscall_getpid(proc)
+        },
         // Fork Syscall
         57 =>
         {
@@ -159,6 +166,11 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         83 =>
         {
             mkdir::syscall_mkdir(proc, arg0, arg1)
+        },
+        // setpgid Syscall
+        109 =>
+        {
+            setpgid::syscall_setpgid(proc, arg0, arg1)
         },
         // Sync Syscall
         162 =>

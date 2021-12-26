@@ -227,7 +227,7 @@ impl Filesystem for DevFilesystem
     {
         if Some(inode.mount_id) == self.mount_id
         {
-            if inode.inode < self.directories.len() + self.devices.len() ||
+            if inode.inode < 2 + self.directories.len() + self.devices.len() ||
                 inode.inode & PSUEDO_TERMINAL_FLAG > 0
             {
                 Ok(Vec::new())
@@ -326,9 +326,9 @@ impl Filesystem for DevFilesystem
         {
             if Some(inode.mount_id) == self.mount_id
             {
-                if inode.inode > 1 && inode.inode < 2 + self.devices.len()
+                if inode.inode > 1 + self.directories.len() && inode.inode < 2 + self.directories.len() + self.devices.len()
                 {
-                    Ok(self.devices[inode.inode - 2].exec_ioctl(cmd))
+                    Ok(self.devices[inode.inode - 2 - self.directories.len()].exec_ioctl(cmd))
                 }
                 else
                 {

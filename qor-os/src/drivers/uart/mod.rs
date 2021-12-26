@@ -2,6 +2,7 @@
 
 use crate::*;
 use crate::fs::devfs::tty::TeletypeDevice;
+use crate::process::PID;
 use crate::utils::ByteRingBuffer;
 
 use super::generic::ByteInterface;
@@ -9,6 +10,8 @@ use super::mmio;
 use super::generic;
 
 use crate::fs::devfs::tty::TeletypeSettings;
+
+use crate::fs::devfs::tty_consts::*;
 
 /// Safety: if the base address is a vaild base address for a UART driver,
 /// this will perform as expected.
@@ -66,7 +69,10 @@ pub struct UARTDriver
     base: usize,
     input_buffer: ByteRingBuffer,
     line_buffer: ByteRingBuffer,
-    terminal_settings: crate::fs::devfs::tty::TeletypeSettings
+    terminal_settings: crate::fs::devfs::tty::TeletypeSettings,
+    fgpgid: PID,
+    tty_paused: bool,
+    tty_preserve_next: bool
 }
 
 impl UARTDriver
@@ -81,7 +87,10 @@ impl UARTDriver
             base,
             input_buffer: ByteRingBuffer::new(),
             line_buffer: ByteRingBuffer::new(),
-            terminal_settings: crate::fs::devfs::tty::TeletypeSettings::new()
+            terminal_settings: crate::fs::devfs::tty::TeletypeSettings::new(),
+            fgpgid: 0,
+            tty_paused: false,
+            tty_preserve_next: false
         }
     }
 
@@ -113,7 +122,14 @@ impl generic::ByteInterface for UARTDriver
     /// Read a byte from the UART
     fn read_byte(&mut self) -> Option<u8>
     {
-        self.line_buffer.dequeue_byte()
+        if self.get_tty_settings().local_flags & ICANON > 0
+        {
+            self.line_buffer.dequeue_byte()
+        }
+        else
+        {
+            self.input_buffer.dequeue_byte()
+        }
 
         // unsafe { read_byte(self.base) }
     }
@@ -153,7 +169,15 @@ impl crate::fs::devfs::tty::TeletypeDevice for UARTDriver
 
     fn tty_write_byte(&mut self, byte: u8)
     {
-        self.write_byte(byte);
+        if self.terminal_settings.output_flags & OPOST > 0 && byte == 0xA
+        {
+            self.write_byte(byte);
+            self.write_byte(0x0D);
+        }
+        else
+        {
+            self.write_byte(byte);
+        }
     }
 
     fn tty_close(&mut self)
@@ -163,7 +187,14 @@ impl crate::fs::devfs::tty::TeletypeDevice for UARTDriver
 
     fn tty_push_byte(&mut self, byte: u8)
     {
-        if byte == 0xD
+        let settings = self.get_tty_settings();
+
+        if self.handle_input(byte)
+        {
+            return;
+        }
+
+        if byte == 0xD && settings.input_flags & ICRNL > 0
         {
             self.input_buffer.enqueue_byte(0xA);
         }
@@ -172,13 +203,14 @@ impl crate::fs::devfs::tty::TeletypeDevice for UARTDriver
             self.input_buffer.enqueue_byte(byte);
         }
 
-        self.handle_input(byte);
-
-        if byte == 0xD
+        if settings.local_flags & ICANON > 0
         {
-            while let Some(b) = self.input_buffer.dequeue_byte()
+            if byte == 0xD
             {
-                self.line_buffer.enqueue_byte(b);
+                while let Some(b) = self.input_buffer.dequeue_byte()
+                {
+                    self.line_buffer.enqueue_byte(b);
+                }
             }
         }
     }
@@ -208,6 +240,49 @@ impl crate::fs::devfs::tty::TeletypeDevice for UARTDriver
 
     fn bytes_available(&self) -> bool
     {
-        !self.line_buffer.is_empty()
+        if self.get_tty_settings().local_flags & ICANON > 0
+        {
+            !self.line_buffer.is_empty()
+        }
+        else
+        {
+            !self.input_buffer.is_empty()
+        }
+    }
+
+    fn flush_tty(&mut self)
+    {
+        while let Some(_) = self.input_buffer.pop_byte() {}
+        while let Some(_) = self.line_buffer.pop_byte() {}
+    }
+
+    fn get_foreground_process_group(&self) -> PID
+    {
+        self.fgpgid
+    }
+
+    fn set_foreground_process_group(&mut self, pgid: PID)
+    {
+        self.fgpgid = pgid;
+    }
+
+    fn get_paused_state(&self) -> bool
+    {
+        self.tty_paused
+    }
+
+    fn set_paused_state(&mut self, state: bool)
+    {
+        self.tty_paused = state;
+    }
+
+    fn get_preserve_next_state(&self) -> bool
+    {
+        self.tty_preserve_next
+    }
+
+    fn set_preserve_next_state(&mut self, state: bool)
+    {
+        self.tty_preserve_next = state;
     }
 }

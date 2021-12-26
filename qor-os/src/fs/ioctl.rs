@@ -1,5 +1,8 @@
 use crate::*;
 
+use crate::process::PID;
+
+#[derive(Debug)]
 /// ioctl Commands
 pub enum IOControlCommand
 {
@@ -12,4 +15,12 @@ pub enum IOControlCommand
     // Real Time Clock
     RealTimeClockGetTime{response: &'static mut drivers::rtc::RTCTime},
     RealTimeClockGetTimestamp{response: &'static mut u64},
+
+    // TTY
+    TeletypeGetSettings{response: &'static mut fs::devfs::tty::TeletypeSettings},
+    TeletypeSetSettingsNoWait{response: &'static mut fs::devfs::tty::TeletypeSettings},
+    TeletypeSetSettingsDrain{response: &'static mut fs::devfs::tty::TeletypeSettings},
+    TeletypeSetSettingsFlush{response: &'static mut fs::devfs::tty::TeletypeSettings},
+    TeletypeGetProcessGroup{response: &'static mut PID},
+    TeletypeSetProcessGroup{response: &'static mut PID},
 }

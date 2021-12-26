@@ -7,3 +7,5 @@ pub use fs::*;
 
 mod devices;
 pub mod tty;
+
+pub mod tty_consts;
