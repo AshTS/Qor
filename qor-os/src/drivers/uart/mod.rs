@@ -232,9 +232,13 @@ impl crate::fs::devfs::tty::TeletypeDevice for UARTDriver
         self.terminal_settings = settings;
     }
 
+    fn bytes_to_backaspace(&self) -> bool
+    {
+        !self.input_buffer.is_empty()
+    }
+
     fn backspace(&mut self) -> bool
     {
-        self.input_buffer.pop_byte(); // Skip the backspace which was already enqueued
         self.input_buffer.pop_byte().is_some()
     }
 

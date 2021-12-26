@@ -143,14 +143,18 @@ pub trait TeletypeDevice
         }
         else if byte == 0x7F
         {
-            if self.backspace()
+            if self.get_tty_settings().local_flags & ICANON > 0
             {
-                if settings.local_flags & ECHO > 0
+                if self.backspace()
                 {
-                    self.tty_write_byte(0x08);
-                    self.tty_write_byte(0x20);
-                    self.tty_write_byte(0x08);
+                    if settings.local_flags & ECHO > 0
+                    {
+                        self.tty_write_byte(0x08);
+                        self.tty_write_byte(0x20);
+                        self.tty_write_byte(0x08);
+                    }
                 }
+                return true;
             }
         }
         else if byte == 0xD && settings.input_flags & ICRNL > 0
@@ -174,6 +178,8 @@ pub trait TeletypeDevice
 
     fn get_preserve_next_state(&self) -> bool;
     fn set_preserve_next_state(&mut self, state: bool);
+
+    fn bytes_to_backaspace(&self) -> bool;
 
     fn exec_ioctl(&mut self, cmd: IOControlCommand) -> usize
     {

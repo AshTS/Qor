@@ -13,6 +13,8 @@
         "syscalls.h": "c",
         "riscv.h": "c",
         "stdio.h": "c",
-        "graphics.h": "c"
+        "graphics.h": "c",
+        "libimg.h": "c",
+        "string.h": "c"
     }
 }
