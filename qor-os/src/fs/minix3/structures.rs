@@ -39,7 +39,7 @@ pub struct Minix3Inode
 #[derive(Debug, Clone, Copy)]
 pub struct Minix3StatData
 {
-    pub mode:   u16,
+  pub mode:   u16,
 	pub nlinks: u16,
 	pub uid:    u16,
 	pub gid:    u16,

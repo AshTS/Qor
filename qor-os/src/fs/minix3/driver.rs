@@ -13,6 +13,25 @@ use libutils::paths::PathBuffer;
 
 use super::super::ioctl::*;
 
+enum UpdateTimes
+{
+    Access,
+    Modify,
+    Create
+}
+
+fn update_time(inode: &mut Minix3Inode, time: UpdateTimes)
+{
+    let this_time = crate::drivers::rtc::driver::RealTimeClockDriver::get_driver().get_unix_timestamp_nano() / 1_000_000_000;
+
+    match time
+    {
+        UpdateTimes::Access => inode.atime = this_time as u32,
+        UpdateTimes::Create => inode.ctime = this_time as u32,
+        UpdateTimes::Modify => inode.mtime = this_time as u32,
+    }
+}
+
 /// Minix3 Filesystem Driver
 pub struct Minix3Filesystem
 {
@@ -282,6 +301,8 @@ impl Minix3Filesystem
     {
         // Get a mutable reference to the inode
         let inode_ref = self.get_mut_inode(inode)?;
+
+        update_time(inode_ref, UpdateTimes::Modify);
 
         // Get the original size
         let orig_entry_count = inode_ref.size / 64;
@@ -675,6 +696,8 @@ impl Minix3Filesystem
 
         inode.size = data.len() as u32;
 
+        update_time(&mut inode, UpdateTimes::Modify);
+
         *(self.get_mut_inode(inode_number)?) = inode;
 
         Ok(())
@@ -700,6 +723,8 @@ impl Minix3Filesystem
             ctime: 0,
             zones: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         };
+
+        update_time(inode, UpdateTimes::Create);
 
         self.write_to_file(next_inode, data.as_bytes())?;
 
