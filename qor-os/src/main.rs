@@ -134,7 +134,7 @@ fn kmain()
         &mut vfs, 
         &OwnedPath::new("/bin/init"), 
         &mut Vec::new(),
-        &mut Vec::new()).unwrap();
+        &mut vec![String::from("PATH=/bin\0")]).unwrap();
     process::scheduler::get_init_process_mut().unwrap().register_child(elf_proc.pid);
 
     process::scheduler::add_process(elf_proc);

@@ -4,6 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${default}",
+                "${workspaceFolder}/libc/include",
                 "${workspaceFolder}/qor-userland/include"
             ],
             "defines": [],
