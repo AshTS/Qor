@@ -30,6 +30,6 @@ impl BlockingSemaphore
 
     pub fn check(self) -> bool
     {
-        self.semaphore.load(core::sync::atomic::Ordering::AcqRel)
+        self.semaphore.load(core::sync::atomic::Ordering::Acquire)
     }
 }

@@ -289,8 +289,11 @@ impl Minix3Filesystem
 
         for (i, zone) in inode.zones.iter().enumerate()
         {
-            if *zone == 0 {continue; }
-            self.read_zone(*zone as usize, i.max(6) - 6, buffer.as_mut_ptr(), &mut index, &mut remaining, &mut offset);
+            if *zone == 0 {continue;}
+            
+            self.read_zone(*zone as usize, 
+                i.max(6) - 6, 
+                buffer.as_mut_ptr(), &mut index, &mut remaining, &mut offset);
         }
 
         buffer

@@ -205,6 +205,7 @@ impl Process
         for s in envp
         {
             envp_addrs.push(self.push_buffer(s.as_bytes()));
+            self.push_buffer(&[0]);
         }
 
         // Write envp

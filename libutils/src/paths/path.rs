@@ -1,7 +1,7 @@
 use core::convert::Into;
 
 #[cfg(not(feature = "std"))]
-use alloc::{format, prelude::v1::String};
+use alloc::{format, string::*};
 
 /// Owned Path Object
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]

@@ -1,10 +1,7 @@
 // Required features
 #![feature(alloc_error_handler)]        // Allow custom allocator
-#![feature(alloc_prelude)]              // Allocation prelude
-#![feature(asm)]                        // For testing processes (ecall)
 #![feature(const_option)]               // Allow constant unwraps
 #![feature(custom_test_frameworks)]     // Allow cargo test
-#![feature(global_asm)]                 // For assembly file compilation
 #![feature(panic_info_message)]         // For panic messages
 
 // Allow dead code for partial implementations
@@ -26,7 +23,7 @@
 // Alloc Prelude
 extern crate alloc;
 use alloc::*;
-use alloc::prelude::v1::*;
+use alloc::{vec::*, boxed::*, string::*};
 
 // Includes
 mod asm;

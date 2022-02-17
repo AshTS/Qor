@@ -72,7 +72,7 @@ pub fn syscall_execve(proc: &mut super::Process, path_ptr: usize, argv_ptr: usiz
     {
         envp_vals.push(unsafe { String::from_utf8_unchecked(v) });
     }
-
+    
     // Ensure the filesystem has been initialized
     proc.ensure_fs();
 
