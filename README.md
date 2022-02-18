@@ -12,7 +12,7 @@ Stored in seperate repositories are the [libc implementation](https://github.com
 4. Run `../configure --target-list=riscv64-softmmu --enable-sdl && make`
 5. Install qemu to your path
 6. Navigate to the `qor-os` directory
-8. Run `rustup override set nightly-2021-03-09` to set the Rust compiler version
+8. Run `rustup override set nightly` to set the Rust compiler version
 9. Run `rustup target add riscv64gc-unknown-none-elf` to install the proper target
 10. Run `rustup component add rust-src` to allow the core library to be built
 
