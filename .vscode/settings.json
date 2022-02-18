@@ -16,6 +16,7 @@
         "graphics.h": "c",
         "libimg.h": "c",
         "string.h": "c",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "stdbool.h": "c"
     }
 }
