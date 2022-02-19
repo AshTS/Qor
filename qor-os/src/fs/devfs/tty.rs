@@ -164,6 +164,10 @@ pub trait TeletypeDevice
                 self.tty_write_byte(0x0A);
             }
         }
+        else if byte == 0x09 && self.get_tty_settings().local_flags & ICANON > 0
+        {
+            return true;
+        }
         
         false
     }
