@@ -147,6 +147,9 @@ pub fn identity_map_kernel()
     page_table.identity_map(lds::stack_start(), lds::stack_end(), PageTableEntryFlags::readable() | PageTableEntryFlags::writable());
     page_table.identity_map(lds::heap_start(), lds::heap_end(), PageTableEntryFlags::readable() | PageTableEntryFlags::writable());
 
+    // Map the TEST MMIO
+    page_table.identity_map(0x10_0000, 0x10_0fff, PageTableEntryFlags::readable() | PageTableEntryFlags::writable());
+
     // Map the RTC MMIO
     page_table.identity_map(0x10_1000, 0x10_1fff, PageTableEntryFlags::readable() | PageTableEntryFlags::writable());
 

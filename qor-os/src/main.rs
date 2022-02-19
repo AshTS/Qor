@@ -31,6 +31,7 @@ mod debug;
 mod drivers;
 mod errno;
 mod fs;
+mod halt;
 mod mem;
 mod kprint;
 mod panic;

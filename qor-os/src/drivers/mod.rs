@@ -7,6 +7,7 @@ pub mod generic;
 pub mod gpu;
 pub mod mmio;
 pub mod plic;
+pub mod power;
 pub mod rtc;
 pub mod timer;
 pub mod uart;
@@ -16,6 +17,7 @@ pub mod virtio;
 pub static mut PLIC_DRIVER: plic::PLICDriver = unsafe { plic::PLICDriver::new(0x0c00_0000) };
 pub static mut TIMER_DRIVER: timer::TimerDriver = unsafe { timer::TimerDriver::new(0x200_0000) };
 pub static mut UART_DRIVER: uart::UARTDriver = unsafe { uart::UARTDriver::new(0x1000_0000) };
+pub static mut POWER_DRIVER: power::PowerDriver = unsafe { power::PowerDriver::new(0x10_0000) };
 
 /// Initialize the UART Driver
 pub fn init_uart_driver()
