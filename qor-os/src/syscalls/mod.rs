@@ -25,6 +25,7 @@ mod open;
 mod pause;
 mod pipe;
 mod read;
+mod reboot;
 mod setpgid;
 mod sigaction;
 mod sigreturn;
@@ -176,6 +177,11 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         162 =>
         {
             sync::syscall_sync(proc)
+        },
+        // Reboot Syscall
+        169 =>
+        {
+            reboot::syscall_reboot(proc, arg0, arg1, arg2, arg3)
         },
         default =>
         {
