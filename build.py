@@ -25,6 +25,7 @@ def usage(prog_name):
     print("   Subcommands:")
     print("     clean                Delete all binaries and libraries")
     print("     build                Build all of the userland programs")
+    print("     build-run            Build all of the userland programs and then run")
     print("     disk                 Move necessary files to disk")
     print("     rebuild              Delete all binaries and libraries, and then build")
     print("     run                  Run Qor")
@@ -159,6 +160,10 @@ if __name__ == "__main__":
     elif subcommand == "build":
         build()
         update_disk()
+    elif subcommand == "build-run":
+        build()
+        update_disk()
+        run()
     elif subcommand == "update":
         update_headers()
     elif subcommand == "disk":
