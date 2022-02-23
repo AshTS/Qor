@@ -425,6 +425,8 @@ impl Process
     /// Duplicate a file descriptor
     pub fn dup(&mut self, old: usize, new: Option<usize>) -> usize
     {
+        self.ensure_fs();
+        
         let fd = if let Some(fd) = self.data.descriptors.get(&old)
         {
             fd.clone()
@@ -449,6 +451,11 @@ impl Process
 
             i
         };
+
+        if let Some(v) = self.data.descriptors.get_mut(&out)
+        {
+            v.borrow_mut().close(self.fs_interface.as_mut().unwrap());
+        }
 
         self.data.descriptors.insert(out, fd);
 
@@ -873,12 +880,24 @@ impl Process
             panic!("Process PID {} has an invalid trap frame loaded!", self.pid);
         }
     }
+
+    /// Perform explicit cleanup which requires context such as closing file descriptors
+    pub fn context_cleanup(&mut self)
+    {
+        let vfs = self.fs_interface.as_mut().unwrap();
+        for (_, desc) in &mut self.data.descriptors
+        {
+            desc.borrow_mut().close(vfs);
+        }
+    }
 }
 
 impl core::ops::Drop for Process
 {
     fn drop(&mut self) 
     {
+        self.context_cleanup();
+
         for i in 0..self.data.stack_size
         {
             let true_stack = unsafe { (*self.root).virt_to_phys(self.stack as usize + mem::PAGE_SIZE * i) }.unwrap();
