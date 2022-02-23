@@ -212,6 +212,13 @@ impl crate::fs::devfs::tty::TeletypeDevice for UARTDriver
                     self.line_buffer.enqueue_byte(b);
                 }
             }
+            else if byte == 0x4
+            {
+                while let Some(b) = self.input_buffer.dequeue_byte()
+                {
+                    self.line_buffer.enqueue_byte(b);
+                }
+            }
         }
     }
 
