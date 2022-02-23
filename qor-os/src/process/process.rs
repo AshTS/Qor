@@ -311,6 +311,20 @@ impl Process
         i
     }
 
+    // Add an already wrapped descriptor
+    pub fn add_wrapped_descriptor(&mut self, fd: alloc::sync::Arc<core::cell::RefCell<Box<dyn FileDescriptor>>>) -> usize
+    {
+        let mut i = 0;
+
+        while self.data.descriptors.contains_key(&i)
+        {
+            i += 1;
+        }
+
+        self.data.descriptors.insert(i, fd);
+
+        i
+    }
 
     /// Open a file by path
     pub fn open(&mut self, path: PathBuffer, mode: usize) -> Result<usize, fs::structures::FilesystemError>
@@ -394,6 +408,8 @@ impl Process
     /// Close a file descriptor
     pub fn close(&mut self, fd_number: usize) -> usize
     {
+        self.ensure_fs();
+
         let v = if let Some(fd) = self.data.descriptors.get_mut(&fd_number)
         {
             fd.borrow_mut().close(self.fs_interface.as_mut().unwrap());
@@ -417,8 +433,8 @@ impl Process
     {
         let (read, write) = super::pipe::new_pipe();
 
-        let read = self.add_descriptor(Box::new(read));
-        let write = self.add_descriptor(Box::new(write));
+        let read = self.add_wrapped_descriptor(read);
+        let write = self.add_wrapped_descriptor(write);
 
         (read, write)
     }
@@ -890,6 +906,8 @@ impl Process
         {
             desc.borrow_mut().close(vfs);
         }
+
+        self.data.descriptors.clear();
     }
 }
 
