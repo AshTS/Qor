@@ -311,6 +311,7 @@ impl Process
         i
     }
 
+
     /// Open a file by path
     pub fn open(&mut self, path: PathBuffer, mode: usize) -> Result<usize, fs::structures::FilesystemError>
     {

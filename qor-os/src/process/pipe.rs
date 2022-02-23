@@ -6,7 +6,23 @@ use crate::fs::structures::FilesystemIndex;
 /// Write side of a pipe
 pub struct WritePipeDescriptor
 {
-    buffer: alloc::sync::Arc<core::cell::RefCell<utils::ByteRingBuffer>>
+    buffer: alloc::sync::Arc<core::cell::RefCell<utils::ByteRingBuffer>>,
+    read_end: Option<alloc::sync::Weak<core::cell::RefCell<Box<dyn FileDescriptor>>>>
+}
+
+impl WritePipeDescriptor
+{
+    fn is_end_closed(&self) -> bool
+    {
+        if let Some(end) = &self.read_end
+        {
+            end.upgrade().is_none()
+        }
+        else
+        {
+            false
+        }
+    }
 }
 
 impl FileDescriptor for WritePipeDescriptor
@@ -18,6 +34,11 @@ impl FileDescriptor for WritePipeDescriptor
 
     fn write(&mut self, _fs: &mut fs::vfs::FilesystemInterface, buffer: *mut u8, count: usize) -> usize
     {
+        if self.is_end_closed()
+        {
+            return errno::EPIPE;
+        }
+
         for i in 0..count
         {
             self.buffer.borrow_mut().enqueue_byte(unsafe { buffer.add(i).read() });
@@ -36,12 +57,33 @@ impl FileDescriptor for WritePipeDescriptor
     {
         None
     }
+
+    fn set_end(&mut self, end: &alloc::sync::Arc<core::cell::RefCell<Box<dyn FileDescriptor>>>)
+    {
+        self.read_end = Some(alloc::sync::Arc::<core::cell::RefCell::<Box<dyn FileDescriptor>>>::downgrade(end));
+    }
 }
 
 /// Read side of a pipe
 pub struct ReadPipeDescriptor
 {
-    buffer: alloc::sync::Arc<core::cell::RefCell<utils::ByteRingBuffer>>
+    buffer: alloc::sync::Arc<core::cell::RefCell<utils::ByteRingBuffer>>,
+    write_end: Option<alloc::sync::Weak<core::cell::RefCell<Box<dyn FileDescriptor>>>>
+}
+
+impl ReadPipeDescriptor
+{
+    fn is_end_closed(&self) -> bool
+    {
+        if let Some(end) = &self.write_end
+        {
+            end.upgrade().is_none()
+        }
+        else
+        {
+            false
+        }
+    }
 }
 
 impl FileDescriptor for ReadPipeDescriptor
@@ -81,20 +123,29 @@ impl FileDescriptor for ReadPipeDescriptor
 
     fn check_available(&self) -> bool
     {
-        !self.buffer.borrow_mut().is_empty()
+        !self.buffer.borrow_mut().is_empty() || self.is_end_closed()
+    }
+
+    fn set_end(&mut self, end: &alloc::sync::Arc<core::cell::RefCell<Box<dyn FileDescriptor>>>)
+    {
+        self.write_end = Some(alloc::sync::Arc::<core::cell::RefCell::<Box<dyn FileDescriptor>>>::downgrade(end));
     }
 }
 
 /// Create a new pipe pair
-pub fn new_pipe() -> (ReadPipeDescriptor, WritePipeDescriptor)
+pub fn new_pipe() -> (alloc::sync::Arc<core::cell::RefCell<Box<dyn FileDescriptor>>>, alloc::sync::Arc<core::cell::RefCell<Box<dyn FileDescriptor>>>)
 {
     let buffer = utils::ByteRingBuffer::new();
     let wrapped_buffer = 
         alloc::sync::Arc::new(
             core::cell::RefCell::new(
                 buffer));
-    (
-        ReadPipeDescriptor { buffer: wrapped_buffer.clone() },
-        WritePipeDescriptor { buffer: wrapped_buffer.clone() }
-    )
+    
+    let read = alloc::sync::Arc::new(core::cell::RefCell::new(Box::new(ReadPipeDescriptor { buffer: wrapped_buffer.clone(), write_end: None }) as Box<dyn FileDescriptor>));
+    let write = alloc::sync::Arc::new(core::cell::RefCell::new(Box::new(WritePipeDescriptor { buffer: wrapped_buffer.clone(), read_end: None }) as Box<dyn FileDescriptor>));
+
+    read.borrow_mut().set_end(&write);
+    write.borrow_mut().set_end(&read);
+
+    (read, write)
 }

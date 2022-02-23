@@ -49,6 +49,11 @@ pub trait FileDescriptor
     {
         true
     }
+
+    fn set_end(&mut self, _: &alloc::sync::Arc<core::cell::RefCell<Box<dyn FileDescriptor>>>)
+    {
+
+    }
 }
 
 /// Null File Descriptor
