@@ -17,6 +17,8 @@ fn panic(info: &core::panic::PanicInfo) -> !
         kerrorln!("no info available");
     }
 
+    unsafe { crate::drivers::POWER_DRIVER.shutdown() };
+
     abort();
 }
 

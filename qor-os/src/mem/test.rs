@@ -1,9 +1,14 @@
-use crate::*;
+use crate::{*, process::init};
+
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 
 /// Test Kernel Page Grained Allocator - Allocate and free 4096 pages
 #[test_case]
 pub fn test_kernel_page_allocator_allocate_all()
 {
+    let initial_pages = super::allocated_kernel_pages();
+
     // Pages to test
     let page_count = 4096;
 
@@ -23,13 +28,15 @@ pub fn test_kernel_page_allocator_allocate_all()
     }
 
     // Assert that all of the pages are free
-    assert_eq!(super::allocated_kernel_pages(), 0);
+    assert_eq!(super::allocated_kernel_pages(), initial_pages);
 }
 
 /// Test Kernel Page Grained Allocator - Ensure Zero Alloc
 #[test_case]
 pub fn test_kernel_page_allocator_zalloc()
 {
+    let initial_pages = super::allocated_kernel_pages();
+
     // Pages to test
     let page_count = 4096;
 
@@ -61,13 +68,15 @@ pub fn test_kernel_page_allocator_zalloc()
     }
 
     // Assert that all of the pages are free
-    assert_eq!(super::allocated_kernel_pages(), 0);
+    assert_eq!(super::allocated_kernel_pages(), initial_pages);
 }
 
 /// Test Kernel Page Grained Allocator - Ensure Unique Allocations
 #[test_case]
 pub fn test_kernel_page_allocator_no_overwrite()
 {
+    let initial_pages = super::allocated_kernel_pages();
+
     // Pages to test
     let page_count = 256;
 
@@ -114,7 +123,7 @@ pub fn test_kernel_page_allocator_no_overwrite()
     }
 
     // Assert that all of the pages are free
-    assert_eq!(super::allocated_kernel_pages(), 0);
+    assert_eq!(super::allocated_kernel_pages(), initial_pages);
 }
 
 /// Test Kernel Byte Grained Allocator - Test Simple Allocation

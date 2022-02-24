@@ -58,7 +58,7 @@ fn kinit()
     // Run any tests if testing is requested
     #[cfg(test)]
     test_main();
-
+    
     // Initialize the kernel heap
     mem::alloc::init_kernel_global_allocator(1024);
     kdebugln!(Initialization, "Global Kernel Byte Allocator Initialized");
@@ -139,8 +139,9 @@ fn kmain()
     process::scheduler::get_init_process_mut().unwrap().register_child(elf_proc.pid);
 
     process::scheduler::add_process(elf_proc);
-
+    
     // Start the timer
     drivers::init_timer_driver(1000);
     kdebugln!(Initialization, "Timer Started");
+
 }

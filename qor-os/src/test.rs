@@ -33,4 +33,6 @@ pub fn test_runner(tests: &[&dyn TestFunction])
     }
 
     kprintln!("Testing Complete");
+
+    halt::kernel_halt();
 }
