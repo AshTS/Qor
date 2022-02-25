@@ -26,10 +26,12 @@ mod pause;
 mod pipe;
 mod read;
 mod reboot;
+mod rmdir;
 mod setpgid;
 mod sigaction;
 mod sigreturn;
 mod sync;
+mod unlink;
 mod wait;
 mod write;
 
@@ -167,6 +169,16 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         83 =>
         {
             mkdir::syscall_mkdir(proc, arg0, arg1)
+        },
+        // Rmdir Syscall
+        84 =>
+        {
+            rmdir::syscall_rmdir(proc, arg0)
+        },
+        // Unlink Syscall
+        87 =>
+        {
+            unlink::syscall_unlink(proc, arg0)
         },
         // setpgid Syscall
         109 =>
