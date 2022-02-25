@@ -1,5 +1,7 @@
 //! Byte Based Kernel Allocator
 
+use core::ptr::NonNull;
+
 use crate::*;
 
 // Overwrite sentinel flag
@@ -99,37 +101,70 @@ impl core::ops::BitOr<AllocationFlags> for AllocationFlags
     }
 }
 
+/// Memory Allocation Node Pointer
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NodePtr
+{
+    page_ptr: core::ptr::NonNull<AllocationHeader>,
+    index: usize
+}
+
+impl NodePtr
+{
+    pub fn new(page_ptr: core::ptr::NonNull<AllocationHeader>, index: usize) -> Self
+    {
+        Self
+        {
+            page_ptr, index
+        }
+    }
+
+    pub unsafe fn dereference(&self) -> Option<&'static mut AllocationNode>
+    {
+        // First, dereference the Allocation Header
+        let header = self.page_ptr.as_ptr().as_mut().unwrap();
+
+        // Second, get the node
+        Some(&mut header.nodes[self.index])
+    }
+}
+
 /// Memory Allocation Node
 #[derive(Debug)]
 pub struct AllocationNode
 {
     ptr: *mut u8,
-    next: Option<usize>, // Index into the allocation header
-    size: u32,
+    size: u64,
+    next: Option<NodePtr>,
     flags: AllocationFlags
 }
 
 impl AllocationNode
 {
     /// Create a new Memory Allocation Node
-    pub fn new(ptr: *mut u8, next: Option<usize>, size: u32, flags: AllocationFlags) -> Self
+    pub fn new(ptr: *mut u8, next: Option<NodePtr>, size: u64, flags: AllocationFlags) -> Self
     {
         Self
         {
             ptr, next, size, flags
         }
     }
+
+    /// Attempt to follow the next pointer
+    pub fn follow_next(&self) -> Option<&mut AllocationNode>
+    {
+        self.next.map(|next| unsafe { next.dereference() }).flatten()
+    }
 }
 
 // Number of Allocation Nodes in each Allocation Header
-const ALLOCATION_NODES: usize = (super::PAGE_SIZE - 2 * core::mem::size_of::<Option<core::ptr::NonNull<AllocationHeader>>>()) / core::mem::size_of::<AllocationNode>();
+const ALLOCATION_NODES: usize = 100; // (super::PAGE_SIZE - 2 * core::mem::size_of::<Option<core::ptr::NonNull<AllocationHeader>>>()) / core::mem::size_of::<AllocationNode>();
 
 /// Memory Allocation Header
 pub struct AllocationHeader
 {
-    prev_allocator: Option<core::ptr::NonNull<AllocationHeader>>,
     next_allocator: Option<core::ptr::NonNull<AllocationHeader>>,
-    nodes: [AllocationNode; ALLOCATION_NODES]
+    nodes: [AllocationNode; 100]
 }
 
 // Ensure the header is less than a page in length
@@ -137,6 +172,24 @@ static_assertions::const_assert_eq!((core::mem::size_of::<AllocationHeader>() < 
 
 impl AllocationHeader
 {
+    /// Allocate a new Allocation Header page and append it to the end of this one
+    pub fn allocate_new_page(&mut self) -> &mut AllocationHeader
+    {
+        let mut page = unsafe { (super::kpalloc(1, "Byte Allocator Header").unwrap() as *mut AllocationHeader).as_mut() }.unwrap();
+
+        page.next_allocator = None;
+
+        self.next_allocator = Some(core::ptr::NonNull::new(page as *mut AllocationHeader).unwrap());
+
+        // Fill in the nodes with invalid nodes
+        for node in &mut page.nodes[..]
+        {
+            node.flags.set_invalid();
+        }
+
+        page
+    }
+
     /// Allocate a new Allocation Header and return a pointer to that header
     pub fn new(starting_pages: usize, header_count: usize) -> Result<&'static mut AllocationHeader, super::page::KernelPageAllocationError>
     {
@@ -148,7 +201,6 @@ impl AllocationHeader
 
         // Set this as the only allocator header
         page.next_allocator = None;
-        page.prev_allocator = None;
 
         // Fill in the nodes with invalid nodes
         for node in &mut page.nodes[1..]
@@ -158,7 +210,7 @@ impl AllocationHeader
 
         // Create the first Allocation Node
         let first_node =
-            AllocationNode::new(kernel_mem, None, (starting_pages * super::PAGE_SIZE) as u32,
+            AllocationNode::new(kernel_mem, None, (starting_pages * super::PAGE_SIZE) as u64,
                                 AllocationFlags::free() | AllocationFlags::valid());
 
         // Insert the first node
@@ -173,7 +225,6 @@ impl AllocationHeader
 
             // Set the pointers
             page.next_allocator = None;
-            page.prev_allocator = walking_prev;
 
             unsafe { walking_prev.unwrap().as_mut().next_allocator = Some(core::ptr::NonNull::new(page as *mut AllocationHeader).unwrap()) };
 
@@ -190,159 +241,10 @@ impl AllocationHeader
         Ok(page)
     }
 
-    /// Get a reference to the next allocator
-    pub fn ref_next(&self) -> Option<&AllocationHeader>
+    /// Get the page pointer from an index into this header
+    pub fn get_node_ptr(&self, index: usize) -> NodePtr
     {
-        if let Some(next) = self.next_allocator
-        {
-            unsafe { Some((next.as_ptr()).as_ref().unwrap())}
-        }
-        else
-        {
-            None
-        }
-    }
-
-    /// Get a mutable reference to the next allocator
-    pub fn mut_next(&self) -> Option<&mut AllocationHeader>
-    {
-        if let Some(next) = self.next_allocator
-        {
-            unsafe { Some((next.as_ptr()).as_mut().unwrap())}
-        }
-        else
-        {
-            None
-        }
-    }
-
-    /// Get a reference to the previous allocator
-    pub fn ref_prev(&self) -> Option<&AllocationHeader>
-    {
-        if let Some(next) = self.prev_allocator
-        {
-            unsafe { Some((next.as_ptr()).as_ref().unwrap())}
-        }
-        else
-        {
-            None
-        }
-    }
-
-    /// Get a mutable reference to the previous allocator
-    pub fn mut_prev(&self) -> Option<&mut AllocationHeader>
-    {
-        if let Some(next) = self.prev_allocator
-        {
-            unsafe { Some((next.as_ptr()).as_mut().unwrap())}
-        }
-        else
-        {
-            None
-        }
-    }
-
-
-    /// Get a reference to the node with the given index
-    pub fn ref_node(&self, index: usize) -> Option<&AllocationNode>
-    {
-        if let Some(prev) = self.ref_prev()
-        {
-            prev.ref_node(index)
-        }
-        else
-        {
-            self.ref_node_inner(index)
-        }
-    }
-
-    /// Inner node reference function
-    pub fn ref_node_inner(&self, index: usize) -> Option<&AllocationNode>
-    {
-        if index < ALLOCATION_NODES
-        {
-            Some(&self.nodes[index])
-        }
-        else
-        {
-            if let Some(next) = self.ref_next()
-            {
-                next.ref_node(index - ALLOCATION_NODES)
-            }
-            else
-            {
-                None
-            }
-        }
-    }
-
-    /// Get a mutable reference to the node with the given index
-    pub fn mut_node(&mut self, index: usize) -> Option<&mut AllocationNode>
-    {
-        if self.prev_allocator.is_none()
-        {
-            return self.mut_node_inner(index);
-        }
-        if let Some(prev) = self.mut_prev()
-        {
-            return prev.mut_node(index);
-        }
-
-        unreachable!()
-    }
-
-    /// Inner node mutable reference function
-    pub fn mut_node_inner(&mut self, index: usize) -> Option<&mut AllocationNode>
-    {
-        if index < ALLOCATION_NODES
-        {
-            Some(&mut self.nodes[index])
-        }
-        else
-        {
-            if let Some(next) = self.mut_next()
-            {
-                next.mut_node(index - ALLOCATION_NODES)
-            }
-            else
-            {
-                None
-            }
-        }
-    }
-
-    /// Get the index of the first free node
-    pub fn get_free(&self) -> Option<usize>
-    {
-        if self.prev_allocator.is_none()
-        {
-            return self.get_free_inner(0)
-        }
-        if let Some(prev) = self.ref_prev()
-        {
-            return prev.get_free()
-        }
-
-        unreachable!()
-    }
-
-    /// Get free helper function
-    fn get_free_inner(&self, start: usize) -> Option<usize>
-    {
-        for (i, node) in self.nodes.iter().enumerate()
-        {
-            if !node.flags.is_valid()
-            {
-                return Some(start + i);
-            }
-        }
-
-        if let Some(next) = self.ref_next()
-        {
-            return next.get_free_inner(start + ALLOCATION_NODES);
-        }
-
-        None
+        NodePtr::new(NonNull::from(self), index)
     }
 
     /// Display the node list
@@ -350,12 +252,13 @@ impl AllocationHeader
     {
         kprintln!("Node List:");
 
-        let mut index = 0;
+        let mut ptr = self.get_node_ptr(0);
 
         loop
         {
-            kprint!("{}\t", index);
-            if let Some(node) = self.ref_node(index)
+            let node = unsafe { ptr.dereference() }.unwrap();
+            kprint!("0x{:x}[{}]\t", ptr.page_ptr.as_ptr() as usize, ptr.index);
+            if node.flags.is_valid()
             {
                 kprint!("{} {} byte{}\t 0x{:x} - 0x{:x}",
                         if node.flags.is_taken() {"[ALLOC]"} else {"[FREE ]"},
@@ -368,7 +271,7 @@ impl AllocationHeader
 
                 if let Some(next) = node.next
                 {
-                    index = next;
+                    ptr = next;
                 }
                 else
                 {
@@ -383,12 +286,33 @@ impl AllocationHeader
         }
     }
 
+    /// Get the first free node
+    pub fn get_free(&mut self) -> NodePtr
+    {
+        for (i, node) in self.nodes.iter().enumerate()
+        {
+            if !node.flags.is_valid()
+            {
+                return self.get_node_ptr(i);
+            }
+        }
+
+        // If nothing has been found, fall through to the next allocator
+        if let Some(next) = self.next_allocator
+        {
+            return unsafe { next.as_ptr().as_mut().unwrap() }.get_free();
+        }
+        // Otherwise, we need to allocate another page
+        kwarnln!("Allocating new page for allocation table");
+        self.allocate_new_page().get_free()
+    }
+
     /// Allocate some space with the given layout
     pub fn allocate(&mut self, layout: core::alloc::Layout) -> *mut u8
     {
         kdebugln!(ByteMemoryAllocation, "Allocating {} bytes with an alignment of {} bytes", layout.size(), layout.align());
 
-        let mut index = 0;
+        let mut node = unsafe { self.get_node_ptr(0).dereference().unwrap() };
 
         let next_free = self.get_free();
 
@@ -401,11 +325,10 @@ impl AllocationHeader
         {
             layout.size()
         };
-        
-
+    
         loop
         {
-            if let Some(node) = self.mut_node(index)
+            if node.flags.is_valid()
             {
                 // If a valid, free, and properly sized node is found
                 if node.flags.is_valid() && node.flags.is_free() && node.size as usize >= size
@@ -424,7 +347,7 @@ impl AllocationHeader
                             Some(AllocationNode::new(
                                 (node.ptr as usize + space) as *mut u8,
                                 node.next,
-                                (node.size as usize - space) as u32,
+                                (node.size as usize - space) as u64,
                                 AllocationFlags::free() | AllocationFlags::valid()
                             ))
                         }
@@ -435,15 +358,15 @@ impl AllocationHeader
 
                         // Update the current node
                         node.flags.set_taken();
-                        node.size = space as u32;
-                        node.next = if new_node.is_some() {Some(next_free.unwrap())} else {node.next};
+                        node.size = space as u64;
+                        node.next = if new_node.is_some() {Some(next_free)} else {node.next};
 
                         let ptr = (node.ptr as usize + padding_needed) as *mut u8;
 
                         // If a new node needs to be added, add it
                         if let Some(n) = new_node
                         {
-                            *self.mut_node(next_free.unwrap()).unwrap() = n;
+                            *unsafe { next_free.dereference().unwrap() } = n;
                         }
 
                         // Return the properly padded pointer
@@ -464,7 +387,7 @@ impl AllocationHeader
 
                 if let Some(next) = node.next
                 {
-                    index = next;
+                    node = unsafe { next.dereference().unwrap() }
                 }
                 else
                 {
@@ -479,29 +402,34 @@ impl AllocationHeader
     }
 
     /// Combine a specific node and its successor
-    fn combine_specific(&mut self, node: usize, successor: usize)
+    fn combine_specific(&mut self, node: NodePtr, successor: NodePtr)
     {
-        assert_eq!(self.nodes[node].next, Some(successor));
-        assert!(self.nodes[node].flags.is_free());
-        assert!(self.nodes[successor].flags.is_free());
-        assert!(self.nodes[node].flags.is_valid());
-        assert!(self.nodes[successor].flags.is_valid());
+        let node = unsafe { node.dereference().unwrap() };
+        assert_eq!(node.next, Some(successor));
+        let successor = unsafe { successor.dereference().unwrap() };
+        assert!(node.flags.is_free());
+        assert!(node.flags.is_valid());
 
-        self.nodes[node].next = self.nodes[successor].next;
-        self.nodes[node].size += self.nodes[successor].size;
-        self.nodes[successor].flags.set_invalid();
+
+        assert!(successor.flags.is_free());
+        assert!(successor.flags.is_valid());
+
+        node.next = successor.next;
+        node.size += successor.size;
+        successor.flags.set_invalid();
     }
 
     /// Walk the table and combine any adjacent nodes which are connected
     fn combine(&mut self)
     {
-        let mut index = 0;
+        let mut current = self.get_node_ptr(0);
 
         let mut prev = None;
 
         loop
         {
-            if let Some(node) = self.ref_node(index)
+            let node =  unsafe { current.dereference().unwrap() };
+            if node.flags.is_valid()
             {
                 let next = node.next;
 
@@ -509,11 +437,11 @@ impl AllocationHeader
                 {
                     if let Some(prev) = prev
                     {
-                        self.combine_specific(prev, index);
+                        self.combine_specific(prev, current);
                     }
                     else
                     {
-                        prev = Some(index);
+                        prev = Some(current);
                     }
                 }
                 else
@@ -523,7 +451,7 @@ impl AllocationHeader
 
                 if let Some(next) = next
                 {
-                    index = next;
+                    current = next;
                 }
                 else
                 {
@@ -541,7 +469,7 @@ impl AllocationHeader
     pub fn deallocate(&mut self, ptr: *mut u8, layout: core::alloc::Layout)
     {
         kdebugln!(ByteMemoryAllocation, "Dellocating {} bytes with an alignment of {} bytes at 0x{:x}", layout.size(), layout.align(), ptr as usize);
-        
+
         // Sentinel Read
         if SENTINEL
         {
@@ -549,16 +477,19 @@ impl AllocationHeader
             {
                 if unsafe {ptr.add(i + layout.size()).read() != (i & 0xFF) as u8}
                 {
+                    self.display_node_list();
+                    kwarn!("Dellocating {} bytes with an alignment of {} bytes at 0x{:x}", layout.size(), layout.align(), ptr as usize);
                     panic!("Sentinel Triggered at 0x{:x}", ptr as usize);
                 }
             }   
         }
         
-        let mut index = 0;
+        let mut current = self.get_node_ptr(0);
 
         loop
         {
-            if let Some(node) = self.mut_node(index)
+            let node =  unsafe { current.dereference().unwrap() };
+            if node.flags.is_valid()
             {
                 // Check if the pointer sits within the current node
                 if node.ptr as usize <= ptr as usize && node.ptr as usize + node.size as usize > ptr as usize
@@ -574,7 +505,7 @@ impl AllocationHeader
 
                 if let Some(next) = node.next
                 {
-                    index = next;
+                    current = next;
                 }
                 else
                 {
@@ -612,7 +543,9 @@ unsafe impl core::alloc::GlobalAlloc for GlobalAllocator
             panic!("Cannot allocate without the Kernel Heap Initialized");
         }
 
-        ptr.as_mut().unwrap().allocate(layout)
+        let ptr = ptr.as_mut().unwrap().allocate(layout);
+
+        ptr
     }
 
     unsafe fn dealloc(&self, data_ptr: *mut u8, layout: core::alloc::Layout)
