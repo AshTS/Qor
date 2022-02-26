@@ -901,6 +901,8 @@ impl Process
     /// Perform explicit cleanup which requires context such as closing file descriptors
     pub fn context_cleanup(&mut self)
     {
+        self.ensure_fs();
+
         for (_, desc) in &mut self.data.descriptors
         {
             desc.borrow_mut().close(self.fs_interface.as_mut().unwrap());
