@@ -293,6 +293,18 @@ impl Filesystem for RamDiskFilesystem
         todo!()
     }
 
+    /// Increment the number of links to an inode
+    fn increment_links(&mut self, _inode: FilesystemIndex) -> FilesystemResult<usize>
+    {
+        todo!()
+    }
+
+    /// Decrement the number of links to an inode
+    fn decrement_links(&mut self, _inode: FilesystemIndex) -> FilesystemResult<usize>
+    {
+        todo!()
+    }
+
     /// Read the data stored in an inode
     fn read_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<Vec<u8>>
     {

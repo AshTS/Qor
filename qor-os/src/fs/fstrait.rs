@@ -44,6 +44,12 @@ pub trait Filesystem
     /// Remove a directory entry from the directory at the given inode
     fn remove_dir_entry(&mut self, directory_index: FilesystemIndex, name: String) -> FilesystemResult<()>;
 
+    /// Increment the number of links to an inode
+    fn increment_links(&mut self, inode: FilesystemIndex) -> FilesystemResult<usize>;
+
+    /// Decrement the number of links to an inode
+    fn decrement_links(&mut self, inode: FilesystemIndex) -> FilesystemResult<usize>;
+
     /// Read the data stored in an inode
     fn read_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<Vec<u8>>;
 

@@ -391,6 +391,36 @@ impl Filesystem for FilesystemInterface
         }
     }
 
+    /// Increment the number of links to an inode
+    fn increment_links(&mut self, inode: FilesystemIndex) -> FilesystemResult<usize>
+    {
+        kdebugln!(Filesystem, "Incrementing links to {:?}", inode);
+
+        if let Some(fs) = self.get_fs_mount(inode.mount_id)
+        {
+            fs.increment_links(inode)
+        }
+        else
+        {
+            Err(FilesystemError::UnableToFindDiskMount(inode.mount_id))
+        }
+    }
+
+    /// Decrement the number of links to an inode
+    fn decrement_links(&mut self, inode: FilesystemIndex) -> FilesystemResult<usize>
+    {
+        kdebugln!(Filesystem, "Decrement links to {:?}", inode);
+
+        if let Some(fs) = self.get_fs_mount(inode.mount_id)
+        {
+            fs.decrement_links(inode)
+        }
+        else
+        {
+            Err(FilesystemError::UnableToFindDiskMount(inode.mount_id))
+        }
+    }
+
     /// Read the data stored in an inode
     fn read_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<Vec<u8>>
     {

@@ -210,6 +210,18 @@ impl Filesystem for ProcFilesystem
         Err(FilesystemError::PermissionDenied)
     }
 
+    /// Increment the number of links to an inode
+    fn increment_links(&mut self, _inode: FilesystemIndex) -> FilesystemResult<usize>
+    {
+        todo!()
+    }
+
+    /// Decrement the number of links to an inode
+    fn decrement_links(&mut self, _inode: FilesystemIndex) -> FilesystemResult<usize>
+    {
+        todo!()
+    }
+
     fn read_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<alloc::vec::Vec<u8>>
     {
         if Some(inode.mount_id) == self.mount_id

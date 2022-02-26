@@ -218,6 +218,18 @@ impl Filesystem for DevFilesystem
         todo!()
     }
 
+    /// Increment the number of links to an inode
+    fn increment_links(&mut self, _inode: FilesystemIndex) -> FilesystemResult<usize>
+    {
+        todo!()
+    }
+
+    /// Decrement the number of links to an inode
+    fn decrement_links(&mut self, _inode: FilesystemIndex) -> FilesystemResult<usize>
+    {
+        todo!()
+    }
+
     /// Remove an inode at the given index from the given directory
     fn remove_inode(&mut self, _inode: FilesystemIndex) -> FilesystemResult<()>
     {
