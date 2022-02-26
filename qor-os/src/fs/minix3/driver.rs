@@ -952,7 +952,13 @@ impl Filesystem for Minix3Filesystem
     }
 
     /// Remove an inode at the given index from the given directory
-    fn remove_inode(&mut self, _inode: FilesystemIndex, _directory: FilesystemIndex) -> FilesystemResult<()>
+    fn remove_inode(&mut self, _inode: FilesystemIndex) -> FilesystemResult<()>
+    {
+        todo!()
+    }
+
+    /// Remove a directory entry from the directory at the given inode
+    fn remove_dir_entry(&mut self, _directory_index: FilesystemIndex, _name: String) -> FilesystemResult<()>
     {
         todo!()
     }

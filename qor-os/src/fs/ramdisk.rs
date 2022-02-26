@@ -282,34 +282,15 @@ impl Filesystem for RamDiskFilesystem
     }
 
     /// Remove an inode at the given index from the given directory
-    fn remove_inode(&mut self, inode: FilesystemIndex, directory: FilesystemIndex) -> FilesystemResult<()>
+    fn remove_inode(&mut self, _inode: FilesystemIndex) -> FilesystemResult<()>
     {
-        if Some(inode.mount_id) == self.mount_id
-        {
-            if let Some(val) = self.inodes.get_mut(inode.inode)
-            {
-                *val = RamDiskInode::Null;
+        todo!()
+    }
 
-                // TODO: Remove the reference from the directory
-
-                Ok(())
-            }
-            else
-            {
-                Err(FilesystemError::BadINode)
-            }
-        }
-        else
-        {
-            if let Some(vfs) = &mut self.vfs
-            {
-                (*vfs).remove_inode(inode, directory)
-            }
-            else
-            {
-                Err(FilesystemError::FilesystemNotMounted)
-            }
-        }
+    /// Remove a directory entry from the directory at the given inode
+    fn remove_dir_entry(&mut self, _directory_index: FilesystemIndex, _name: String) -> FilesystemResult<()>
+    {
+        todo!()
     }
 
     /// Read the data stored in an inode

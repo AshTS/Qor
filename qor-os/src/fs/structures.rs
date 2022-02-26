@@ -14,7 +14,8 @@ pub enum FilesystemError
     BadINode,
     BadFilesystemFormat,
     FileNotFound(String),
-    OutOfSpace
+    OutOfSpace,
+    PermissionDenied
 }
 
 /// Generic Filesystem Result Type

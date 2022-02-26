@@ -39,7 +39,10 @@ pub trait Filesystem
     fn create_directory(&mut self, inode: FilesystemIndex, name: String) -> FilesystemResult<FilesystemIndex>;
 
     /// Remove an inode at the given index from the given directory
-    fn remove_inode(&mut self, inode: FilesystemIndex, directory: FilesystemIndex) -> FilesystemResult<()>;
+    fn remove_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<()>;
+
+    /// Remove a directory entry from the directory at the given inode
+    fn remove_dir_entry(&mut self, directory_index: FilesystemIndex, name: String) -> FilesystemResult<()>;
 
     /// Read the data stored in an inode
     fn read_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<Vec<u8>>;

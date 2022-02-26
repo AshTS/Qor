@@ -362,17 +362,32 @@ impl Filesystem for FilesystemInterface
     }
 
     /// Remove an inode at the given index from the given directory
-    fn remove_inode(&mut self, inode: FilesystemIndex, directory: FilesystemIndex) -> FilesystemResult<()>
+    fn remove_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<()>
     {
-        kdebugln!(Filesystem, "Remove inode {:?} in directory {:?}", inode, directory);
+        kdebugln!(Filesystem, "Remove inode {:?}", inode);
 
         if let Some(fs) = self.get_fs_mount(inode.mount_id)
         {
-            fs.remove_inode(inode, directory)
+            fs.remove_inode(inode)
         }
         else
         {
             Err(FilesystemError::UnableToFindDiskMount(inode.mount_id))
+        }
+    }
+
+    /// Remove a directory entry from the directory at the given inode
+    fn remove_dir_entry(&mut self, directory_index: FilesystemIndex, name: String) -> FilesystemResult<()>
+    {
+        kdebugln!(Filesystem, "Remove directory entry {} in {:?}", name, directory_index);
+
+        if let Some(fs) = self.get_fs_mount(directory_index.mount_id)
+        {
+            fs.remove_dir_entry(directory_index, name)
+        }
+        else
+        {
+            Err(FilesystemError::UnableToFindDiskMount(directory_index.mount_id))
         }
     }
 

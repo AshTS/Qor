@@ -218,9 +218,16 @@ impl Filesystem for DevFilesystem
         todo!()
     }
 
-    fn remove_inode(&mut self, _inode: FilesystemIndex, _directory: FilesystemIndex) -> FilesystemResult<()>
+    /// Remove an inode at the given index from the given directory
+    fn remove_inode(&mut self, _inode: FilesystemIndex) -> FilesystemResult<()>
     {
-        todo!()
+        Err(FilesystemError::PermissionDenied)
+    }
+
+    /// Remove a directory entry from the directory at the given inode
+    fn remove_dir_entry(&mut self, _directory_index: FilesystemIndex, _name: String) -> FilesystemResult<()>
+    {
+        Err(FilesystemError::PermissionDenied)
     }
 
     fn read_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<alloc::vec::Vec<u8>>
