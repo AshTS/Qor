@@ -901,10 +901,9 @@ impl Process
     /// Perform explicit cleanup which requires context such as closing file descriptors
     pub fn context_cleanup(&mut self)
     {
-        let vfs = self.fs_interface.as_mut().unwrap();
         for (_, desc) in &mut self.data.descriptors
         {
-            desc.borrow_mut().close(vfs);
+            desc.borrow_mut().close(self.fs_interface.as_mut().unwrap());
         }
 
         self.data.descriptors.clear();
