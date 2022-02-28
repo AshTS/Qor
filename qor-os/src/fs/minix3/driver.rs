@@ -353,6 +353,49 @@ impl Minix3Filesystem
         Ok(())
     }
 
+    /// Add a directory entry at the given inode
+    fn remove_directory_entry(&mut self, inode: usize, name: String) -> FilesystemResult<()>
+    {
+        // Get a mutable reference to the inode
+        let inode_ref = self.get_mut_inode(inode)?;
+
+        update_time(inode_ref, UpdateTimes::Modify);
+
+        let inode_ref = *inode_ref;
+        
+        // Get the original contents as a buffer
+        let mut buffer = self.read_from_inode(inode_ref);
+
+        // Get the original number of entries
+        let original_count = inode_ref.size / 64;
+
+        // Cast the buffer as an array of directory entries
+        let array = unsafe { core::mem::transmute::<&mut [u8], &mut [Minix3DirEntry]>(buffer.as_mut()) };
+
+        // Iterate over the array
+        let mut move_back = false;
+        for i in 0..original_count as usize
+        {
+            if !move_back
+            {
+                let s = array[i].to_string();
+
+                if s == name
+                {
+                    move_back = true;
+                }
+            }
+            else
+            {
+                array[i - 1] = array[i];
+            }
+        }
+
+        self.write_to_file(inode, unsafe { core::slice::from_raw_parts(buffer.as_ptr(), (original_count as usize - 1) * 64) })?;
+
+        Ok(())
+    }
+
     /// Add a directory entry from the inode and name to the given inode
     fn add_directory_entry(&mut self, dest: usize, inode: usize, name: &str) -> FilesystemResult<()>
     {
@@ -706,6 +749,17 @@ impl Minix3Filesystem
         Ok(())
     }
 
+    /// Remove an inode and the blocks associated with it
+    fn delete_inode(&mut self, inode_number: usize) -> FilesystemResult<()>
+    {
+        let mut inode = self.get_inode(inode_number)?;
+
+        self.free_zones(&mut inode)?;
+        self.free_inode(inode_number)?;
+
+        Ok(())
+    }
+
     /// Allocate a file
     fn allocate_file(&mut self, data: String, mode: u16) -> FilesystemResult<usize>
     {
@@ -952,27 +1006,101 @@ impl Filesystem for Minix3Filesystem
     }
 
     /// Remove an inode at the given index from the given directory
-    fn remove_inode(&mut self, _inode: FilesystemIndex) -> FilesystemResult<()>
+    fn remove_inode(&mut self, inode: FilesystemIndex) -> FilesystemResult<()>
     {
-        todo!()
+        if Some(inode.mount_id) == self.mount_id
+        {
+            self.delete_inode(inode.inode)?;
+
+            Ok(())
+        }
+        else
+        {
+            if let Some(vfs) = &mut self.vfs
+            {
+                vfs.remove_inode(inode)
+            }
+            else
+            {
+                Err(FilesystemError::FilesystemNotMounted)
+            }
+        }
     }
 
     /// Remove a directory entry from the directory at the given inode
-    fn remove_dir_entry(&mut self, _directory_index: FilesystemIndex, _name: String) -> FilesystemResult<()>
+    fn remove_dir_entry(&mut self, directory_index: FilesystemIndex, name: String) -> FilesystemResult<()>
     {
-        todo!()
+        if Some(directory_index.mount_id) == self.mount_id
+        {
+            self.remove_directory_entry(directory_index.inode, name)?;
+
+            Ok(())
+        }
+        else
+        {
+            if let Some(vfs) = &mut self.vfs
+            {
+                vfs.remove_dir_entry(directory_index, name)
+            }
+            else
+            {
+                Err(FilesystemError::FilesystemNotMounted)
+            }
+        }
     }
 
     /// Increment the number of links to an inode
-    fn increment_links(&mut self, _inode: FilesystemIndex) -> FilesystemResult<usize>
+    fn increment_links(&mut self, inode: FilesystemIndex) -> FilesystemResult<usize>
     {
-        todo!()
+        if Some(inode.mount_id) == self.mount_id
+        {
+            let r = self.get_mut_inode(inode.inode)?;
+
+            r.nlinks += 1;
+
+            Ok(r.nlinks.into())
+        }
+        else
+        {
+            if let Some(vfs) = &mut self.vfs
+            {
+                vfs.increment_links(inode)
+            }
+            else
+            {
+                Err(FilesystemError::FilesystemNotMounted)
+            }
+        }
     }
 
     /// Decrement the number of links to an inode
-    fn decrement_links(&mut self, _inode: FilesystemIndex) -> FilesystemResult<usize>
+    fn decrement_links(&mut self, inode: FilesystemIndex) -> FilesystemResult<usize>
     {
-        todo!()
+        if Some(inode.mount_id) == self.mount_id
+        {
+            let r = self.get_mut_inode(inode.inode)?;
+
+            if r.nlinks > 0
+            {
+                r.nlinks -= 1;
+                Ok(r.nlinks.into())
+            }
+            else
+            {
+                Ok(0)
+            }
+        }
+        else
+        {
+            if let Some(vfs) = &mut self.vfs
+            {
+                vfs.increment_links(inode)
+            }
+            else
+            {
+                Err(FilesystemError::FilesystemNotMounted)
+            }
+        }
     }
 
     /// Read the data stored in an inode

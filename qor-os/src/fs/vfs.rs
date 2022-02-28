@@ -3,7 +3,7 @@ use crate::*;
 use super::fstrait::Filesystem;
 use super::structures::*;
 
-use alloc::collections::BTreeMap;
+use alloc::{collections::BTreeMap, borrow::ToOwned};
 use alloc::format;
 
 use libutils::paths::{OwnedPath, PathBuffer};
@@ -383,7 +383,13 @@ impl Filesystem for FilesystemInterface
 
         if let Some(fs) = self.get_fs_mount(directory_index.mount_id)
         {
-            fs.remove_dir_entry(directory_index, name)
+            fs.remove_dir_entry(directory_index, name)?;
+
+            let path = self.inode_to_path(directory_index)?.to_owned();
+
+            self.invalidate_index(&path)?;
+
+            Ok(())
         }
         else
         {

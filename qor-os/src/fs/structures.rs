@@ -15,7 +15,29 @@ pub enum FilesystemError
     BadFilesystemFormat,
     FileNotFound(String),
     OutOfSpace,
-    PermissionDenied
+    PermissionDenied,
+    DirectoryNotEmpty
+}
+
+impl FilesystemError
+{
+    pub fn to_errno(&self) -> usize
+    {
+        match self
+        {
+            FilesystemError::MissingRootMount => errno::ENODEV,
+            FilesystemError::FilesystemUninitialized => errno::ENODEV,
+            FilesystemError::UnableToFindDiskMount(_) => errno::ENODEV,
+            FilesystemError::FilesystemNotMounted => errno::ENODEV,
+            FilesystemError::INodeIsNotADirectory => errno::ENOTDIR,
+            FilesystemError::BadINode => errno::EPERM,
+            FilesystemError::BadFilesystemFormat => errno::ENODEV,
+            FilesystemError::FileNotFound(_) => errno::ENOENT,
+            FilesystemError::OutOfSpace => errno::ENOSPC,
+            FilesystemError::PermissionDenied => errno::EPERM,
+            FilesystemError::DirectoryNotEmpty => errno::ENOTEMPTY,
+        }
+    }
 }
 
 /// Generic Filesystem Result Type

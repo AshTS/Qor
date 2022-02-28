@@ -1,4 +1,6 @@
-  /// Minix3 Superblock
+use crate::String;
+  
+/// Minix3 Superblock
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct Minix3SuperBlock
@@ -56,4 +58,22 @@ pub struct Minix3DirEntry
 {
   pub inode: u32,
   pub name:  [u8; 60],
+}
+
+impl Minix3DirEntry
+{
+  pub fn to_string(&self) -> String
+  {
+    let mut s = String::new();
+
+    for c in self.name
+    {
+        if c != 0
+        {
+            s.push(c as char);
+        }
+    }
+
+    s
+  }
 }

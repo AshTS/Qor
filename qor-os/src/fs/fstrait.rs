@@ -64,4 +64,23 @@ pub trait Filesystem
 
     /// Execute an ioctl command on an inode
     fn exec_ioctl(&mut self, inode: FilesystemIndex, cmd: IOControlCommand) -> FilesystemResult<usize>;
+
+
+    /// Unlink an inode
+    fn unlink_inode(&mut self, inode: FilesystemIndex, directory: FilesystemIndex, name: String) -> FilesystemResult<()>
+    {
+        if self.decrement_links(inode)? == 0
+        {
+            self.remove_dir_entry(directory, name)?;
+            self.remove_inode(inode)?;
+        }
+
+        Ok(())
+    }
+
+    /// Unlink an inode
+    fn remove_directory(&mut self, _inode: FilesystemIndex, _parent: FilesystemIndex, _name: String) -> FilesystemResult<()>
+    {
+        todo!() 
+    }
 }
