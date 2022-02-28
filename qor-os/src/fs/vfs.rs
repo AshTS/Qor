@@ -317,13 +317,27 @@ impl Filesystem for FilesystemInterface
         
     }
 
-    /// Get the directory entries for the given inode
+    /// Get the directory entries in the directory at the given inode
     fn get_dir_entries(&mut self, inode: FilesystemIndex) -> FilesystemResult<Vec<DirectoryEntry>>
     {
         kdebugln!(Filesystem, "List Directory Entries at {:?}", inode);
         if let Some(fs) = self.get_fs_mount(inode.mount_id)
         {
             fs.get_dir_entries(inode)
+        }
+        else
+        {
+            Err(FilesystemError::UnableToFindDiskMount(inode.mount_id))
+        }
+    }
+
+    /// Get the directory entry for the given inode
+    fn get_stat(&mut self, inode: FilesystemIndex) -> FilesystemResult<FileStat>
+    {
+        kdebugln!(Filesystem, "Get Directory Entry at {:?}", inode);
+        if let Some(fs) = self.get_fs_mount(inode.mount_id)
+        {
+            fs.get_stat(inode)
         }
         else
         {

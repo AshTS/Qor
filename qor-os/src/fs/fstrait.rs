@@ -29,8 +29,11 @@ pub trait Filesystem
     /// Convert an inode to a path
     fn inode_to_path(&mut self, inode: FilesystemIndex) -> FilesystemResult<PathBuffer>;
 
-    /// Get the directory entries for the given inode
+    /// Get the directory entries in the directory at the given inode
     fn get_dir_entries(&mut self, inode: FilesystemIndex) -> FilesystemResult<Vec<DirectoryEntry>>;
+
+    /// Get the directory entry for the given inode
+    fn get_stat(&mut self, inode: FilesystemIndex) -> FilesystemResult<FileStat>;
 
     /// Create a file in the directory at the given inode
     fn create_file(&mut self, inode: FilesystemIndex, name: String) -> FilesystemResult<FilesystemIndex>;
@@ -65,10 +68,38 @@ pub trait Filesystem
     /// Execute an ioctl command on an inode
     fn exec_ioctl(&mut self, inode: FilesystemIndex, cmd: IOControlCommand) -> FilesystemResult<usize>;
 
+    /// Assert is not a directory
+    fn assert_not_directory(&mut self, inode: FilesystemIndex) -> FilesystemResult<()>
+    {
+        if self.get_stat(inode)?.mode & 0x4000 > 0
+        {
+            Err(FilesystemError::INodeIsDirectory)
+        }
+        else
+        {
+            Ok(())
+        }
+    }
+
+    /// Assert is a directory
+    fn assert_directory(&mut self, inode: FilesystemIndex) -> FilesystemResult<()>
+    {
+        if self.get_stat(inode)?.mode & 0x4000 > 0
+        {
+            Ok(())
+        }
+        else
+        {
+            Err(FilesystemError::INodeIsNotADirectory)
+        }
+    }
 
     /// Unlink an inode
     fn unlink_inode(&mut self, inode: FilesystemIndex, directory: FilesystemIndex, name: String) -> FilesystemResult<()>
     {
+        self.assert_not_directory(inode)?;
+        self.assert_directory(directory)?;
+
         if self.decrement_links(inode)? == 0
         {
             self.remove_dir_entry(directory, name)?;
@@ -79,8 +110,24 @@ pub trait Filesystem
     }
 
     /// Unlink an inode
-    fn remove_directory(&mut self, _inode: FilesystemIndex, _parent: FilesystemIndex, _name: String) -> FilesystemResult<()>
+    fn remove_directory(&mut self, inode: FilesystemIndex, parent: FilesystemIndex, name: String) -> FilesystemResult<()>
     {
-        todo!() 
+        self.assert_directory(inode)?;
+        self.assert_directory(parent)?;
+
+        // Make sure the directory is empty
+        for ent in self.get_dir_entries(inode)?
+        {
+            if ent.name != "." && ent.name != ".."
+            {
+                return Err(FilesystemError::DirectoryNotEmpty);
+            }
+        }
+
+        // Remove the directory entry for the directory in its parent and remove the inode for the directory
+        self.remove_dir_entry(parent, name)?;
+        self.remove_inode(inode)?;
+
+        Ok(())
     }
 }

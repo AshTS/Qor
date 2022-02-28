@@ -24,7 +24,10 @@ pub fn syscall_rmdir(proc: &mut super::Process, path_ptr: usize) -> usize
     let mut expanded_path = OwnedPath::new(path);
     expanded_path.canonicalize(&proc.data.cwd);
 
-    kwarnln!("rmdir ({})", expanded_path);
+    if let Err(e) = proc.rmdir(expanded_path)
+    {
+        return e;
+    }
 
-    usize::MAX
+    0
 }

@@ -959,6 +959,43 @@ impl Filesystem for Minix3Filesystem
         }
     }
 
+    /// Get the directory entry for the given inode
+    fn get_stat(&mut self, inode: FilesystemIndex) -> FilesystemResult<FileStat>
+    {
+        if Some(inode.mount_id) == self.mount_id
+        {
+            let read = self.get_inode(inode.inode)?;
+
+            Ok(FileStat
+            {
+                dev_id: inode.mount_id,
+                inode: inode.inode,
+                mode: read.mode,
+                links: read.nlinks,
+                uid: read.uid,
+                gid: read.gid,
+                special_dev_id: 0,
+                size: read.size as usize,
+                blk_size: 512,
+                blocks_alloced: 1, // TODO
+                atime: read.atime as usize,
+                mtime: read.mtime as usize,
+                ctime: read.ctime as usize,
+            })
+        }
+        else
+        {
+            if let Some(vfs) = &mut self.vfs
+            {
+                vfs.get_stat(inode)
+            }
+            else
+            {
+                Err(FilesystemError::FilesystemNotMounted)
+            }
+        }
+    }
+
     /// Create a file in the directory at the given inode
     fn create_file(&mut self, inode: FilesystemIndex, name: alloc::string::String) -> FilesystemResult<FilesystemIndex>
     {

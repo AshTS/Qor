@@ -808,6 +808,46 @@ impl Process
         Ok(())
     }
 
+    /// Remove a directory
+    pub fn rmdir(&mut self, path: OwnedPath) -> Result<(), usize>
+    {
+        self.ensure_fs();
+
+        let vfs = self.fs_interface.as_mut().unwrap();
+
+        // Get the inode of the path involved
+        let inode = 
+            if let Ok(inode_result) = vfs.path_to_inode(&path)
+            {
+                inode_result
+            }
+            else
+            {
+                return Err(errno::ENOENT);
+            };
+
+        let (parent_path, name) = path.split_last();
+
+        // Get the inode of the parent directory
+        let parent = 
+            if let Ok(inode_result) = vfs.path_to_inode(&parent_path)
+            {
+                inode_result
+            }
+            else
+            {
+                return Err(errno::ENOENT);
+            };
+
+        // Remove the directory
+        if let Err(e) = vfs.remove_directory(inode, parent, name.to_string())
+        {
+            return Err(e.to_errno());
+        }
+
+        Ok(())
+    }
+
     /// Get the total memory held by the process in pages
     pub fn get_process_memory(&self) -> usize
     {

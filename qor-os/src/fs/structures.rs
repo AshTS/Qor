@@ -16,7 +16,8 @@ pub enum FilesystemError
     FileNotFound(String),
     OutOfSpace,
     PermissionDenied,
-    DirectoryNotEmpty
+    DirectoryNotEmpty,
+    INodeIsDirectory
 }
 
 impl FilesystemError
@@ -36,6 +37,7 @@ impl FilesystemError
             FilesystemError::OutOfSpace => errno::ENOSPC,
             FilesystemError::PermissionDenied => errno::EPERM,
             FilesystemError::DirectoryNotEmpty => errno::ENOTEMPTY,
+            FilesystemError::INodeIsDirectory => errno::EISDIR,
         }
     }
 }
@@ -73,4 +75,23 @@ pub struct DirectoryEntry
     pub index: FilesystemIndex,
     pub name: String,
     pub entry_type: DirectoryEntryType
+}
+
+/// Stat structure
+#[derive(Debug, Clone, Copy)]
+pub struct FileStat
+{
+    pub dev_id: usize,
+    pub inode: usize,
+    pub mode: u16,
+    pub links: u16,
+    pub uid: u16,
+    pub gid: u16,
+    pub special_dev_id: usize,
+    pub size: usize,
+    pub blk_size: usize,
+    pub blocks_alloced: usize,
+    pub atime: usize,
+    pub mtime: usize,
+    pub ctime: usize
 }

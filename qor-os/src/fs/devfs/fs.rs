@@ -208,6 +208,12 @@ impl Filesystem for DevFilesystem
         }
     }
 
+    /// Get the directory entry for the given inode
+    fn get_stat(&mut self, _inode: FilesystemIndex) -> FilesystemResult<FileStat>
+    {
+        todo!()
+    }
+
     fn create_file(&mut self, _inode: FilesystemIndex, _name: alloc::string::String) -> FilesystemResult<FilesystemIndex>
     {
         todo!()

@@ -190,6 +190,12 @@ impl Filesystem for RamDiskFilesystem
         }
     }
 
+    /// Get the directory entry for the given inode
+    fn get_stat(&mut self, _inode: FilesystemIndex) -> FilesystemResult<FileStat>
+    {
+        todo!()
+    }
+
     /// Create a file in the directory at the given inode
     fn create_file(&mut self, inode: FilesystemIndex, name: String) -> FilesystemResult<FilesystemIndex>
     {
