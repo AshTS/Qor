@@ -1,19 +1,39 @@
-Virtual File System
-    Optimize read call in file descriptors
-Minix3 File System
-    Filesystem calls sometimes brick filesystem
-Processes
-    Add segmentation fault display
-    Rewrite Process Structure, it is a bit of a mess
-Kernel
-    Add Keyboard Driver
-    Add Mouse Driver
-Shell
-    Flush stdin at end of execution
-    Add Pipe
-    Add Chevrons
-LibC
-    Run initialization Functions
-Userland
-    ed
-        Loading files sometimes drops bytes
+General Todo:
+ Add getdents wrapper to unistd.head
+ Update pipe handling for the shell
+  Multiple return values
+  Wait for all processes
+  Add background and foreground groups
+ Add common utility functions for syscalls
+ Clean up the filesystem functions in process.rs
+ User and group id handling
+ Core dumps
+ Dynamically expanding the stack
+ Better teletype handling
+ Keyboard driver
+ Mouse driver
+ Unix sockets
+ Check for execution privelages
+ Add access syscall
+ Better proc filesystem implementation
+ Add fstat syscall
+ Add lstat syscall
+
+Utilities Todo:
+ stat
+ ps
+ grep
+ rm
+ cp
+ mv
+ file
+ chmod
+ head
+ tail
+ more
+ date
+ diff
+ wc
+ kill
+ hex
+ time
