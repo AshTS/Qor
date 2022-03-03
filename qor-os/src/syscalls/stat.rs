@@ -43,14 +43,10 @@ pub fn syscall_stat(proc: &mut super::Process, path_ptr: usize, buffer_ptr: usiz
     let mut expanded_path = OwnedPath::new(path);
     expanded_path.canonicalize(&proc.data.cwd);
 
-    kwarnln!("Stat for path: {}", expanded_path);
-
     match  proc.stat(expanded_path)
     {
         Ok(stat_data) => 
         {
-            kdebugln!("{:?}", stat_data);
-
             unsafe
             {
                 let buf = buffer_ptr.as_mut().unwrap();
