@@ -1,5 +1,4 @@
 General Todo:
- Add getdents wrapper to unistd.head
  Update pipe handling for the shell
   Multiple return values
   Wait for all processes
@@ -20,7 +19,6 @@ General Todo:
  Add lstat syscall
 
 Utilities Todo:
- stat
  ps
  grep
  rm
