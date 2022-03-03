@@ -121,7 +121,7 @@ def unmount_disk():
 def update_disk():
     print("Copying files to Disk")
 
-    mount_disk();
+    mount_disk()
 
     try:
         run_command("sudo rm -rf /mnt/*", shell=True, hide=True)
@@ -133,7 +133,7 @@ def update_disk():
         for entry in binaries:
             run_command("sudo cp -p " + entry["bin-path"] + " /mnt" + entry["output-path"], shell=True).check_returncode()
     finally:
-        unmount_disk();
+        unmount_disk()
 
 def run():
     print("Starting Qor")
