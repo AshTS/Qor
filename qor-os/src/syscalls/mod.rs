@@ -30,6 +30,7 @@ mod rmdir;
 mod setpgid;
 mod sigaction;
 mod sigreturn;
+mod stat;
 mod sync;
 mod unlink;
 mod wait;
@@ -59,6 +60,11 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         3 =>
         {
             close::syscall_close(proc, arg0)
+        },
+        // Stat Syscall
+        4 =>
+        {
+            stat::syscall_stat(proc, arg0, arg1)
         },
         // lseek Syscall
         8 =>

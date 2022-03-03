@@ -848,6 +848,23 @@ impl Process
         Ok(())
     }
 
+    /// Stat a file
+    pub fn stat(&mut self, path: OwnedPath) -> Result<fs::structures::FileStat, usize>
+    {
+        self.ensure_fs();
+        let vfs = self.fs_interface.as_mut().unwrap();
+
+        // Convert the path to an inode
+        if let Ok(inode_result) = vfs.path_to_inode(&path)
+        {
+            vfs.get_stat(inode_result).map_err(|e| e.to_errno())
+        }
+        else
+        {
+            Err(errno::ENOENT)
+        }
+    }
+
     /// Get the total memory held by the process in pages
     pub fn get_process_memory(&self) -> usize
     {
