@@ -179,7 +179,7 @@ pub fn load_elf(file_data: Vec<u8>, path: PathBuffer, args: &Vec<String>, envp: 
         }
     }
 
-    let stack_size = 4;
+    let stack_size = 1;
 
     // Allocate space for four pages of stack space
     let stack_space = mem::kpzalloc(stack_size, "ELF Stack Space").unwrap();
@@ -187,7 +187,7 @@ pub fn load_elf(file_data: Vec<u8>, path: PathBuffer, args: &Vec<String>, envp: 
     // Map the stack space
     for i in 0..stack_size
     {
-        table.map(0x2_0000_0000 + mem::PAGE_SIZE * i,
+        table.map(super::process::STACK_END - mem::PAGE_SIZE - mem::PAGE_SIZE * i,
             stack_space + mem::PAGE_SIZE * i,
             mem::mmu::PageTableEntryFlags::user() | mem::mmu::PageTableEntryFlags::readable() | mem::mmu::PageTableEntryFlags::executable() | mem::mmu::PageTableEntryFlags::writable() | mem::mmu::PageTableEntryFlags::dirty() | mem::mmu::PageTableEntryFlags::accessed(),
             0);
@@ -198,7 +198,7 @@ pub fn load_elf(file_data: Vec<u8>, path: PathBuffer, args: &Vec<String>, envp: 
     let mut proc = Process::from_components(
         elf_header.e_entry as usize, 
         table as *mut mem::mmu::PageTable, 
-        stack_size, 0x2_0000_0000,
+        stack_size, super::process::STACK_END - mem::PAGE_SIZE * stack_size,
         mem_stats);
 
     let mut full_arguments = vec![path.as_str().to_string()];

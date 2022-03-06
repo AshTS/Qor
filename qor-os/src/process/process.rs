@@ -1,6 +1,7 @@
 use crate::*;
 use crate::drivers::timer::KernelTime;
 use crate::fs::fstrait::Filesystem;
+use crate::mem::mmu::PageTableEntryFlags;
 
 use fs::structures::DirectoryEntry;
 use libutils::paths::OwnedPath;
@@ -45,6 +46,10 @@ const SEEK_CUR: usize = 2;
 const SEEK_END: usize = 4;
 
 const MAP_ANON: usize = 1;
+
+// Stack locations
+pub const STACK_START: usize = 0x2_0000_0000;
+pub const STACK_END: usize = 0x3_0000_0000;
 
 /// Reasons for a process to be waiting
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -100,8 +105,6 @@ impl Process
 
         let page_table = unsafe {page_table_ptr.as_mut()}.unwrap();
 
-        use mem::mmu::PageTableEntryFlags;
-
         // Map the Kernel
         page_table.identity_map(mem::lds::text_start(), mem::lds::text_end(), PageTableEntryFlags::readable() | PageTableEntryFlags::executable() | PageTableEntryFlags::user());
         page_table.identity_map(mem::lds::rodata_start(), mem::lds::rodata_end(), PageTableEntryFlags::readable() | PageTableEntryFlags::executable() | PageTableEntryFlags::user());
@@ -150,6 +153,29 @@ impl Process
         unsafe { temp_result.frame.as_mut().unwrap() }.regs[2] = stack_ptr + stack_size * mem::PAGE_SIZE;
 
         temp_result
+    }
+    
+    /// Expand the stack downwards
+    pub fn expand_stack(&mut self, address: usize)
+    {
+        if address < STACK_START || address >= STACK_END
+        {
+            panic!("Address {:x} is not within the valid stack space", address);
+        }
+
+        // kwarnln!("Expanding the stack, an attempted read or write occured at {:x}", address);
+        while address < self.stack as usize
+        {
+            let new_page = mem::kpzalloc(1, "Expanded Stack").unwrap();
+
+            unsafe
+            {
+                let table = self.root.as_mut().unwrap();
+
+                table.map(self.stack as usize - mem::PAGE_SIZE, new_page, PageTableEntryFlags::readable() | PageTableEntryFlags::writable() | PageTableEntryFlags::user(), 0);
+                self.stack = (self.stack as usize - mem::PAGE_SIZE) as *mut u8;
+            }
+        }
     }
 
     /// Set the environment arguments

@@ -71,10 +71,24 @@ pub fn interrupt_handler(interrupt_context: InterruptContext) -> usize
         },
         default =>
         {
-            kerrorln!("{}", interrupt_context);
             // If the trap occured during a process, report it as a fatal fault
             if let Some(proc) = process::scheduler::current_process()
             {
+                // Check if the interrupt is a Page Fault, if it is and the address is within the valid stack region, attempt to expand the stack
+                if matches!(interrupt_context.get_cause(), InterruptType::LoadPageFault | InterruptType::StorePageFault)
+                {
+                    let address = interrupt_context.get_associated_value();
+
+                    if address >= process::process::STACK_START && address <= process::process::STACK_END
+                    {
+                        proc.expand_stack(interrupt_context.get_associated_value());
+
+                        return interrupt_context.instruction_address();
+                    }
+                }
+
+                kerrorln!("{}", interrupt_context);
+
                 if process::scheduler::get_process_manager().as_mut().unwrap().send_signal(
                     proc.pid, 
                             POSIXSignal
