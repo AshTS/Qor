@@ -163,7 +163,8 @@ impl Process
             panic!("Address {:x} is not within the valid stack space", address);
         }
 
-        // kwarnln!("Expanding the stack, an attempted read or write occured at {:x}", address);
+        kdebugln!(Processes, "Expanding the stack, an attempted read or write occured at {:x}", address);
+        
         while address < self.stack as usize
         {
             let new_page = mem::kpzalloc(1, "Expanded Stack").unwrap();
