@@ -1,13 +1,8 @@
 General Todo:
- Update pipe handling for the shell
-  Multiple return values
-  Wait for all processes
-  Add background and foreground groups
  Add common utility functions for syscalls
  Clean up the filesystem functions in process.rs
  User and group id handling
  Core dumps
- Dynamically expanding the stack
  Better teletype handling
  Keyboard driver
  Mouse driver
