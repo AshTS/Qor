@@ -175,6 +175,8 @@ impl Process
 
                 table.map(self.stack as usize - mem::PAGE_SIZE, new_page, PageTableEntryFlags::readable() | PageTableEntryFlags::writable() | PageTableEntryFlags::user(), 0);
                 self.stack = (self.stack as usize - mem::PAGE_SIZE) as *mut u8;
+
+                self.data.mem_stats.data += 1;
             }
         }
     }
