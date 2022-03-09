@@ -36,6 +36,17 @@ mod unlink;
 mod wait;
 mod write;
 
+pub mod utils;
+
+pub fn flatten_syscall_result(result: Result<usize, usize>) -> usize
+{
+    match result
+    {
+        Ok(v) => v,
+        Err(v) => v,
+    }
+}
+
 /// Syscall callback
 pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, arg2: usize, arg3: usize, arg4: usize, arg5: usize, arg6: usize) -> usize
 {
@@ -54,7 +65,7 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         // Open Syscall
         2 =>
         {
-            open::syscall_open(proc, arg0, arg1, arg2)
+            flatten_syscall_result(open::syscall_open(proc, arg0, arg1, arg2))
         },
         // Close Syscall
         3 =>
@@ -64,7 +75,7 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         // Stat Syscall
         4 =>
         {
-            stat::syscall_stat(proc, arg0, arg1)
+            flatten_syscall_result(stat::syscall_stat(proc, arg0, arg1))
         },
         // lseek Syscall
         8 =>
@@ -169,22 +180,22 @@ pub fn handle_syscall(proc: &mut Process, num: usize, arg0: usize, arg1: usize, 
         // Chdir Syscall
         80 =>
         {
-            chdir::syscall_chdir(proc, arg0)
+            flatten_syscall_result(chdir::syscall_chdir(proc, arg0))
         },
         // Mkdir Syscall
         83 =>
         {
-            mkdir::syscall_mkdir(proc, arg0, arg1)
+            flatten_syscall_result(mkdir::syscall_mkdir(proc, arg0, arg1))
         },
         // Rmdir Syscall
         84 =>
         {
-            rmdir::syscall_rmdir(proc, arg0)
+            flatten_syscall_result(rmdir::syscall_rmdir(proc, arg0))
         },
         // Unlink Syscall
         87 =>
         {
-            unlink::syscall_unlink(proc, arg0)
+            flatten_syscall_result(unlink::syscall_unlink(proc, arg0))
         },
         // setpgid Syscall
         109 =>
