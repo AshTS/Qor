@@ -4,4 +4,4 @@ userland__/*/build
 qor-os/hdd.dsk
 libutils/target
 *.diff
-.vscode
+.vscode/*
