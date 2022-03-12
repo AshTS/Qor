@@ -378,7 +378,7 @@ pub fn current_process() -> Option<&'static mut Box<Process>>
 {
     unsafe 
     {
-        GLOBAL_PROC_MANAGER.as_mut().unwrap().currently_running_mut()
+        GLOBAL_PROC_MANAGER.as_mut().map(|global| global.currently_running_mut()).flatten()
     }
 }
 
