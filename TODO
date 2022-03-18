@@ -1,5 +1,4 @@
 General Todo:
- Add common utility functions for syscalls
  Clean up the filesystem functions in process.rs
  User and group id handling
  Core dumps
@@ -14,7 +13,6 @@ General Todo:
  Add lstat syscall
 
 Utilities Todo:
- ps
  grep
  rm
  cp
