@@ -140,6 +140,20 @@ def run():
 
     run_command("cargo run --release", cwd=cwd+"/qor-os", shell=True, no_capture=True).check_returncode()
 
+    copy_output()
+
+def copy_output():
+    print("Copying output")
+
+    mount_disk()
+
+    try:
+        run_command("rm -rf qor-userland/root-output", shell=True, hide=True)
+        run_command("mkdir qor-userland/root-output", shell=True, hide=True)
+        run_command("cp -rp /mnt/home/root qor-userland/root-output", shell=True, hide=True).check_returncode()
+    finally:
+        unmount_disk()
+
 if __name__ == "__main__":
     prog_name, args = decons(sys.argv)
 
