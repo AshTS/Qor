@@ -66,7 +66,8 @@ skip_float_save:
     ld sp, 520(a5)
 
     # Call the m_trap function
-    call m_trap
+    # TODO: Add this function back when interrupt handling is added
+    # call m_trap
 
     # Restore Registers
     csrw mepc, a0

@@ -4,7 +4,8 @@
 #[cfg(feature = "std")]
 extern crate std;
 
-#[cfg(not(feature = "std"))]
-extern crate alloc;
+// #[cfg(not(feature = "std"))]
+// extern crate alloc;
 
-pub mod paths;
+// pub mod paths;
+pub mod sync;

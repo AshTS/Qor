@@ -6,18 +6,18 @@ use crate::*;
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> !
 {
-    kerror!("\nAborting: ");
+    kerror!(unsafe "\nAborting: ");
 
     if let Some(p) = info.location()
     {
-        kerrorln!("line {}, file {}: {}", p.line(), p.file(), info.message().unwrap());
+        kerrorln!(unsafe "line {}, file {}: {}", p.line(), p.file(), info.message().unwrap());
     }
     else
     {
-        kerrorln!("no info available");
+        kerrorln!(unsafe "no info available");
     }
 
-    unsafe { crate::drivers::POWER_DRIVER.shutdown() };
+    // unsafe { crate::drivers::POWER_DRIVER.shutdown() };
 
     abort();
 }
