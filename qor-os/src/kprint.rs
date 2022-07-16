@@ -9,6 +9,7 @@ macro_rules! kprint
         use core::fmt::Write;
 
         // Safety: This is safe because overlapping writes is acceptable if annoying
+        #[allow(unused_unsafe)]
 		let _ = write!(unsafe { crate::drivers::UART_DRIVER.unsafe_writer() }, $($args)+);    
     });
 
@@ -144,7 +145,7 @@ macro_rules! kdebugln
     });
 
     (unsafe $fmt:expr, $($args:tt)+) => ({
-        crate::kdebug!(unsafe, Other, concat!($fmt, "\r\n"), $($args)+)
+        crate::kdebug!(unsafe Other, concat!($fmt, "\r\n"), $($args)+)
     });
 
     //
@@ -224,7 +225,7 @@ macro_rules! kwarnln
 {
     (unsafe) => ({crate::kwarn!(unsafe "\r\n")});
 
-    (unsafe$fmt:expr) => ({
+    (unsafe $fmt:expr) => ({
         crate::kwarn!(unsafe concat!($fmt, "\r\n"))
     });
 
@@ -298,7 +299,7 @@ macro_rules! kerrorln
 {
     (unsafe) => ({crate::kerror!(unsafe "\r\n")});
 
-    (unsafe$fmt:expr) => ({
+    (unsafe $fmt:expr) => ({
         crate::kerror!(unsafe concat!($fmt, "\r\n"))
     });
 
