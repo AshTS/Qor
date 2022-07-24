@@ -535,6 +535,20 @@ impl PageTable
         entry.set_accessed(access_flags.read());
     }
 
+    /// Identity map a range of addresses
+    pub fn identity_map(&mut self, start: usize, end: usize, access_flags: RWXFlags, flags: UGFlags)
+    {
+        // Loop over the range in page sized chunks
+        let mut walking_addr = start & !(4096 - 1);
+        while walking_addr <= end
+        {
+            // Map each page sized chunk
+            self.map(VirtualAddress(walking_addr as u64), walking_addr, access_flags, flags, MemoryPageLevel::Level0);
+
+            walking_addr += crate::mem::PAGE_SIZE;
+        }
+    }
+
     /// Recursively remove all of the page tables and free the pages allocated
     pub fn unmap_all(&mut self, no_interrupts: libutils::sync::NoInterruptMarker)
     {
