@@ -14,3 +14,6 @@ pub use error::*;
 
 pub mod pages;
 pub use pages::*;
+
+pub mod pagetable;
+pub use pagetable::*;
