@@ -59,6 +59,12 @@ fn kinit()
     // Initialize the page allocator
     mem::PAGE_ALLOCATOR.initialize(thread_marker, interrupt_marker).expect("Unable to initialize GPA");
     kdebugln!(thread_marker, Initialization, "Global Page Allocator Initialized");
+
+    // Initialize the global page table
+    kdebugln!(thread_marker, Initialization, "Initializing Global Page Table");
+    let mut page_table = mem::PAGE_ALLOCATOR.allocate(interrupt_marker, mem::PageTable::new()).expect("Unable to allocate Global Page Table");
+    mem::identity_map_kernel(&mut page_table);
+    mem::set_page_table(&page_table);
 }
 
 /// Kernel Main Function (Called in supervisor mode)
@@ -66,5 +72,5 @@ fn kinit()
 pub extern "C"
 fn kmain()
 {
-
+    kprintln!(unsafe "Hello World!");
 }
