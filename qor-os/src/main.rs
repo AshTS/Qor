@@ -39,6 +39,7 @@ mod kprint;
 mod mem;
 mod panic;
 mod test;
+mod trap;
 
 /// Kernel Initialize Function (Called immediately after boot)
 #[no_mangle]
@@ -68,6 +69,10 @@ fn kinit()
     let mut page_table = mem::PAGE_ALLOCATOR.allocate(interrupt_marker, mem::PageTable::new()).expect("Unable to allocate Global Page Table");
     mem::identity_map_kernel(&mut page_table);
     mem::set_page_table(&page_table);
+
+    // Initialize a trap frame
+    kdebugln!(thread_marker, Initialization, "Initializing Trap Frame");
+    trap::initialize_trap_frame(interrupt_marker);
 }
 
 /// Kernel Main Function (Called in supervisor mode)

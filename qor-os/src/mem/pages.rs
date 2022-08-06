@@ -299,9 +299,7 @@ impl<T> KernelPageBox<T>
         assert!(core::mem::size_of::<T>() <= PAGE_SIZE * length);
 
         ptr.write(data);
-
-        kdebugln!(unsafe "after");
-
+        
         Self
         {
             ptr: core::ptr::Unique::new(ptr).unwrap(), length
