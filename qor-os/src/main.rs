@@ -81,4 +81,9 @@ pub extern "C"
 fn kmain()
 {
     kprintln!(unsafe "Hello World!");
+
+    drivers::PLIC_DRIVER.enable_with_priority(drivers::interrupts::UART_INTERRUPT, drivers::InterruptPriority::Priority7);
+    drivers::PLIC_DRIVER.set_threshold(drivers::InterruptPriority::Priority1);
+
+    libutils::sync::no_interrupts(|_| { kprintln!(unsafe "No Interrupts!") });
 }

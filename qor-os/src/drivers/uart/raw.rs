@@ -45,7 +45,7 @@ pub unsafe fn init(base_address: usize)
 pub unsafe fn read_byte(base_address: usize) -> Option<u8>
 {
     // Check the input pending bit
-    if mmio::read_offset::<u8>(base_address, UART_LSR) & 1 != 0
+    if mmio::read_offset::<u8>(base_address, UART_LSR) & 1 == 0
     {
         None
     }

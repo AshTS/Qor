@@ -7,7 +7,7 @@ extern "C" fn m_trap(epc: usize,
                      cause: TrapCause,
                      hart: usize,
                      status: usize,
-                     frame: &mut TrapFrame) -> usize
+                     _frame: &mut TrapFrame) -> usize
 {
     match cause
     {
@@ -66,6 +66,33 @@ extern "C" fn m_trap(epc: usize,
         {
             kerrorln!(unsafe "Store Page Fault at address {:#x} in instruction at {:#x}", tval, epc);
             panic!();
+        }
+        TrapCause::MachineExternal =>
+        {
+            if let Some(interrupt) = crate::drivers::PLIC_DRIVER.next_interrupt()
+            {
+                if interrupt == crate::drivers::interrupts::UART_INTERRUPT
+                {
+                    if let Some(c) = unsafe { crate::drivers::UART_DRIVER.unchecked_read_byte() }
+                    {
+                        match c
+                        {
+                            10 | 13 =>
+                            {
+                                kprintln!(unsafe "");
+                            },
+                            v =>
+                            {
+                                kprint!(unsafe "{}", v as char)
+                            }
+                        }
+                    }
+                }
+
+                crate::drivers::PLIC_DRIVER.claim_interrupt(interrupt);
+            }
+
+            epc
         }
         _ =>
         {
