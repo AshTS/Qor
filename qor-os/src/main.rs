@@ -6,7 +6,7 @@
 #![feature(ptr_internals)]              // For pointer types
 
 // Use the default allocation error handler
-// #![feature(default_alloc_error_handler)]
+#![feature(default_alloc_error_handler)]
 
 // Allow dead code for partial implementations
 #![allow(dead_code)]
@@ -25,8 +25,7 @@
 #![reexport_test_harness_main = "test_main"]
 
 // Alloc Prelude
-// extern crate alloc;
-// use alloc::*;
+extern crate alloc;
 
 use libutils::sync::{InitThreadMarker, NoInterruptMarker};
 
@@ -59,6 +58,10 @@ fn kinit()
     // Initialize the page allocator
     mem::PAGE_ALLOCATOR.initialize(thread_marker, interrupt_marker).expect("Unable to initialize GPA");
     kdebugln!(thread_marker, Initialization, "Global Page Allocator Initialized");
+
+    // Initialize the global allocator
+    mem::GLOBAL_ALLOCATOR.initialize(thread_marker, interrupt_marker);
+    kdebugln!(thread_marker, Initialization, "Global Allocator Initialized");
 
     // Initialize the global page table
     kdebugln!(thread_marker, Initialization, "Initializing Global Page Table");

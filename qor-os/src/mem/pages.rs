@@ -300,6 +300,8 @@ impl<T> KernelPageBox<T>
 
         ptr.write(data);
 
+        kdebugln!(unsafe "after");
+
         Self
         {
             ptr: core::ptr::Unique::new(ptr).unwrap(), length
@@ -364,7 +366,7 @@ impl<T> core::ops::Drop for KernelPageBox<T>
         let _ = unsafe { self.ptr.as_ptr().read() };
 
         // Drop the pages allocated
-        libutils::sync::no_interrupts(|no_interrupts|
+        libutils::sync::no_interrupts_supervisor(|no_interrupts|
             unsafe
             {
                 crate::mem::PAGE_ALLOCATOR.free_pages_unchecked(no_interrupts, self.ptr.as_ptr() as *mut Page, self.length).expect("Failed to free memory from `KernelPageBox`");

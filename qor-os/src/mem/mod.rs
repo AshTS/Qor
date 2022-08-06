@@ -9,6 +9,9 @@ pub type Page = [u8; PAGE_SIZE];
 /// Global Page Allocator
 pub static PAGE_ALLOCATOR: GlobalPageAllocator = GlobalPageAllocator::new();
 
+pub mod allocator;
+pub use allocator::*;
+
 pub mod error;
 pub use error::*;
 
