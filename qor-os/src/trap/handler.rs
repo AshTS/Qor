@@ -67,6 +67,14 @@ extern "C" fn m_trap(epc: usize,
             kerrorln!(unsafe "Store Page Fault at address {:#x} in instruction at {:#x}", tval, epc);
             panic!();
         }
+        TrapCause::MachineTimer =>
+        {
+            crate::drivers::CLINT_DRIVER.set_remaining(0, 10_000_000);
+
+            timer_tick();
+
+            epc
+        }
         TrapCause::MachineExternal =>
         {
             if let Some(interrupt) = crate::drivers::PLIC_DRIVER.next_interrupt()
@@ -102,4 +110,10 @@ extern "C" fn m_trap(epc: usize,
             panic!("Unhandled Trap {:?}", cause);
         }
     }
+}
+
+/// Timer Callback
+pub fn timer_tick()
+{
+    kwarn!(unsafe ".");
 }

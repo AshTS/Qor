@@ -85,5 +85,5 @@ fn kmain()
     drivers::PLIC_DRIVER.enable_with_priority(drivers::interrupts::UART_INTERRUPT, drivers::InterruptPriority::Priority7);
     drivers::PLIC_DRIVER.set_threshold(drivers::InterruptPriority::Priority1);
 
-    libutils::sync::no_interrupts(|_| { kprintln!(unsafe "No Interrupts!") });
+    drivers::CLINT_DRIVER.set_remaining(0, 10_000_000);
 }
