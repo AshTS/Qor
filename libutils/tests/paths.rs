@@ -2,8 +2,7 @@ extern crate libutils;
 
 /// Test the Path Iterator
 #[test]
-pub fn test_path_iterator()
-{
+pub fn test_path_iterator() {
     use libutils::paths::OwnedPath;
 
     let path0 = OwnedPath::new("/usr/bin/ls");
@@ -14,18 +13,26 @@ pub fn test_path_iterator()
     assert_eq!(path0.iter().collect::<Vec<_>>(), vec!["usr", "bin", "ls"]);
     assert_eq!(path1.iter().collect::<Vec<_>>(), vec!["bin", "ls"]);
     assert_eq!(path2.iter().collect::<Vec<_>>(), Vec::<&str>::new());
-    assert_eq!(path3.iter().collect::<Vec<_>>(), vec![".", "..", "..", "home"]);
+    assert_eq!(
+        path3.iter().collect::<Vec<_>>(),
+        vec![".", "..", "..", "home"]
+    );
 
-    assert_eq!((&path0).iter().collect::<Vec<_>>(), vec!["usr", "bin", "ls"]);
+    assert_eq!(
+        (&path0).iter().collect::<Vec<_>>(),
+        vec!["usr", "bin", "ls"]
+    );
     assert_eq!((&path1).iter().collect::<Vec<_>>(), vec!["bin", "ls"]);
     assert_eq!((&path2).iter().collect::<Vec<_>>(), Vec::<&str>::new());
-    assert_eq!((&path3).iter().collect::<Vec<_>>(), vec![".", "..", "..", "home"]);
+    assert_eq!(
+        (&path3).iter().collect::<Vec<_>>(),
+        vec![".", "..", "..", "home"]
+    );
 }
 
 /// Test the Path Canonicalization
 #[test]
-pub fn test_path_canonicalization()
-{
+pub fn test_path_canonicalization() {
     use libutils::paths::OwnedPath;
 
     let mut path0 = OwnedPath::new("/usr/bin/ls");
@@ -46,8 +53,7 @@ pub fn test_path_canonicalization()
 
 /// Test Path Splitting
 #[test]
-pub fn test_path_splitting()
-{
+pub fn test_path_splitting() {
     use libutils::paths::OwnedPath;
 
     let path0 = OwnedPath::new("/usr/bin/ls");
