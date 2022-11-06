@@ -339,6 +339,13 @@ impl<T> KernelPageBox<T> {
         // Safety: We can dereference the contained pointer as we know that we are the sole owners of that pointer
         unsafe { self.ptr.as_mut() }
     }
+
+    /// Leak the memory used for the page table
+    pub fn leak(mut self) -> &'static mut T {
+        self.length = 0;
+        // Safety: We can dereference the contained pointer as we know that we are the sole owners of that pointer
+        unsafe { &mut *self.ptr.as_ptr() }
+    }
 }
 
 impl<T> core::ops::Deref for KernelPageBox<T> {
@@ -357,13 +364,16 @@ impl<T> core::ops::DerefMut for KernelPageBox<T> {
 
 impl<T> core::ops::Drop for KernelPageBox<T> {
     fn drop(&mut self) {
-        let _ = unsafe { self.ptr.as_ptr().read() };
+        if self.length != 0 {
+            let _ = unsafe { self.ptr.as_ptr().read() };
+        
 
-        // Drop the pages allocated
-        libutils::sync::no_interrupts_supervisor(|no_interrupts| unsafe {
-            crate::mem::PAGE_ALLOCATOR
-                .free_pages_unchecked(no_interrupts, self.ptr.as_ptr() as *mut Page, self.length)
-                .expect("Failed to free memory from `KernelPageBox`");
-        })
+            // Drop the pages allocated
+            libutils::sync::no_interrupts_supervisor(|no_interrupts| unsafe {
+                crate::mem::PAGE_ALLOCATOR
+                    .free_pages_unchecked(no_interrupts, self.ptr.as_ptr() as *mut Page, self.length)
+                    .expect("Failed to free memory from `KernelPageBox`");
+            })
+        }
     }
 }
