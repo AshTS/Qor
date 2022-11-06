@@ -537,3 +537,11 @@ impl core::fmt::Display for PageTable {
         Ok(())
     }
 }
+
+impl core::ops::Drop for PageTable {
+    fn drop(&mut self) {
+        libutils::sync::no_interrupts_supervisor( |no_interrupts| {
+            self.unmap_all(no_interrupts)
+        });
+    }
+}
