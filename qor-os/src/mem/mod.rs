@@ -25,23 +25,51 @@ pub mod pagetable;
 pub use pagetable::*;
 
 /// Set a page table as the global page table
-pub fn set_page_table(page_table: &PageTable)
-{
+pub fn set_page_table(page_table: &PageTable) {
     let addr = page_table as *const PageTable as usize;
 
     unsafe { riscv::register::satp::set(riscv::register::satp::Mode::Sv39, 0, addr >> 12) };
 }
 
 /// Identity map the kernel
-pub fn identity_map_kernel(page_table: &mut PageTable)
-{
+pub fn identity_map_kernel(page_table: &mut PageTable) {
     // Identity map the kernel
-    page_table.identity_map(lds::text_start(), lds::text_end(), RWXFlags::ReadExecute, UGFlags::None);
-    page_table.identity_map(lds::rodata_start(), lds::rodata_end(), RWXFlags::ReadExecute, UGFlags::None);
-    page_table.identity_map(lds::data_start(), lds::data_end(), RWXFlags::ReadWrite, UGFlags::None);
-    page_table.identity_map(lds::bss_start(), lds::bss_end(), RWXFlags::ReadWrite, UGFlags::None);
-    page_table.identity_map(lds::stack_start(), lds::stack_end(), RWXFlags::ReadWrite, UGFlags::None);
-    page_table.identity_map(lds::heap_start(), lds::heap_end(), RWXFlags::ReadWrite, UGFlags::None);
+    page_table.identity_map(
+        lds::text_start(),
+        lds::text_end(),
+        RWXFlags::ReadExecute,
+        UGFlags::None,
+    );
+    page_table.identity_map(
+        lds::rodata_start(),
+        lds::rodata_end(),
+        RWXFlags::ReadExecute,
+        UGFlags::None,
+    );
+    page_table.identity_map(
+        lds::data_start(),
+        lds::data_end(),
+        RWXFlags::ReadWrite,
+        UGFlags::None,
+    );
+    page_table.identity_map(
+        lds::bss_start(),
+        lds::bss_end(),
+        RWXFlags::ReadWrite,
+        UGFlags::None,
+    );
+    page_table.identity_map(
+        lds::stack_start(),
+        lds::stack_end(),
+        RWXFlags::ReadWrite,
+        UGFlags::None,
+    );
+    page_table.identity_map(
+        lds::heap_start(),
+        lds::heap_end(),
+        RWXFlags::ReadWrite,
+        UGFlags::None,
+    );
 
     // Identity map test handle
     page_table.identity_map(0x10_0000, 0x10_0fff, RWXFlags::ReadWrite, UGFlags::None);

@@ -10,7 +10,7 @@ macro_rules! kprint
 
         // Safety: This is safe because overlapping writes is acceptable if annoying
         #[allow(unused_unsafe)]
-		let _ = write!(unsafe { crate::drivers::UART_DRIVER.unsafe_writer() }, $($args)+);    
+		let _ = write!(unsafe { crate::drivers::UART_DRIVER.unsafe_writer() }, $($args)+);
     });
 
     ($thread_marker:expr, $($args:tt)+) => ({
@@ -18,7 +18,7 @@ macro_rules! kprint
         use libutils::sync::InitThreadMarker;
 
         // Safety: This is safe because overlapping writes is acceptable if annoying
-		let _ = (|_: InitThreadMarker| { write!(unsafe { crate::drivers::UART_DRIVER.unsafe_writer() }, $($args)+) })($thread_marker);    
+		let _ = (|_: InitThreadMarker| { write!(unsafe { crate::drivers::UART_DRIVER.unsafe_writer() }, $($args)+) })($thread_marker);
     });
 }
 
@@ -64,7 +64,7 @@ macro_rules! kdebug
             }
         }
     });
-    
+
     (unsafe $mode:ident, $fmt:expr) => ({
         if crate::debug::check_debug(crate::debug::DebugCategories::$mode)
         {
@@ -92,7 +92,7 @@ macro_rules! kdebug
             }
         }
     });
-    
+
     ($thread_marker:expr, $mode:ident, $fmt:expr) => ({
         if crate::debug::check_debug(crate::debug::DebugCategories::$mode)
         {
@@ -108,19 +108,19 @@ macro_rules! kdebug
     });
 
     (unsafe $fmt:expr, $($args:tt)+) => ({
-        crate::kdebug!(unsafe Other, $fmt, $($args)+) 
+        crate::kdebug!(unsafe Other, $fmt, $($args)+)
     });
-    
+
     (unsafe $fmt:expr) => ({
-        crate::kdebug!(unsafe Other, $fmt) 
+        crate::kdebug!(unsafe Other, $fmt)
     });
 
     ($thread_marker:expr, $fmt:expr, $($args:tt)+) => ({
-        crate::kdebug!($thread_marker, Other, $fmt, $($args)+) 
+        crate::kdebug!($thread_marker, Other, $fmt, $($args)+)
     });
-    
+
     ($thread_marker:expr, $fmt:expr) => ({
-        crate::kdebug!($thread_marker, Other, $fmt) 
+        crate::kdebug!($thread_marker, Other, $fmt)
     });
 }
 
@@ -184,7 +184,7 @@ macro_rules! kwarn
             crate::kprint!(unsafe $fmt, $($args)+);
         }
     });
-    
+
     (unsafe $fmt:expr) => ({
         if crate::kprint::COLORED
         {
@@ -206,7 +206,7 @@ macro_rules! kwarn
             crate::kprint!($fmt, $($args)+);
         }
     });
-    
+
     ($thread_marker:expr, $fmt:expr) => ({
         if crate::kprint::COLORED
         {
@@ -258,7 +258,7 @@ macro_rules! kerror
             crate::kprint!(unsafe $fmt, $($args)+);
         }
     });
-    
+
     (unsafe $fmt:expr) => ({
         if crate::kprint::COLORED
         {
@@ -280,7 +280,7 @@ macro_rules! kerror
             crate::kprint!($fmt, $($args)+);
         }
     });
-    
+
     ($thread_marker:expr, $fmt:expr) => ({
         if crate::kprint::COLORED
         {

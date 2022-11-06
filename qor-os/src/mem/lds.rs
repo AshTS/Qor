@@ -1,8 +1,7 @@
 //! Constants from the linker script
 
 // Constants recieved from the linker script
-extern "C"
-{
+extern "C" {
     static TEXT_START: usize;
     static TEXT_END: usize;
     static RODATA_START: usize;
@@ -20,95 +19,83 @@ extern "C"
 /// Get the text start address as a usize
 /// Safety: Because this value should have been read properly from the linker
 /// script, this is safe
-pub fn text_start() -> usize
-{
-	unsafe { TEXT_START }
+pub fn text_start() -> usize {
+    unsafe { TEXT_START }
 }
 
 /// Get the text end address as a usize
 /// Safety: Because this value should have been read properly from the linker
 /// script, this is safe
-pub fn text_end() -> usize
-{
-	unsafe { TEXT_END }
+pub fn text_end() -> usize {
+    unsafe { TEXT_END }
 }
 
 /// Get the rodata start address as a usize
 /// Safety: Because this value should have been read properly from the linker
 /// script, this is safe
-pub fn rodata_start() -> usize
-{
-	unsafe { RODATA_START }
+pub fn rodata_start() -> usize {
+    unsafe { RODATA_START }
 }
 
 /// Get the rodata end address as a usize
 /// Safety: Because this value should have been read properly from the linker
 /// script, this is safe
-pub fn rodata_end() -> usize
-{
-	unsafe { RODATA_END }
+pub fn rodata_end() -> usize {
+    unsafe { RODATA_END }
 }
 
 /// Get the data start address as a usize
 /// Safety: Because this value should have been read properly from the linker
 /// script, this is safe
-pub fn data_start() -> usize
-{
-	unsafe { DATA_START }
+pub fn data_start() -> usize {
+    unsafe { DATA_START }
 }
 
 /// Get the data end address as a usize
 /// Safety: Because this value should have been read properly from the linker
 /// script, this is safe
-pub fn data_end() -> usize
-{
-	unsafe { DATA_END }
+pub fn data_end() -> usize {
+    unsafe { DATA_END }
 }
 
 /// Get the bss start address as a usize
 /// Safety: Because this value should have been read properly from the linker
 /// script, this is safe
-pub fn bss_start() -> usize
-{
-	unsafe { BSS_START }
+pub fn bss_start() -> usize {
+    unsafe { BSS_START }
 }
 
 /// Get the bss end address as a usize
 /// Safety: Because this value should have been read properly from the linker
 /// script, this is safe
-pub fn bss_end() -> usize
-{
-	unsafe { BSS_END }
+pub fn bss_end() -> usize {
+    unsafe { BSS_END }
 }
 
 /// Get the stack start address as a usize
 /// Safety: Because this value should have been read properly from the linker
 /// script, this is safe
-pub fn stack_start() -> usize
-{
-	unsafe { KERNEL_STACK_START }
+pub fn stack_start() -> usize {
+    unsafe { KERNEL_STACK_START }
 }
 
 /// Get the stack end address as a usize
 /// Safety: Because this value should have been read properly from the linker
 /// script, this is safe
-pub fn stack_end() -> usize
-{
-	unsafe { KERNEL_STACK_END }
+pub fn stack_end() -> usize {
+    unsafe { KERNEL_STACK_END }
 }
 
 /// Get the heap start address as a usize
 /// Safety: Because this value should have been read properly from the linker
 /// script, this is safe
-pub fn heap_start() -> usize
-{
-	unsafe { HEAP_START }
+pub fn heap_start() -> usize {
+    unsafe { HEAP_START }
 }
 
 /// Get the heap end address as a usize
 /// Safety: Because this value should have been read properly from the linker
 /// script, this is safe
-pub fn heap_end() -> usize
-{
-	unsafe { HEAP_END }
+pub fn heap_end() -> usize {
+    unsafe { HEAP_END }
 }
