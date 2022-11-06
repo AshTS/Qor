@@ -82,6 +82,8 @@ pub extern "C" fn kinit() {
     mem::identity_map_kernel(&mut page_table);
     mem::set_page_table(&page_table);
 
+    page_table.leak();
+
     // Initialize a trap frame
     kdebugln!(thread_marker, Initialization, "Initializing Trap Frame");
     trap::initialize_trap_frame(interrupt_marker);
