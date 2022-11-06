@@ -85,6 +85,10 @@ pub extern "C" fn kinit() {
     // Initialize a trap frame
     kdebugln!(thread_marker, Initialization, "Initializing Trap Frame");
     trap::initialize_trap_frame(interrupt_marker);
+
+    // Initialize the process map
+    kdebugln!(thread_marker, Initialization, "Initializing Process Map");
+    process::init_process_map(thread_marker);
 }
 
 /// Kernel Main Function (Called in supervisor mode)
