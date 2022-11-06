@@ -24,6 +24,9 @@ pub use pages::*;
 pub mod pagetable;
 pub use pagetable::*;
 
+pub mod units;
+pub use units::*;
+
 /// Set a page table as the global page table
 pub fn set_page_table(page_table: &PageTable) {
     let addr = page_table as *const PageTable as usize;

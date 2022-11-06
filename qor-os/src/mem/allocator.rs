@@ -1,5 +1,7 @@
 use libutils::sync::{InitThreadMarker, NoInterruptMarker};
 
+use super::PageCount;
+
 /// Allocation Chunk Metadata
 #[derive(Debug, Clone, Copy)]
 pub struct AllocationChunk {
@@ -253,15 +255,14 @@ impl GlobalAllocator {
     }
 
     /// Initialize the allocator
-    pub fn initialize(&self, _init_thread: InitThreadMarker, no_interrupts: NoInterruptMarker) {
+    pub fn initialize(&self, _init_thread: InitThreadMarker, no_interrupts: NoInterruptMarker, pages: PageCount) {
         // Allocate the proper number of pages
-        let pages = 512;
         let entries = crate::mem::PAGE_ALLOCATOR
             .allocate_static(no_interrupts, [None; 4096])
             .expect("Unable to allocate allocation entries");
 
         let pointer = crate::mem::PAGE_ALLOCATOR
-            .allocate_static_pages(no_interrupts, pages)
+            .allocate_static_pages(no_interrupts, pages.raw())
             .expect("Unable to allocate space for heap")
             .as_ptr();
 
@@ -273,7 +274,7 @@ impl GlobalAllocator {
                 .insert(Allocator::new(
                     entries,
                     pointer as usize,
-                    crate::mem::PAGE_SIZE * pages,
+                    crate::mem::PAGE_SIZE * pages.raw(),
                 ))
         };
     }
