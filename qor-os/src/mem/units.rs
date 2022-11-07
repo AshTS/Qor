@@ -1,4 +1,5 @@
 /// Memory Unit Generic Type, stores the size of a memory region as a number of a particular size of units
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MemoryUnit<const SCALE: usize>(usize);
 
 /// Memory Unit for Pages

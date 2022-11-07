@@ -5,6 +5,8 @@ use crate::mem::error::GlobalPageAllocatorError;
 use crate::mem::Page;
 use crate::mem::PAGE_SIZE;
 
+use super::PageCount;
+
 /// Internal Global Kernel Page Allocator Data
 struct GlobalPageAllocatorData {
     bitmap: core::ptr::Unique<u64>,
@@ -20,6 +22,12 @@ pub struct GlobalPageAllocator {
 /// A `Box` like structure for continuous ranges of kernel pages
 pub struct KernelPageBox<T> {
     ptr: core::ptr::Unique<T>,
+    length: usize,
+}
+
+/// A `Vec` like structure for continuous ranges of kernel pages
+pub struct KernelPageSeq {
+    ptr: core::ptr::Unique<Page>,
     length: usize,
 }
 
@@ -378,6 +386,91 @@ impl<T> core::ops::Drop for KernelPageBox<T> {
                 crate::mem::PAGE_ALLOCATOR
                     .free_pages_unchecked(no_interrupts, self.ptr.as_ptr() as *mut Page, self.length)
                     .expect("Failed to free memory from `KernelPageBox`");
+            })
+        }
+    }
+}
+
+impl KernelPageSeq {
+    /// Construct a new kernel page box from its constituent parts. This is effectively just a slice with a drop implementation. It takes a pointer to the data contained and the number of pages.
+    ///
+    /// Safety: The pointer must point to a valid, allocated range of the proper number of pages
+    pub unsafe fn from_raw(ptr: *mut Page, length: usize) -> Self {
+        for i in 0..length {
+            ptr.add(i).write([0; PAGE_SIZE]);
+        }
+
+        Self {
+            ptr: core::ptr::Unique::new(ptr).unwrap(),
+            length,
+        }
+    }
+
+    /// Create a new kernel page sequence by calling allocate on the global page allocator. Note that this creates a new no_interrupt context, if many pieces of data must be allocated, try to do so explicitly in a larger no_interrupt context.
+    pub fn new(pages: PageCount) -> Result<Self, GlobalPageAllocatorError> {
+        libutils::sync::no_interrupts_supervisor(|no_interrupts| {
+            let (ptr, length) = crate::mem::PAGE_ALLOCATOR.allocate_pages_raw(no_interrupts, pages.raw())?;
+
+            //
+            Ok(unsafe { Self::from_raw(ptr, length) })
+        })
+    }
+
+    /// Free the memory stored in a KernelPageBox
+    pub fn free(self, _no_interrupts: NoInterruptMarker) {
+        drop(self);
+    }
+
+    /// Get the raw pointer
+    pub fn raw(&self) -> *const Page {
+        self.ptr.as_ptr()
+    }
+
+    /// Get the internal slice
+    pub fn get(&self) -> &[Page] {
+        // Safety: We can dereference the contained pointer as we know that we are the sole owners of that pointer
+        unsafe { core::slice::from_raw_parts(self.raw(), self.length) }
+    }
+
+    /// Get a mutable reference to the internal slice
+    pub fn get_mut(&mut self) -> &mut [Page] {
+        // Safety: We can dereference the contained pointer as we know that we are the sole owners of that pointer
+        unsafe { core::slice::from_raw_parts_mut(self.raw() as *mut Page, self.length) }
+    }
+
+    /// Leak the memory used for the page table
+    pub fn leak(mut self) -> &'static mut [Page] {
+        self.length = 0;
+        // Safety: We can dereference the contained pointer as we know that we are the sole owners of that pointer
+        unsafe { core::slice::from_raw_parts_mut(self.raw() as *mut Page, self.length) }
+    }
+}
+
+impl core::ops::Deref for KernelPageSeq {
+    type Target = [Page];
+
+    fn deref(&self) -> &Self::Target {
+        self.get()
+    }
+}
+
+impl core::ops::DerefMut for KernelPageSeq {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.get_mut()
+    }
+}
+
+impl core::ops::Drop for KernelPageSeq {
+    fn drop(&mut self) {
+        if self.length != 0 {
+            let _ = unsafe { self.ptr.as_ptr().read() };
+        
+
+            // Drop the pages allocated
+            libutils::sync::no_interrupts_supervisor(|no_interrupts| unsafe {
+                crate::mem::PAGE_ALLOCATOR
+                    .free_pages_unchecked(no_interrupts, self.ptr.as_ptr() as *mut Page, self.length)
+                    .expect("Failed to free memory from `KernelPageSeq`");
             })
         }
     }
