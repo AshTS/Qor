@@ -1,9 +1,9 @@
 use libutils::sync::NoInterruptMarker;
 
-use crate::mem::{PAGE_SIZE, KiByteCount, PageCount};
+use crate::mem::{PAGE_SIZE, KiByteCount, PageCount, KernelPageBox};
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct TrapFrame {
     pub regs: [usize; 32],
     pub fregs: [f64; 32],
@@ -38,6 +38,12 @@ impl TrapFrame {
             hartid: 0,
             trap_stack_size: stack_size.raw()
         }
+    }
+}
+
+impl core::ops::Drop for TrapFrame {
+    fn drop(&mut self) {
+        unsafe { KernelPageBox::from_raw(self.trap_stack, self.trap_stack_size, 0) };
     }
 }
 
