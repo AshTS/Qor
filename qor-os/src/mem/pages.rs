@@ -5,6 +5,7 @@ use crate::mem::error::GlobalPageAllocatorError;
 use crate::mem::Page;
 use crate::mem::PAGE_SIZE;
 
+use super::ByteCount;
 use super::PageCount;
 
 /// Internal Global Kernel Page Allocator Data
@@ -161,14 +162,14 @@ impl GlobalPageAllocator {
     pub fn allocate_pages_raw(
         &self,
         _no_interrupts: NoInterruptMarker,
-        page_count: usize,
+        page_count: PageCount,
     ) -> Result<(*mut Page, usize), GlobalPageAllocatorError> {
         if let Some(data) = &mut *self.data.spin_lock() {
             // We loop over the indexes
             let mut index = 0;
-            while index <= data.count - page_count {
+            while index <= data.count - page_count.raw() {
                 let mut viable = true;
-                for add in 0..page_count {
+                for add in 0..page_count.raw() {
                     viable = viable && (data.is_page_allocated(index + add) == FREE);
                     if !viable {
                         index += add + 1;
@@ -177,16 +178,16 @@ impl GlobalPageAllocator {
                 }
 
                 if viable {
-                    for add in 0..page_count {
+                    for add in 0..page_count.raw() {
                         assert!(data.allocate_page(index + add).is_ok());
                     }
 
                     // Safety: Index can't be greater than the number of pages given to the allocator, so this pointer addition is safe
                     let start_pointer = unsafe { data.start_addr.as_ptr().add(index) };
 
-                    kdebugln!(unsafe KernelPageTable, "Allocating {} pages at {:?}", page_count, start_pointer);
+                    kdebugln!(unsafe KernelPageTable, "Allocating {} pages at {:?}", page_count.raw(), start_pointer);
 
-                    return Ok((start_pointer, page_count));
+                    return Ok((start_pointer, page_count.raw()));
                 }
             }
 
@@ -200,11 +201,11 @@ impl GlobalPageAllocator {
     pub fn allocate_static_pages_data<T: Copy>(
         &self,
         no_interrupts: NoInterruptMarker,
-        page_count: usize,
+        page_count: PageCount,
         fill: T,
     ) -> Result<&'static mut [T], GlobalPageAllocatorError> {
         // We must verify that the type `T` fits within the allocated space
-        assert!(core::mem::size_of::<T>() <= PAGE_SIZE * page_count);
+        assert!(core::mem::size_of::<T>() <= PAGE_SIZE * page_count.raw());
 
         let (pointer, length) = self.allocate_pages_raw(no_interrupts, page_count)?;
 
@@ -224,7 +225,7 @@ impl GlobalPageAllocator {
     pub fn allocate_static_pages(
         &self,
         no_interrupts: NoInterruptMarker,
-        page_count: usize,
+        page_count: PageCount,
     ) -> Result<&'static mut [Page], GlobalPageAllocatorError> {
         let (pointer, length) = self.allocate_pages_raw(no_interrupts, page_count)?;
 
@@ -240,9 +241,9 @@ impl GlobalPageAllocator {
         no_interrupts: NoInterruptMarker,
         data: T,
     ) -> Result<&'static mut T, GlobalPageAllocatorError> {
-        let page_count = (core::mem::size_of::<T>() + PAGE_SIZE - 1) / PAGE_SIZE;
+        let page_count = ByteCount::new(core::mem::size_of::<T>());
 
-        let (pointer, _) = self.allocate_pages_raw(no_interrupts, page_count)?;
+        let (pointer, _) = self.allocate_pages_raw(no_interrupts, page_count.convert())?;
 
         let pointer = pointer as *mut T;
 
@@ -255,7 +256,7 @@ impl GlobalPageAllocator {
     pub fn allocate_pages<T>(
         &self,
         no_interrupts: NoInterruptMarker,
-        page_count: usize,
+        page_count: PageCount,
         data: T,
     ) -> Result<KernelPageBox<T>, GlobalPageAllocatorError> {
         let (ptr, length) = self.allocate_pages_raw(no_interrupts, page_count)?;
@@ -271,7 +272,7 @@ impl GlobalPageAllocator {
     ) -> Result<KernelPageBox<T>, GlobalPageAllocatorError> {
         self.allocate_pages(
             no_interrupts,
-            (core::mem::size_of::<T>() + PAGE_SIZE - 1) / PAGE_SIZE,
+            ByteCount::new(core::mem::size_of::<T>()).convert(),
             data,
         )
     }
@@ -409,7 +410,7 @@ impl KernelPageSeq {
     /// Create a new kernel page sequence by calling allocate on the global page allocator. Note that this creates a new no_interrupt context, if many pieces of data must be allocated, try to do so explicitly in a larger no_interrupt context.
     pub fn new(pages: PageCount) -> Result<Self, GlobalPageAllocatorError> {
         libutils::sync::no_interrupts_supervisor(|no_interrupts| {
-            let (ptr, length) = crate::mem::PAGE_ALLOCATOR.allocate_pages_raw(no_interrupts, pages.raw())?;
+            let (ptr, length) = crate::mem::PAGE_ALLOCATOR.allocate_pages_raw(no_interrupts, pages)?;
 
             //
             Ok(unsafe { Self::from_raw(ptr, length) })

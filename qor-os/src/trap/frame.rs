@@ -1,6 +1,6 @@
 use libutils::sync::NoInterruptMarker;
 
-use crate::mem::PAGE_SIZE;
+use crate::mem::{PAGE_SIZE, KiByteCount, PageCount};
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
@@ -10,19 +10,22 @@ pub struct TrapFrame {
     pub satp: usize,
     pub trap_stack: *mut u8,
     pub hartid: usize,
+    pub trap_stack_size: usize
 }
 
 impl TrapFrame {
     /// Create a new trap frame, allocating a stack of the given size
-    pub fn new(no_interrupts: NoInterruptMarker, stack_size: usize) -> Self {
+    pub fn new(no_interrupts: NoInterruptMarker, stack_size: KiByteCount) -> Self {
+        // Convert the stack over to pages
+        let stack_size: PageCount = stack_size.convert();
+
         // Statically allocate the stack
         let stack =
             match crate::mem::PAGE_ALLOCATOR.allocate_static_pages(no_interrupts, stack_size) {
                 Ok(stack) => stack as *mut [[u8; PAGE_SIZE]] as *mut u8,
                 Err(e) => panic!(
-                    "Unable to allocate {} page{} for trap stack: {}",
+                    "Unable to allocate {} for trap stack: {}",
                     stack_size,
-                    if stack_size > 1 { "s" } else { "" },
                     e
                 ),
             };
@@ -33,6 +36,7 @@ impl TrapFrame {
             satp: 0,
             trap_stack: stack,
             hartid: 0,
+            trap_stack_size: stack_size.raw()
         }
     }
 }
@@ -40,7 +44,7 @@ impl TrapFrame {
 /// Initialize the global trap frame
 pub fn initialize_trap_frame(no_interrupts: NoInterruptMarker) {
     // Construct the new trap frame
-    let frame = TrapFrame::new(no_interrupts, 1);
+    let frame = TrapFrame::new(no_interrupts, PageCount::new(1).convert());
 
     // Statically allocate the trap frame
     let static_allocated = crate::mem::PAGE_ALLOCATOR

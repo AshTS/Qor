@@ -1,6 +1,6 @@
 use libutils::sync::{Mutex, MutexGuard, NoInterruptMarker};
 
-use crate::{mem::{KernelPageBox, self, PAGE_SIZE, KernelPageSeq}, trap::TrapFrame};
+use crate::{mem::{KernelPageBox, self, PAGE_SIZE, KernelPageSeq, PageCount}, trap::TrapFrame};
 
 use super::*;
 
@@ -35,7 +35,7 @@ impl Process {
 
         let stack = KernelPageSeq::new(stack_size).expect("Unable to allocate page table for process");
 
-        let trap_frame = TrapFrame::new(unsafe { NoInterruptMarker::new() }, 2);
+        let trap_frame = TrapFrame::new(unsafe { NoInterruptMarker::new() }, PageCount::new(2).convert());
             
         let mut trap_frame = KernelPageBox::new(trap_frame).expect("Unable to allocate space for trap stack");
 

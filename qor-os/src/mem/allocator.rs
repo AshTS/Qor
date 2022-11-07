@@ -262,7 +262,7 @@ impl GlobalAllocator {
             .expect("Unable to allocate allocation entries");
 
         let pointer = crate::mem::PAGE_ALLOCATOR
-            .allocate_static_pages(no_interrupts, pages.raw())
+            .allocate_static_pages(no_interrupts, pages)
             .expect("Unable to allocate space for heap")
             .as_ptr();
 
