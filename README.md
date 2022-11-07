@@ -1,8 +1,8 @@
 # Qor
 
-Basic kernel written in Rust for RISC-V, following the tutorial by Stephen Marz [RISC-V OS using Rust](https://osblog.stephenmarz.com/index.html).
+Basic kernel written in Rust for RISC-V, initially following the tutorial by Stephen Marz [RISC-V OS using Rust](https://osblog.stephenmarz.com/index.html).
 
-Stored in seperate repositories are the [libc implementation](https://github.com/CarterTS/QorLibC) and the [userland programs](https://github.com/CarterTS/QorUserland)
+Stored in seperate repositories are the [libc implementation](https://github.com/AshTS/QorLibC) and the [userland programs](https://github.com/AshTS/QorUserland)
 
 ## Install
 
