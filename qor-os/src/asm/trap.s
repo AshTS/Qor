@@ -17,11 +17,11 @@
 .endm
 
 .macro save_fp i, basereg=t6
-    fsd f\i, ((NUM_GP_REGS + (\i))*REG_SIZE)(\basereg)
+    # fsd f\i, ((NUM_GP_REGS + (\i))*REG_SIZE)(\basereg)
 .endm
 
 .macro load_fp i, basereg=t6
-    fld f\i, ((NUM_GP_REGS + (\i))*REG_SIZE)(\basereg)
+    # fld f\i, ((NUM_GP_REGS + (\i))*REG_SIZE)(\basereg)
 .endm
 
 .global asm_trap_vector
@@ -63,7 +63,10 @@ skip_float_save:
     csrr a3, mhartid
     csrr a4, mstatus
     mv a5, t5
+    ld t0, 538(a5)
+    sll t0, t0, 12
     ld sp, 520(a5)
+    add sp, sp, t0
 
     # Call the m_trap function
     call m_trap
