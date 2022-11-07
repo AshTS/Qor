@@ -4,7 +4,6 @@
 #![feature(custom_test_frameworks)] // Allow cargo test
 #![feature(panic_info_message)] // For panic messages
 #![feature(ptr_internals)] // For pointer types
-#![feature(const_btree_new)] // For static initialization of binary tree for processes
 #![feature(fn_align)] // To allow functions to be forced to a 4 byte boundary
 
 // Use the default allocation error handler
