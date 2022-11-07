@@ -1,6 +1,6 @@
 use libutils::sync::{Mutex, MutexGuard, NoInterruptMarker};
 
-use crate::{mem::{KernelPageBox, self, Page, PAGE_SIZE}, trap::TrapFrame};
+use crate::{mem::{KernelPageBox, self, PAGE_SIZE, KernelPageSeq}, trap::TrapFrame};
 
 use super::*;
 
@@ -33,13 +33,13 @@ impl Process {
         page_table.identity_map((fn_ptr as usize) & (!(mem::PAGE_SIZE - 1)), (fn_ptr as usize) & (!(mem::PAGE_SIZE - 1)) + 1, mem::RWXFlags::ReadWriteExecute, mem::UGFlags::UserGlobal);
 
 
-        let stack = KernelPageBox::new([0u8; mem::PAGE_SIZE]).expect("Unable to allocate page table for process");
+        let stack = KernelPageSeq::new(stack_size).expect("Unable to allocate page table for process");
 
         let trap_frame = TrapFrame::new(unsafe { NoInterruptMarker::new() }, 2);
             
         let mut trap_frame = KernelPageBox::new(trap_frame).expect("Unable to allocate space for trap stack");
 
-        trap_frame.regs[2] = stack.get() as *const Page as usize + PAGE_SIZE - 1;
+        trap_frame.regs[2] = stack.raw() as usize + stack_size.raw() * PAGE_SIZE - 1;
 
         let execution_state = unsafe { ExecutionState::new(stack, trap_frame, fn_ptr as usize) };
 

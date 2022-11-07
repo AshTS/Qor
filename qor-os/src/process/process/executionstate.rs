@@ -1,8 +1,8 @@
-use crate::{mem::{KernelPageBox, Page, PageTable}, trap::TrapFrame};
+use crate::{mem::{KernelPageBox, KernelPageSeq, PageTable}, trap::TrapFrame};
 
 /// Process Execution State
 pub struct ExecutionState {
-    stack: KernelPageBox<Page>,
+    stack: KernelPageSeq,
     frame: KernelPageBox<TrapFrame>,
     program_counter: usize
 }
@@ -11,7 +11,7 @@ impl ExecutionState {
     /// Construct a new ExecutionState from its raw components
     /// 
     /// Safety: The program counter must be valid
-    pub unsafe fn new(stack: KernelPageBox<Page>, frame: KernelPageBox<TrapFrame>, program_counter: usize) -> Self {
+    pub unsafe fn new(stack: KernelPageSeq, frame: KernelPageBox<TrapFrame>, program_counter: usize) -> Self {
         Self {
             stack,
             frame,
