@@ -12,6 +12,8 @@ pub use plic::*;
 pub mod uart;
 pub use uart::*;
 
+pub mod virtio;
+
 /// UART Driver
 ///
 /// Safety: The address is that given in the QEMU specification for the `virt` RISC-V board
