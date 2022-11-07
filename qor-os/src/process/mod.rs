@@ -7,8 +7,7 @@ use alloc::sync::Arc;
 
 use atomic::Atomic;
 
-static mut PROCESS_MAP: Option<Arc<Mutex<BTreeMap<ProcessIdentifier, ProcessInterface>>>> =
-    None;
+static mut PROCESS_MAP: Option<Arc<Mutex<BTreeMap<ProcessIdentifier, ProcessInterface>>>> = None;
 
 static NEXT_PID: Atomic<ProcessIdentifier> = Atomic::new(0);
 
@@ -39,7 +38,9 @@ pub fn add_process(process: Process) {
 
     kdebugln!(unsafe "Adding Process {}", pid);
 
-    process_map().spin_lock().insert(pid, ProcessInterface::new(alloc::sync::Arc::new(process)));
+    process_map()
+        .spin_lock()
+        .insert(pid, ProcessInterface::new(alloc::sync::Arc::new(process)));
 }
 
 /// Get the process interface for the given pid

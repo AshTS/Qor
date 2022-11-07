@@ -5,7 +5,7 @@ use super::ExecutionState;
 /// Mutable Process Data
 pub struct MutableProcessData {
     execution_state: ExecutionState,
-    memory_map: KernelPageBox<PageTable>
+    memory_map: KernelPageBox<PageTable>,
 }
 
 impl MutableProcessData {
@@ -13,7 +13,7 @@ impl MutableProcessData {
     pub fn new(execution_state: ExecutionState, memory_map: KernelPageBox<PageTable>) -> Self {
         Self {
             execution_state,
-            memory_map
+            memory_map,
         }
     }
 

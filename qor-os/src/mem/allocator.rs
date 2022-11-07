@@ -255,7 +255,12 @@ impl GlobalAllocator {
     }
 
     /// Initialize the allocator
-    pub fn initialize(&self, _init_thread: InitThreadMarker, no_interrupts: NoInterruptMarker, pages: PageCount) {
+    pub fn initialize(
+        &self,
+        _init_thread: InitThreadMarker,
+        no_interrupts: NoInterruptMarker,
+        pages: PageCount,
+    ) {
         // Allocate the proper number of pages
         let entries = crate::mem::PAGE_ALLOCATOR
             .allocate_static(no_interrupts, [None; 4096])

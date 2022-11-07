@@ -8,9 +8,7 @@ pub struct ConstantProcessData {
 impl ConstantProcessData {
     /// Allocate a new process with constant data
     pub fn new(pid: ProcessIdentifier) -> Self {
-        Self {
-            pid
-        }
+        Self { pid }
     }
 
     /// Get the Process Identifier of a process

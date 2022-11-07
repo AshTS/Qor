@@ -11,9 +11,7 @@ pub struct ProcessInterface {
 impl ProcessInterface {
     /// Construct a new process interface
     pub fn new(inner: alloc::sync::Arc<Process>) -> Self {
-        Self {
-            inner
-        }
+        Self { inner }
     }
 
     /// Switch to this process

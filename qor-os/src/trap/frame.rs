@@ -1,6 +1,6 @@
 use libutils::sync::NoInterruptMarker;
 
-use crate::mem::{PAGE_SIZE, KiByteCount, PageCount, KernelPageBox};
+use crate::mem::{KernelPageBox, KiByteCount, PageCount, PAGE_SIZE};
 
 #[repr(C)]
 #[derive(Debug, Clone)]
@@ -10,7 +10,7 @@ pub struct TrapFrame {
     pub satp: usize,
     pub trap_stack: *mut u8,
     pub hartid: usize,
-    pub trap_stack_size: usize
+    pub trap_stack_size: usize,
 }
 
 impl TrapFrame {
@@ -23,11 +23,7 @@ impl TrapFrame {
         let stack =
             match crate::mem::PAGE_ALLOCATOR.allocate_static_pages(no_interrupts, stack_size) {
                 Ok(stack) => stack as *mut [[u8; PAGE_SIZE]] as *mut u8,
-                Err(e) => panic!(
-                    "Unable to allocate {} for trap stack: {}",
-                    stack_size,
-                    e
-                ),
+                Err(e) => panic!("Unable to allocate {} for trap stack: {}", stack_size, e),
             };
 
         Self {
@@ -36,7 +32,7 @@ impl TrapFrame {
             satp: 0,
             trap_stack: stack,
             hartid: 0,
-            trap_stack_size: stack_size.raw()
+            trap_stack_size: stack_size.raw(),
         }
     }
 }

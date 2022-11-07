@@ -10,7 +10,7 @@ pub struct AtomicProcessData {
 impl AtomicProcessData {
     pub fn new() -> Self {
         Self {
-            state: Atomic::new(ProcessState::Running)
+            state: Atomic::new(ProcessState::Running),
         }
     }
 }
@@ -24,6 +24,7 @@ impl AtomicProcessData {
 
     /// Set the current process state
     pub fn set_state(&self, state: ProcessState) {
-        self.state.store(state, core::sync::atomic::Ordering::SeqCst)
+        self.state
+            .store(state, core::sync::atomic::Ordering::SeqCst)
     }
 }

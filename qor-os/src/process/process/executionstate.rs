@@ -1,28 +1,35 @@
-use crate::{mem::{KernelPageBox, KernelPageSeq, PageTable}, trap::TrapFrame};
+use crate::{
+    mem::{KernelPageBox, KernelPageSeq, PageTable},
+    trap::TrapFrame,
+};
 
 /// Process Execution State
 pub struct ExecutionState {
     stack: KernelPageSeq,
     frame: KernelPageBox<TrapFrame>,
-    program_counter: usize
+    program_counter: usize,
 }
 
 impl ExecutionState {
     /// Construct a new ExecutionState from its raw components
-    /// 
+    ///
     /// Safety: The program counter must be valid
-    pub unsafe fn new(stack: KernelPageSeq, frame: KernelPageBox<TrapFrame>, program_counter: usize) -> Self {
+    pub unsafe fn new(
+        stack: KernelPageSeq,
+        frame: KernelPageBox<TrapFrame>,
+        program_counter: usize,
+    ) -> Self {
         Self {
             stack,
             frame,
-            program_counter
+            program_counter,
         }
     }
 
     /// Get a reference to the trap frame
     pub fn trap_frame(&self) -> &TrapFrame {
         self.frame.get()
-    } 
+    }
 
     /// Get a mutable reference to the trap frame
     pub fn mut_trap_frame(&mut self) -> &mut TrapFrame {

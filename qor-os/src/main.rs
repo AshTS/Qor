@@ -4,7 +4,8 @@
 #![feature(custom_test_frameworks)] // Allow cargo test
 #![feature(panic_info_message)] // For panic messages
 #![feature(ptr_internals)] // For pointer types
-#![feature(fn_align)] // To allow functions to be forced to a 4 byte boundary
+#![feature(fn_align)]
+// To allow functions to be forced to a 4 byte boundary
 
 // Use the default allocation error handler
 #![feature(default_alloc_error_handler)]
@@ -23,7 +24,7 @@
 // Alloc Prelude
 extern crate alloc;
 
-use libutils::sync::{InitThreadMarker, NoInterruptMarker};
+use libutils::{sync::{InitThreadMarker, NoInterruptMarker}, utils};
 
 // Includes
 mod asm;
@@ -63,7 +64,11 @@ pub extern "C" fn kinit() {
     );
 
     // Initialize the global allocator
-    mem::GLOBAL_ALLOCATOR.initialize(thread_marker, interrupt_marker, mem::KiByteCount::new(2048).convert());
+    mem::GLOBAL_ALLOCATOR.initialize(
+        thread_marker,
+        interrupt_marker,
+        mem::KiByteCount::new(2048).convert(),
+    );
     kdebugln!(
         thread_marker,
         Initialization,
@@ -98,6 +103,26 @@ pub extern "C" fn kinit() {
 #[repr(align(4))]
 pub extern "C" fn kmain() {
     kprintln!(unsafe "Hello World!");
+
+    let device_raw = unsafe { drivers::virtio::VirtIOHelper::new(0x1000_8000) };
+    let mut device = drivers::virtio::VirtIODeviceDriver::new(drivers::virtio::VirtIODeviceType::BlockDevice, device_raw);
+    
+    let features = device.init_driver((!(1 << 5))).unwrap();
+
+    
+    let mut driver = drivers::virtio::drivers::block::BlockDriver::new(device);
+    driver.device_specific(features).unwrap();
+
+    let buf = mem::KernelPageBox::new([0u8; 4096]).unwrap();
+    let buf = buf.raw() as *mut u8;
+
+    for i in 0..128 {
+        let addr = i * 512;
+        kdebugln!(unsafe "0x{:x}", addr);
+        driver.sync_read(buf, 512, addr);
+        kdebugln!(unsafe "{}", unsafe { utils::memdump::MemoryDump::new(buf as usize, 512) });
+    }
+
 
     drivers::PLIC_DRIVER.enable_with_priority(
         drivers::interrupts::UART_INTERRUPT,

@@ -1,6 +1,9 @@
 use libutils::sync::{Mutex, MutexGuard, NoInterruptMarker};
 
-use crate::{mem::{KernelPageBox, self, PAGE_SIZE, KernelPageSeq, PageCount}, trap::TrapFrame};
+use crate::{
+    mem::{self, KernelPageBox, KernelPageSeq, PageCount, PAGE_SIZE},
+    trap::TrapFrame,
+};
 
 use super::*;
 
@@ -15,37 +18,51 @@ pub struct Process {
 
 impl Process {
     /// Construct a new `Process` from the constituent components
-    pub fn new(atomic_data: AtomicProcessData, const_data: ConstantProcessData, mutable_data: MutableProcessData) -> Self {
+    pub fn new(
+        atomic_data: AtomicProcessData,
+        const_data: ConstantProcessData,
+        mutable_data: MutableProcessData,
+    ) -> Self {
         Self {
             atomic_data,
             const_data,
-            mutable_data: Mutex::new(mutable_data)
+            mutable_data: Mutex::new(mutable_data),
         }
     }
 
     /// Construct from raw values
     pub fn from_raw(fn_ptr: unsafe extern "C" fn(), stack_size: crate::mem::PageCount) -> Self {
         kdebugln!(unsafe "Constructing Process for code at {:x} with stack of size {}", fn_ptr as usize, stack_size);
-        
-       
 
-        let mut page_table = KernelPageBox::new(mem::PageTable::new()).expect("Unable to allocate page table for process");
-        page_table.identity_map((fn_ptr as usize) & (!(mem::PAGE_SIZE - 1)), (fn_ptr as usize) & (!(mem::PAGE_SIZE - 1)) + 1, mem::RWXFlags::ReadWriteExecute, mem::UGFlags::UserGlobal);
+        let mut page_table = KernelPageBox::new(mem::PageTable::new())
+            .expect("Unable to allocate page table for process");
+        page_table.identity_map(
+            (fn_ptr as usize) & (!(mem::PAGE_SIZE - 1)),
+            (fn_ptr as usize) & (!(mem::PAGE_SIZE - 1)) + 1,
+            mem::RWXFlags::ReadWriteExecute,
+            mem::UGFlags::UserGlobal,
+        );
 
+        let stack =
+            KernelPageSeq::new(stack_size).expect("Unable to allocate page table for process");
 
-        let stack = KernelPageSeq::new(stack_size).expect("Unable to allocate page table for process");
+        let trap_frame = TrapFrame::new(
+            unsafe { NoInterruptMarker::new() },
+            PageCount::new(2).convert(),
+        );
 
-        let trap_frame = TrapFrame::new(unsafe { NoInterruptMarker::new() }, PageCount::new(2).convert());
-            
-        let mut trap_frame = KernelPageBox::new(trap_frame).expect("Unable to allocate space for trap stack");
+        let mut trap_frame =
+            KernelPageBox::new(trap_frame).expect("Unable to allocate space for trap stack");
 
         trap_frame.regs[2] = stack.raw() as usize + stack_size.raw() * PAGE_SIZE - 1;
 
         let execution_state = unsafe { ExecutionState::new(stack, trap_frame, fn_ptr as usize) };
 
-        Self::new(AtomicProcessData::new(), 
-        ConstantProcessData::new(crate::process::next_process_id()),
-      MutableProcessData::new(execution_state, page_table))
+        Self::new(
+            AtomicProcessData::new(),
+            ConstantProcessData::new(crate::process::next_process_id()),
+            MutableProcessData::new(execution_state, page_table),
+        )
     }
 
     /// Switch to this process

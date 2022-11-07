@@ -380,12 +380,15 @@ impl<T> core::ops::Drop for KernelPageBox<T> {
     fn drop(&mut self) {
         if self.length != 0 {
             let _ = unsafe { self.ptr.as_ptr().read() };
-        
 
             // Drop the pages allocated
             libutils::sync::no_interrupts_supervisor(|no_interrupts| unsafe {
                 crate::mem::PAGE_ALLOCATOR
-                    .free_pages_unchecked(no_interrupts, self.ptr.as_ptr() as *mut Page, self.length)
+                    .free_pages_unchecked(
+                        no_interrupts,
+                        self.ptr.as_ptr() as *mut Page,
+                        self.length,
+                    )
                     .expect("Failed to free memory from `KernelPageBox`");
             })
         }
@@ -410,7 +413,8 @@ impl KernelPageSeq {
     /// Create a new kernel page sequence by calling allocate on the global page allocator. Note that this creates a new no_interrupt context, if many pieces of data must be allocated, try to do so explicitly in a larger no_interrupt context.
     pub fn new(pages: PageCount) -> Result<Self, GlobalPageAllocatorError> {
         libutils::sync::no_interrupts_supervisor(|no_interrupts| {
-            let (ptr, length) = crate::mem::PAGE_ALLOCATOR.allocate_pages_raw(no_interrupts, pages)?;
+            let (ptr, length) =
+                crate::mem::PAGE_ALLOCATOR.allocate_pages_raw(no_interrupts, pages)?;
 
             //
             Ok(unsafe { Self::from_raw(ptr, length) })
@@ -465,12 +469,15 @@ impl core::ops::Drop for KernelPageSeq {
     fn drop(&mut self) {
         if self.length != 0 {
             let _ = unsafe { self.ptr.as_ptr().read() };
-        
 
             // Drop the pages allocated
             libutils::sync::no_interrupts_supervisor(|no_interrupts| unsafe {
                 crate::mem::PAGE_ALLOCATOR
-                    .free_pages_unchecked(no_interrupts, self.ptr.as_ptr() as *mut Page, self.length)
+                    .free_pages_unchecked(
+                        no_interrupts,
+                        self.ptr.as_ptr() as *mut Page,
+                        self.length,
+                    )
                     .expect("Failed to free memory from `KernelPageSeq`");
             })
         }

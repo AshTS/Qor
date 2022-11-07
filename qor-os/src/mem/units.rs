@@ -3,7 +3,7 @@
 pub struct MemoryUnit<const SCALE: usize>(usize);
 
 /// Memory Unit for Pages
-pub type PageCount = MemoryUnit<{super::PAGE_SIZE}>;
+pub type PageCount = MemoryUnit<{ super::PAGE_SIZE }>;
 
 /// Memory Unit for KiBytes
 pub type KiByteCount = MemoryUnit<1024>;
@@ -51,7 +51,7 @@ impl core::fmt::Display for MemoryUnit<1024> {
     }
 }
 
-impl core::fmt::Display for MemoryUnit<{super::PAGE_SIZE}> {
+impl core::fmt::Display for MemoryUnit<{ super::PAGE_SIZE }> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{} Pages ({} KiB)", self.0, self.convert::<1024>().raw())
     }
