@@ -431,7 +431,7 @@ impl PageTable {
             // If the current entry is invalid, we need to allocate a new page table for the next level
             if entry.valid() == false {
                 // Allocate the next level
-                let next_level = libutils::sync::no_interrupts(|no_interrupts| {
+                let next_level = libutils::sync::no_interrupts_supervisor(|no_interrupts| {
                     crate::mem::PAGE_ALLOCATOR.allocate_static(no_interrupts, PageTable::new())
                 })
                 .expect("Unable to allocate page table");

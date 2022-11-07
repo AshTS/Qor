@@ -1,36 +1,38 @@
+use libutils::sync::MutexGuard;
+
 use super::*;
 
 /// Process Interface
+#[derive(Clone)]
 pub struct ProcessInterface {
-    inner: core::cell::UnsafeCell<Process>,
+    inner: alloc::sync::Arc<Process>,
 }
 
 impl ProcessInterface {
+    /// Construct a new process interface
+    pub fn new(inner: alloc::sync::Arc<Process>) -> Self {
+        Self {
+            inner
+        }
+    }
+
+    /// Switch to this process
+    pub unsafe fn switch_to(&self) -> ! {
+        self.inner.switch_to_process()
+    }
+
     /// Get the PID of the process
     pub fn pid(&self) -> ProcessIdentifier {
-        // Safety: The data in the const_data section of the process structure
-        // is constant and thus allowed to be read non-atomically at any time.
-        // Furthermore, the pointer within the unsafe cell should not alias,
-        // and will only be dropped when there are no more references to it.
-        unsafe { self.inner.get().as_mut().unwrap() }.const_data.pid
+        self.inner.pid()
     }
 
-    /// Get the status of the process
-    pub fn status(&self) -> ProcessState {
-        // Safety: The data in the const_data section of the process structure
-        // is constant and thus allowed to be read atomically at any time.
-        // Furthermore, the pointer within the unsafe cell should not alias,
-        // and will only be dropped when there are no more references to it.
-        unsafe { self.inner.get().as_mut().unwrap() }
-            .atomic_data
-            .status
-            .load(core::sync::atomic::Ordering::AcqRel)
+    /// Get the state of the process
+    pub fn state(&self) -> ProcessState {
+        self.inner.state()
+    }
+
+    /// Obtain a lock on the mutable data for the process
+    pub fn lock_mutable(&self) -> MutexGuard<'_, MutableProcessData> {
+        self.inner.lock_mutable()
     }
 }
-
-// Safety:
-// A process interface is allowed to be shared between threads, this is because
-// it is only a handle to the actual process, which will have access to the
-// dangerous parts mediated by a mutex
-unsafe impl Send for ProcessInterface {}
-unsafe impl Sync for ProcessInterface {}

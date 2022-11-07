@@ -20,7 +20,7 @@ impl TrapFrame {
             match crate::mem::PAGE_ALLOCATOR.allocate_static_pages(no_interrupts, stack_size) {
                 Ok(stack) => stack as *mut [[u8; PAGE_SIZE]] as *mut u8,
                 Err(e) => panic!(
-                    "Unable to allocate {} page {} for trap stack: {}",
+                    "Unable to allocate {} page{} for trap stack: {}",
                     stack_size,
                     if stack_size > 1 { "s" } else { "" },
                     e

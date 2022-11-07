@@ -4,8 +4,8 @@
 #![feature(custom_test_frameworks)] // Allow cargo test
 #![feature(panic_info_message)] // For panic messages
 #![feature(ptr_internals)] // For pointer types
-#![feature(const_btree_new)]
-// For static initialization of binary tree for processes
+#![feature(const_btree_new)] // For static initialization of binary tree for processes
+#![feature(fn_align)] // To allow functions to be forced to a 4 byte boundary
 
 // Use the default allocation error handler
 #![feature(default_alloc_error_handler)]
@@ -41,6 +41,7 @@ mod trap;
 
 /// Kernel Initialize Function (Called immediately after boot)
 #[no_mangle]
+#[repr(align(4))]
 pub extern "C" fn kinit() {
     // Safety: we can construct the `InitThreadMarker` since we are the init thread
     let thread_marker = unsafe { InitThreadMarker::new() };
@@ -63,7 +64,7 @@ pub extern "C" fn kinit() {
     );
 
     // Initialize the global allocator
-    mem::GLOBAL_ALLOCATOR.initialize(thread_marker, interrupt_marker);
+    mem::GLOBAL_ALLOCATOR.initialize(thread_marker, interrupt_marker, mem::KiByteCount::new(2048).convert());
     kdebugln!(
         thread_marker,
         Initialization,
@@ -95,6 +96,7 @@ pub extern "C" fn kinit() {
 
 /// Kernel Main Function (Called in supervisor mode)
 #[no_mangle]
+#[repr(align(4))]
 pub extern "C" fn kmain() {
     kprintln!(unsafe "Hello World!");
 
@@ -105,4 +107,8 @@ pub extern "C" fn kmain() {
     drivers::PLIC_DRIVER.set_threshold(drivers::InterruptPriority::Priority1);
 
     drivers::CLINT_DRIVER.set_remaining(0, 10_000_000);
+
+    let p = process::Process::from_raw(asm::init_proc_location, mem::PageCount::new(1));
+
+    process::add_process(p);
 }

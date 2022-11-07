@@ -15,3 +15,9 @@ pub enum ProcessState {
     Waiting(WaitReason),
     Dead,
 }
+
+impl core::default::Default for ProcessState {
+    fn default() -> Self {
+        ProcessState::Running
+    }
+}

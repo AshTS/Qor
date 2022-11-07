@@ -318,7 +318,7 @@ impl<T> KernelPageBox<T> {
 
     /// Create a new kernel page box by calling allocate on the global page allocator. Note that this creates a new no_interrupt context, if many pieces of data must be allocated, try to do so explicitly in a larger no_interrupt context.
     pub fn new(data: T) -> Result<Self, GlobalPageAllocatorError> {
-        libutils::sync::no_interrupts(|no_interrupts| {
+        libutils::sync::no_interrupts_supervisor(|no_interrupts| {
             crate::mem::PAGE_ALLOCATOR.allocate(no_interrupts, data)
         })
     }
@@ -326,6 +326,11 @@ impl<T> KernelPageBox<T> {
     /// Free the memory stored in a KernelPageBox
     pub fn free(self, _no_interrupts: NoInterruptMarker) {
         drop(self);
+    }
+
+    /// Get the raw pointer
+    pub fn raw(&self) -> *const T {
+        self.ptr.as_ptr()
     }
 
     /// Get the internal slice
