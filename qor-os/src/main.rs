@@ -26,6 +26,8 @@ extern crate alloc;
 
 use libutils::{sync::{InitThreadMarker, NoInterruptMarker}, utils};
 
+use crate::drivers::virtio::{discover_virtio_devices, driver};
+
 // Includes
 mod asm;
 mod debug;
@@ -96,6 +98,10 @@ pub extern "C" fn kinit() {
     // Initialize the process map
     kdebugln!(thread_marker, Initialization, "Initializing Process Map");
     process::init_process_map(thread_marker);
+
+    // Discover virtio devices
+    kdebugln!(thread_marker, Initialization, "VirtIO Device Discovery");
+    drivers::virtio_device_discovery(thread_marker).unwrap();
 }
 
 /// Kernel Main Function (Called in supervisor mode)
@@ -104,25 +110,18 @@ pub extern "C" fn kinit() {
 pub extern "C" fn kmain() {
     kprintln!(unsafe "Hello World!");
 
-    let device_raw = unsafe { drivers::virtio::VirtIOHelper::new(0x1000_8000) };
-    let mut device = drivers::virtio::VirtIODeviceDriver::new(drivers::virtio::VirtIODeviceType::BlockDevice, device_raw);
-    
-    let features = device.init_driver((!(1 << 5))).unwrap();
-
-    
-    let mut driver = drivers::virtio::drivers::block::BlockDriver::new(device);
-    driver.device_specific(features).unwrap();
+    let device_collection = drivers::virtio_device_collection();
+    let mut driver = device_collection.block_devices[0].spin_lock();
 
     let buf = mem::KernelPageBox::new([0u8; 4096]).unwrap();
     let buf = buf.raw() as *mut u8;
 
-    for i in 0..128 {
+    for i in 0..4 {
         let addr = i * 512;
         kdebugln!(unsafe "0x{:x}", addr);
         driver.sync_read(buf, 512, addr);
         kdebugln!(unsafe "{}", unsafe { utils::memdump::MemoryDump::new(buf as usize, 512) });
     }
-
 
     drivers::PLIC_DRIVER.enable_with_priority(
         drivers::interrupts::UART_INTERRUPT,

@@ -1,5 +1,3 @@
-use core::ptr::read_volatile;
-
 use crate::*;
 
 use crate::drivers::virtio::*;

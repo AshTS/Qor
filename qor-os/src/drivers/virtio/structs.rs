@@ -1,6 +1,8 @@
+use libutils::sync::Mutex;
+
 use crate::*;
 
-use super::consts::*;
+use super::{consts::*, drivers::block::BlockDriver};
 
 use crate::mem::PAGE_SIZE;
 
@@ -165,7 +167,7 @@ pub struct AuxQueueData {
 
 /// VirtIO Devices Collection
 pub struct DeviceCollection {
-    pub block_devices: alloc::vec::Vec<()>,
+    pub block_devices: alloc::vec::Vec<Mutex<BlockDriver>>,
     pub gpu_devices: alloc::vec::Vec<()>,
 }
 
