@@ -126,12 +126,15 @@ pub extern "C" fn kmain() {
     process::add_process(p);
 }
 
-async fn async_number() -> u32 {
-    42
-}
-
 async fn example_task() {
-    let num = async_number().await;
+    let driver = drivers::virtio_device_collection();
 
-    kprintln!(unsafe "async number: {}", num);
+    let mut buf = alloc::boxed::Box::new([0u8; 4096 * 8]);
+
+    let mut d = driver.block_devices[0].spin_lock();
+
+    if let Some(v) = unsafe { d.async_read(buf.as_mut_ptr(), 4096 * 8, 0x200) } {
+        v.await;
+        kdebugln!(unsafe "{:?}", buf);
+    }
 }
