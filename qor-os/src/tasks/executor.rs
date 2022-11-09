@@ -24,14 +24,44 @@ impl SimpleExecutor {
         self.task_queue.push_back(task);
     }
 
-    /// Run to exhaustion
-    pub fn run(&mut self) {
-        while let Some(mut task) = self.task_queue.pop_front() {
+    /// Single step, returns true when there is at least one task in the queue
+    pub fn step(&mut self) -> Option<bool> {
+        if let Some(mut task) = self.task_queue.pop_front() {
             let waker = dummy_waker();
             let mut context = Context::from_waker(&waker);
             match task.poll(&mut context) {
-                Poll::Ready(()) => {},
-                Poll::Pending => self.task_queue.push_back(task)
+                Poll::Ready(()) => Some(true),
+                Poll::Pending => { self.task_queue.push_back(task); Some(false) }
+            }            
+        }
+        else {
+            None
+        }
+    }
+
+    /// Run to exhaustion
+    pub fn run(&mut self) {
+        while self.step().is_some() {}
+    }
+
+    /// Run through the queue until all tasks are pending
+    pub fn run_until_pending(&mut self) {
+        'outer: loop {
+            let remaining = self.task_queue.len();
+
+            let mut flag = false;
+
+            for _ in 0..remaining {
+                if let Some(b) = self.step() {
+                    flag |= b;
+                }
+                else {
+                    break 'outer;
+                }
+            }
+
+            if !flag {
+                break;
             }
         }
     }
