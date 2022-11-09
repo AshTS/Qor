@@ -26,8 +26,6 @@ extern crate alloc;
 
 use libutils::{sync::{InitThreadMarker, NoInterruptMarker}, utils};
 
-use crate::drivers::virtio::{discover_virtio_devices, driver};
-
 // Includes
 mod asm;
 mod debug;
@@ -113,14 +111,13 @@ pub extern "C" fn kmain() {
     let device_collection = drivers::virtio_device_collection();
     let mut driver = device_collection.block_devices[0].spin_lock();
 
-    let buf = mem::KernelPageBox::new([0u8; 4096]).unwrap();
-    let buf = buf.raw() as *mut u8;
+    let mut buf = mem::KernelPageBox::new([0u8; 512]).unwrap();
 
     for i in 0..4 {
         let addr = i * 512;
         kdebugln!(unsafe "0x{:x}", addr);
-        driver.sync_read(buf, 512, addr);
-        kdebugln!(unsafe "{}", unsafe { utils::memdump::MemoryDump::new(buf as usize, 512) });
+        driver.sync_read_slice(&mut *buf, addr).unwrap();
+        kdebugln!(unsafe "{}", unsafe { utils::memdump::MemoryDump::new(buf.raw() as usize, 512) });
     }
 
     drivers::PLIC_DRIVER.enable_with_priority(

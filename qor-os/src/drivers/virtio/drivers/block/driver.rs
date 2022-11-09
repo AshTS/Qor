@@ -137,12 +137,12 @@ impl BlockDriver {
     }
 
     /// Send a read request to the block device
-    pub fn read(&mut self, buffer: *mut u8, size: u32, offset: u64) -> Option<BlockOperation> {
+    pub unsafe fn read(&mut self, buffer: *mut u8, size: u32, offset: u64) -> Option<BlockOperation> {
         self.block_operation(buffer, size, offset, false)
     }
 
     /// Send a write request to the block device
-    pub fn write(&mut self, buffer: *mut u8, size: u32, offset: u64) -> Option<BlockOperation> {
+    pub unsafe fn write(&mut self, buffer: *mut u8, size: u32, offset: u64) -> Option<BlockOperation> {
         self.block_operation(buffer, size, offset, true)
     }
 
@@ -163,12 +163,31 @@ impl BlockDriver {
 
         // while read_volatile(request.request).status.status == 111 {}
     }
-
-    pub fn sync_read(&mut self, buffer: *mut u8, size: u32, offset: u64) {
-        unsafe { Self::sync(self.read(buffer, size, offset).unwrap()) };
+    
+    // Synchronously read from the disk into a pointer based buffer
+    pub unsafe fn sync_read(&mut self, buffer: *mut u8, size: u32, offset: u64) {
+        Self::sync(self.read(buffer, size, offset).unwrap());
     }
 
-    pub fn sync_write(&mut self, buffer: *mut u8, size: u32, offset: u64) {
-        unsafe { Self::sync(self.write(buffer, size, offset).unwrap()) };
+    // Synchronously write to disk from a pointer based buffer
+    pub unsafe fn sync_write(&mut self, buffer: *mut u8, size: u32, offset: u64) {
+        Self::sync(self.write(buffer, size, offset).unwrap());
+    }
+
+    pub fn sync_read_slice(&mut self, buffer: &mut [u8], offset: u64) -> Result<(), ()> {
+        assert!(buffer.len() % 512 == 0);
+
+        unsafe { self.sync_read(buffer.as_mut() as *mut [u8] as *mut u8, buffer.len() as u32, offset) }
+
+        Ok(())
+    }
+
+    // Synchronously write to disk from a pointer based buffer
+    pub fn sync_write_slice(&mut self, buffer: &[u8], offset: u64) -> Result<(), ()> {
+        assert!(buffer.len() % 512 == 0);
+
+        unsafe { self.sync_write(buffer.as_ref() as *const [u8] as *mut u8, buffer.len() as u32, offset) }
+
+        Ok(())
     }
 }
