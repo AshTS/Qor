@@ -5,6 +5,8 @@ use crate::drivers::virtio::*;
 use super::consts::*;
 use super::structs::*;
 
+use super::*;
+
 /// Block Driver Operation Handle
 pub struct BlockOperation {
     request: *mut Request,
@@ -15,17 +17,24 @@ unsafe impl Send for BlockOperation {}
 unsafe impl Sync for BlockOperation {}
 
 impl libutils::sync::semaphore::Semaphore for BlockOperation {
-    fn read(self) -> (bool, Option<Self>) {
-        let (b, s) = self.semaphore.read();
-        if let Some(s) = s {
-            assert!(!b);
+    fn read(mut self) -> (bool, Option<Self>) {
+        if unsafe { self.unchecked_read() } {
+            (true, None)
+        }
+        else {
+            (false, Some(self))
+        }
+    }
+    
+    unsafe fn unchecked_read(&mut self) -> bool {
+        if !self.semaphore.unchecked_read() {
 
-            (false, Some(BlockOperation { request: self.request, semaphore: s }))
+            false
         }
         else {
             unsafe { drop(alloc::boxed::Box::from_raw(self.request)) };
 
-            (true, None)
+            true
         }
     }
 }
@@ -162,6 +171,14 @@ impl BlockDriver {
         }
 
         // while read_volatile(request.request).status.status == 111 {}
+    }
+
+    pub unsafe fn async_read(&mut self, buffer: *mut u8, size: u32, offset: u64) -> Option<AsyncBlockRead> {
+        self.read(buffer, size, offset).map(|operation| AsyncBlockRead { operation: Some(operation) })
+    }
+
+    pub unsafe fn async_write(&mut self, buffer: *mut u8, size: u32, offset: u64) -> Option<AsyncBlockRead> {
+        self.write(buffer, size, offset).map(|operation| AsyncBlockRead { operation: Some(operation) })
     }
     
     // Synchronously read from the disk into a pointer based buffer

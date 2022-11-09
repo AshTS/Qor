@@ -14,6 +14,10 @@ impl Semaphore for SignalSemaphore {
     fn read(self) -> (bool, Option<Self>) {
         (self.flag.swap(false, core::sync::atomic::Ordering::SeqCst), Some(self))
     }
+
+    unsafe fn unchecked_read(&mut self) -> bool {
+        self.flag.swap(false, core::sync::atomic::Ordering::SeqCst)
+    }
 }
 
 impl SignalSemaphoreSender {

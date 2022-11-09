@@ -33,6 +33,17 @@ impl<T: Copy + PartialEq> Semaphore for UpdateSemaphore<T> {
             (false, Some(self))
         }
     }
+
+    unsafe fn unchecked_read(&mut self) -> bool {
+        let new = unsafe { core::ptr::read_volatile(self.ptr) };
+        if new != self.last {
+            self.last = new;
+            true
+        }
+        else {
+            false
+        }
+    }
 }
 
 // Safety:  This is considered safe only because we consume the semaphore when it detects an update, this way, we don't have to worry about partial updates causing a double trigger
