@@ -24,7 +24,7 @@
 // Alloc Prelude
 extern crate alloc;
 
-use libutils::{sync::{InitThreadMarker, NoInterruptMarker}, utils};
+use libutils::{sync::{InitThreadMarker, NoInterruptMarker}};
 
 // Includes
 mod asm;
@@ -36,6 +36,7 @@ mod kprint;
 mod mem;
 mod panic;
 mod process;
+mod tasks;
 mod test;
 mod trap;
 
@@ -108,17 +109,9 @@ pub extern "C" fn kinit() {
 pub extern "C" fn kmain() {
     kprintln!(unsafe "Hello World!");
 
-    let device_collection = drivers::virtio_device_collection();
-    let mut driver = device_collection.block_devices[0].spin_lock();
-
-    let mut buf = mem::KernelPageBox::new([0u8; 512]).unwrap();
-
-    for i in 0..4 {
-        let addr = i * 512;
-        kdebugln!(unsafe "0x{:x}", addr);
-        driver.sync_read_slice(&mut *buf, addr).unwrap();
-        kdebugln!(unsafe "{}", unsafe { utils::memdump::MemoryDump::new(buf.raw() as usize, 512) });
-    }
+    let mut executor = tasks::SimpleExecutor::new();
+    executor.spawn(tasks::Task::new(example_task()));
+    executor.run();
 
     drivers::PLIC_DRIVER.enable_with_priority(
         drivers::interrupts::UART_INTERRUPT,
@@ -131,4 +124,14 @@ pub extern "C" fn kmain() {
     let p = process::Process::from_raw(asm::init_proc_location, mem::PageCount::new(1));
 
     process::add_process(p);
+}
+
+async fn async_number() -> u32 {
+    42
+}
+
+async fn example_task() {
+    let num = async_number().await;
+
+    kprintln!(unsafe "async number: {}", num);
 }
