@@ -1,3 +1,4 @@
+use alloc::sync::Arc;
 use libutils::sync::Mutex;
 
 use crate::*;
@@ -167,7 +168,7 @@ pub struct AuxQueueData {
 
 /// VirtIO Devices Collection
 pub struct DeviceCollection {
-    pub block_devices: alloc::vec::Vec<Mutex<BlockDriver>>,
+    pub block_devices: alloc::vec::Vec<Arc<Mutex<BlockDriver>>>,
     pub gpu_devices: alloc::vec::Vec<()>,
 }
 

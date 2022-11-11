@@ -1,5 +1,6 @@
 use crate::*;
 
+use crate::drivers::BlockDevice;
 use crate::drivers::virtio::*;
 
 use super::consts::*;
@@ -177,8 +178,8 @@ impl BlockDriver {
         self.read(buffer, size, offset).map(|operation| AsyncBlockRead { operation: Some(operation) })
     }
 
-    pub unsafe fn async_write(&mut self, buffer: *mut u8, size: u32, offset: u64) -> Option<AsyncBlockRead> {
-        self.write(buffer, size, offset).map(|operation| AsyncBlockRead { operation: Some(operation) })
+    pub unsafe fn async_write(&mut self, buffer: *mut u8, size: u32, offset: u64) -> Option<AsyncBlockWrite> {
+        self.write(buffer, size, offset).map(|operation| AsyncBlockWrite { operation: Some(operation) })
     }
     
     // Synchronously read from the disk into a pointer based buffer
@@ -206,5 +207,23 @@ impl BlockDriver {
         unsafe { self.sync_write(buffer.as_ref() as *const [u8] as *mut u8, buffer.len() as u32, offset) }
 
         Ok(())
+    }
+}
+
+impl<const BLOCK_SIZE: usize> BlockDevice<BLOCK_SIZE, AsyncBlockRead, AsyncBlockWrite> for BlockDriver {
+    unsafe fn async_read(&mut self, buffer: *mut u8, size: u32, offset: u64) -> Option<AsyncBlockRead> {
+        assert!(size as usize % BLOCK_SIZE == 0);
+        assert!(size % 512 == 0);
+        assert!(BLOCK_SIZE % 512 == 0);
+        
+        self.async_read(buffer, size, offset)
+    }
+
+    unsafe fn async_write(&mut self, buffer: *mut u8, size: u32, offset: u64) -> Option<AsyncBlockWrite> {
+        assert!(size as usize % BLOCK_SIZE == 0);
+        assert!(size % 512 == 0);
+        assert!(BLOCK_SIZE % 512 == 0);
+
+        self.async_write(buffer, size, offset)
     }
 }

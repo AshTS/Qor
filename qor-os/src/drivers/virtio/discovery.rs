@@ -1,4 +1,5 @@
 use crate::*;
+use alloc::sync::Arc;
 use libutils::sync::Mutex;
 
 use super::*;
@@ -30,7 +31,7 @@ impl DeviceCollection {
                 let mut block_driver = super::drivers::block::BlockDriver::new(device_driver);
                 block_driver.device_specific(accepted_features)?;
 
-                self.block_devices.push(Mutex::new(block_driver));
+                self.block_devices.push(Arc::new(Mutex::new(block_driver)));
             }
             // Ignore any unknown devices
             VirtIODeviceType::UnknownDevice => {}

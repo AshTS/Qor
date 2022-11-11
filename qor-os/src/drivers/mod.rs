@@ -1,5 +1,8 @@
 // Include the drivers
 
+pub mod block;
+pub use block::*;
+
 pub mod clint;
 use alloc::sync::Arc;
 pub use clint::*;
