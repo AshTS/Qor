@@ -68,7 +68,7 @@ pub extern "C" fn kinit() {
     mem::GLOBAL_ALLOCATOR.initialize(
         thread_marker,
         interrupt_marker,
-        mem::KiByteCount::new(2048).convert(),
+        mem::KiByteCount::new(8192).convert(),
     );
     kdebugln!(
         thread_marker,
@@ -129,13 +129,5 @@ pub extern "C" fn kmain() {
 
 async fn example_task() {
     let driver = drivers::virtio_device_collection();
-
     let mut buffer = crate::drivers::BlockDeviceBuffer::<1024, _, _, _>::new(driver.block_devices[0].clone());
-
-    kprintln!(unsafe "{:?}", buffer.read_block(0).await);
-    buffer.read_block_mut(0).await[0] = 42;
-
-    kprintln!(unsafe "{:?}", buffer.read_block(0).await);
-
-    buffer.sync_device().await;
 }

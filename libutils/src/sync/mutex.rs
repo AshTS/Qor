@@ -26,6 +26,21 @@ impl<T> Mutex<T> {
         MutexGuard { reference: &self }
     }
 
+    /// Attempt to get the lock on the `Mutex`, returning `None` if it is not possible
+    pub fn attempt_lock<'a>(&'a self) -> Option<MutexGuard<'a, T>> {
+        if self.acquire_lock() {
+            Some(MutexGuard { reference: &self })
+        }
+        else {
+            None
+        }
+    }
+
+    /// Asynchronously access the lock on the `Mutex`
+    pub fn async_lock<'a>(&'a self) -> MutexFuture<'a, T> {
+        MutexFuture { mutex: self }
+    }
+
     /// Internal function to attempt to acquire the lock on the `Mutex`,
     /// returns `true` if the lock was acquired.
     fn acquire_lock(&self) -> bool {
@@ -70,5 +85,21 @@ impl<'a, T> core::ops::DerefMut for MutexGuard<'a, T> {
 impl<'a, T> core::ops::Drop for MutexGuard<'a, T> {
     fn drop(&mut self) {
         unsafe { self.reference.release_lock() }
+    }
+}
+
+/// A future implementor for the `Mutex` which allows async locking
+pub struct MutexFuture<'a, T> {
+    mutex: &'a Mutex<T>,
+}
+
+impl<'a, T> core::future::Future for MutexFuture<'a, T> {
+    type Output = MutexGuard<'a, T>;
+
+    fn poll(self: core::pin::Pin<&mut Self>, _: &mut core::task::Context<'_>) -> core::task::Poll<Self::Output> {
+        match self.mutex.attempt_lock() {
+            Some(lock) => core::task::Poll::Ready(lock),
+            None => core::task::Poll::Pending
+        }
     }
 }

@@ -31,7 +31,7 @@ impl<const BLOCK_SIZE: usize, R: Future<Output=()>, W: Future<Output=()>, BlkDev
         if !self.cache.contains_key(&block) {
             let mut buffer = Box::new([0u8; BLOCK_SIZE]);
 
-            unsafe { self.blk_dev.spin_lock().async_read(buffer.as_mut_ptr(), BLOCK_SIZE as u32, block as u64 * BLOCK_SIZE as u64) }.unwrap().await;
+            unsafe { self.blk_dev.async_lock().await.async_read(buffer.as_mut_ptr(), BLOCK_SIZE as u32, block as u64 * BLOCK_SIZE as u64) }.unwrap().await;
 
             self.cache.insert(block, buffer);
         }
@@ -51,7 +51,7 @@ impl<const BLOCK_SIZE: usize, R: Future<Output=()>, W: Future<Output=()>, BlkDev
         if !self.cache.contains_key(&block) {
             let mut buffer = Box::new([0u8; BLOCK_SIZE]);
 
-            unsafe { self.blk_dev.spin_lock().async_read(buffer.as_mut_ptr(), BLOCK_SIZE as u32, block as u64 * BLOCK_SIZE as u64) }.unwrap().await;
+            unsafe { self.blk_dev.async_lock().await.async_read(buffer.as_mut_ptr(), BLOCK_SIZE as u32, block as u64 * BLOCK_SIZE as u64) }.unwrap().await;
 
             self.cache.insert(block, buffer);
         }
@@ -76,7 +76,7 @@ impl<const BLOCK_SIZE: usize, R: Future<Output=()>, W: Future<Output=()>, BlkDev
 
         for v in self.dirty.keys() {
             futures.push(
-                unsafe { self.blk_dev.spin_lock().async_write( self.cache.get_mut(v).unwrap().as_mut_ptr(), BLOCK_SIZE as u32, *v as u64 * BLOCK_SIZE as u64) }.unwrap()
+                unsafe { self.blk_dev.async_lock().await.async_write( self.cache.get_mut(v).unwrap().as_mut_ptr(), BLOCK_SIZE as u32, *v as u64 * BLOCK_SIZE as u64) }.unwrap()
             )
         }
 
