@@ -41,11 +41,15 @@ impl SimpleExecutor {
 
     /// Run to exhaustion
     pub fn run(&mut self) {
-        while self.step().is_some() {}
+        while self.run_until_pending() {}
     }
 
     /// Run through the queue until all tasks are pending
-    pub fn run_until_pending(&mut self) {
+    pub fn run_until_pending(&mut self) -> bool {
+        if self.task_queue.len() == 0 {
+            return false;
+        }
+
         'outer: loop {
             let remaining = self.task_queue.len();
 
@@ -56,12 +60,12 @@ impl SimpleExecutor {
                     flag |= b;
                 }
                 else {
-                    break 'outer;
+                    break 'outer false;
                 }
             }
 
             if !flag {
-                break;
+                break true;
             }
         }
     }

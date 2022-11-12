@@ -30,6 +30,7 @@ use libutils::{sync::{InitThreadMarker, NoInterruptMarker}};
 mod asm;
 mod debug;
 mod drivers;
+mod fs;
 mod halt;
 #[macro_use]
 mod kprint;
@@ -39,6 +40,7 @@ mod process;
 mod tasks;
 mod test;
 mod trap;
+mod types;
 
 /// Kernel Initialize Function (Called immediately after boot)
 #[no_mangle]
