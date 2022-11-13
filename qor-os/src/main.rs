@@ -30,6 +30,7 @@ use libutils::{sync::{InitThreadMarker, NoInterruptMarker}};
 mod asm;
 mod debug;
 mod drivers;
+mod errno;
 mod fs;
 mod halt;
 #[macro_use]
