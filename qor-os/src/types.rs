@@ -12,6 +12,4 @@ pub type GroupIdentifier = u16;
 pub struct TimeRepr(pub usize);
 
 /// Device ID
-#[repr(C)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct DeviceIdentifier(pub usize);
+pub type DeviceIdentifier = usize;

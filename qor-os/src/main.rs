@@ -110,7 +110,13 @@ pub extern "C" fn kinit() {
 #[no_mangle]
 #[repr(align(4))]
 pub extern "C" fn kmain() {
-    kprintln!(unsafe "Hello World!");
+    // Safety: we can construct the `InitThreadMarker` since we are the init thread
+    let thread_marker = unsafe { InitThreadMarker::new() };
+
+    kdebugln!(thread_marker, "Switch to supervisor mode");
+
+    // Initialize the global filesystem
+    fs::init_global_filesystem(thread_marker);
 
     let mut executor = tasks::SimpleExecutor::new();
     executor.spawn(tasks::Task::new(example_task()));
