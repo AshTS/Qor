@@ -2,7 +2,7 @@ use alloc::boxed::Box;
 
 use crate::types::DeviceIdentifier;
 
-use super::{InodePointer, FilesystemInterface, FileStat, DirectoryEntry};
+use super::{InodePointer, FilesystemInterface, FileStat, DirectoryEntry, FileMode};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FileSystemError {
@@ -40,4 +40,25 @@ pub trait FileSystem: Send {
 
     /// Mount a filesystem at the given inode
     async fn mount_fs_at(&mut self, inode: InodePointer, root: InodePointer, name: alloc::string::String) -> FilesystemResult<()>;
+
+    /// Allocate a new file with the given mode
+    async fn create_file(&mut self, inode: InodePointer, mode: FileMode, name: alloc::string::String) -> FilesystemResult<InodePointer>;
+
+    /// Allocate a new directory
+    async fn create_directory(&mut self, inode: InodePointer, name: alloc::string::String) -> FilesystemResult<InodePointer>;
+
+    /// Remove an inode
+    async fn remove_inode(&mut self, inode: InodePointer) -> FilesystemResult<()>;
+
+    /// Increment the number of hard links to an inode
+    async fn increment_links(&mut self, inode: InodePointer) -> FilesystemResult<usize>;
+
+    /// Decrement the number of hard links to an inode
+    async fn decrement_links(&mut self, inode: InodePointer) -> FilesystemResult<usize>;
+
+    /// Read the data from an inode
+    async fn read_inode(&mut self, inode: InodePointer) -> FilesystemResult<alloc::vec::Vec<u8>>;
+
+    /// Write data to an inode
+    async fn write_inode(&mut self, inode: InodePointer, data: &[u8]) -> FilesystemResult<()>;
 }

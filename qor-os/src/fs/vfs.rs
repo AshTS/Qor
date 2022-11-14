@@ -7,7 +7,7 @@ use crate::*;
 
 use crate::{types::DeviceIdentifier, kdebugln, fs::FileSystemError};
 
-use super::{FileSystem, FilesystemResult, InodePointer, FileStat, DirectoryEntry};
+use super::{FileSystem, FilesystemResult, InodePointer, FileStat, DirectoryEntry, FileMode};
 
 // Next Device id
 static NEXT_DEVICE_ID: Atomic<DeviceIdentifier> = Atomic::new(1);
@@ -158,6 +158,11 @@ impl FilesystemInterface {
     pub fn path_to_inode(&mut self, path: PathBuffer) -> FilesystemResult<InodePointer> {
         self.index.get(&path).ok_or(FileSystemError::BadPath).copied()
     }
+
+    /// Attempt to get a path from an inode
+    pub fn inode_to_path(&mut self, inode: InodePointer) -> FilesystemResult<PathBuffer> {
+        self.indexed.get(&inode).ok_or(FileSystemError::BadInode(inode))
+    }
 }
 
 #[async_trait::async_trait]
@@ -206,5 +211,40 @@ impl FileSystem for FilesystemInterface {
     /// Mount a filesystem at the given inode
     async fn mount_fs_at(&mut self, inode: InodePointer, root: InodePointer, name: alloc::string::String) -> FilesystemResult<()> {
         self.fs_from_device_error(inode.device_id)?.mount_fs_at(inode, root, name).await
+    }
+
+    /// Allocate a new file with the given mode
+    async fn create_file(&mut self, inode: InodePointer, mode: FileMode, name: alloc::string::String) -> FilesystemResult<InodePointer> {
+        self.fs_from_device_error(inode.device_id)?.create_file(inode, mode, name).await
+    }
+
+    /// Allocate a new directory
+    async fn create_directory(&mut self, inode: InodePointer, name: alloc::string::String) -> FilesystemResult<InodePointer> {
+        self.fs_from_device_error(inode.device_id)?.create_directory(inode, name).await
+    }
+
+    /// Remove an inode
+    async fn remove_inode(&mut self, inode: InodePointer) -> FilesystemResult<()> {
+        self.fs_from_device_error(inode.device_id)?.remove_inode(inode).await
+    }
+
+    /// Increment the number of hard links to an inode
+    async fn increment_links(&mut self, inode: InodePointer) -> FilesystemResult<usize> {
+        self.fs_from_device_error(inode.device_id)?.increment_links(inode).await
+    }
+
+    /// Decrement the number of hard links to an inode
+    async fn decrement_links(&mut self, inode: InodePointer) -> FilesystemResult<usize> {
+        self.fs_from_device_error(inode.device_id)?.decrement_links(inode).await
+    }
+
+    /// Read the data from an inode
+    async fn read_inode(&mut self, inode: InodePointer) -> FilesystemResult<alloc::vec::Vec<u8>> {
+        self.fs_from_device_error(inode.device_id)?.read_inode(inode).await
+    }
+
+    /// Write data to an inode
+    async fn write_inode(&mut self, inode: InodePointer, data: &[u8]) -> FilesystemResult<()> {
+        self.fs_from_device_error(inode.device_id)?.write_inode(inode, data).await
     }
 }

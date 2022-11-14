@@ -46,6 +46,36 @@ impl RamFS {
             Err(fs::FileSystemError::UnmountedDevice)
         }
     }
+
+    /// Get a reference to an internal inode, returning an error if unable to do such a mapping
+    pub fn inode_ref(&self, inode: InodePointer) -> FilesystemResult<&RamFSInode> {
+        if self.mount_id == Some(inode.device_id) {
+            if let Some(f) = self.inodes.get(&inode.index) {
+                Ok(f)
+            }
+            else {
+                Err(fs::FileSystemError::BadInode(inode))
+            }
+        }  
+        else {
+            Err(fs::FileSystemError::UnmountedDevice)
+        }
+    }
+
+    /// Get a mutable reference to an internal inode, returning an error if unable to do such a mapping
+    pub fn inode_mut(&mut self, inode: InodePointer) -> FilesystemResult<&mut RamFSInode> {
+        if self.mount_id == Some(inode.device_id) {
+            if let Some(f) = self.inodes.get_mut(&inode.index) {
+                Ok(f)
+            }
+            else {
+                Err(fs::FileSystemError::BadInode(inode))
+            }
+        }  
+        else {
+            Err(fs::FileSystemError::UnmountedDevice)
+        }
+    }
 }
 
 #[async_trait::async_trait]
@@ -92,7 +122,7 @@ impl FileSystem for RamFS {
             uid: 1000,
             gid: 1000,
             special_dev_id: 0,
-            size: 0,
+            size: 5,
             blk_size: 4096,
             blocks_allocated: 1,
             atime: TimeRepr(0),
@@ -106,11 +136,11 @@ impl FileSystem for RamFS {
         let directory = FileStat {
             index: self.inode(1)?,
             mode: FileMode::from_components(DirectoryEntryType::Directory, Permissions::read_write_execute(), Permissions::read_write_execute(), Permissions::read_write_execute()),
-            links: 1,
+            links: 2,
             uid: 1000,
             gid: 1000,
             special_dev_id: 0,
-            size: 0,
+            size: 5,
             blk_size: 4096,
             blocks_allocated: 1,
             atime: TimeRepr(0),
@@ -118,8 +148,7 @@ impl FileSystem for RamFS {
             ctime: TimeRepr(0),
         };
 
-        self.inodes.insert(1, RamFSInode { filestat: directory, file_data: RamFSFileData::DirectoryData(vec![("hello".to_string(), 2), ("world".to_string(), 3)]) });
-
+        self.inodes.insert(1, RamFSInode { filestat: directory, file_data: RamFSFileData::DirectoryData(vec![(".".to_string(), 1), ("..".to_string(), 1), ("hello".to_string(), 2), ("world".to_string(), 3)]) });
 
         Ok(())
     }
@@ -180,5 +209,65 @@ impl FileSystem for RamFS {
         self.mounted_inodes.push((inode, root, name));
 
         Ok(())
+    }
+
+    /// Allocate a new file with the given mode
+    async fn create_file(&mut self, inode: InodePointer, mode: FileMode, name: alloc::string::String) -> FilesystemResult<InodePointer> {
+        todo!()
+    }
+
+    /// Allocate a new directory
+    async fn create_directory(&mut self, inode: InodePointer, name: alloc::string::String) -> FilesystemResult<InodePointer> {
+        todo!()
+    }
+
+    /// Remove an inode
+    async fn remove_inode(&mut self, inode: InodePointer) -> FilesystemResult<()> {
+        if self.mount_id == Some(inode.device_id) {
+            if self.inodes.contains_key(&inode.index) {
+                self.inodes.remove(&inode.index);
+                Ok(())
+            }
+            else {
+                Err(fs::FileSystemError::BadInode(inode))
+            }
+        }  
+        else {
+            Err(fs::FileSystemError::UnmountedDevice)
+        }
+    }
+
+    /// Increment the number of hard links to an inode
+    async fn increment_links(&mut self, inode: InodePointer) -> FilesystemResult<usize> {
+        self.inode_mut(inode)?.filestat.links = self.inode_mut(inode)?.filestat.links + 1;
+        Ok(self.inode_mut(inode)?.filestat.links as usize)
+    }
+
+    /// Decrement the number of hard links to an inode
+    async fn decrement_links(&mut self, inode: InodePointer) -> FilesystemResult<usize> {
+        self.inode_mut(inode)?.filestat.links = self.inode_mut(inode)?.filestat.links.max(1) - 1;
+        Ok(self.inode_mut(inode)?.filestat.links as usize)
+    }
+
+    /// Read the data from an inode
+    async fn read_inode(&mut self, inode: InodePointer) -> FilesystemResult<alloc::vec::Vec<u8>> {
+        match &self.inode_ref(inode)?.file_data {
+            RamFSFileData::DirectoryData(_) => Ok(Vec::new()),
+            RamFSFileData::FileData(data) => Ok(data.clone())
+        }
+    }
+
+    /// Write data to an inode
+    async fn write_inode(&mut self, inode: InodePointer, in_data: &[u8]) -> FilesystemResult<()> {
+        // TODO: Change size on disk
+        match &mut self.inode_mut(inode)?.file_data {
+            RamFSFileData::DirectoryData(_) => Ok(()),
+            RamFSFileData::FileData(data) => {
+                data.clear();
+                alloc::vec::Vec::extend_from_slice(data, in_data);
+
+                Ok(())
+            }
+        }
     }
 }
