@@ -1,19 +1,19 @@
+use alloc::boxed::Box;
 use core::future::Future;
 use core::pin::Pin;
 use core::task::Context;
 use core::task::Poll;
-use alloc::boxed::Box;
 
 /// Kernel task object used to enable async execution on the kernel
 pub struct Task {
-    future: Pin<Box<dyn Future<Output=()>>>,
+    future: Pin<Box<dyn Future<Output = ()>>>,
 }
 
 impl Task {
     /// Construct a task around a properly designed future
-    pub fn new(future: impl Future<Output=()> + 'static) -> Task {
+    pub fn new(future: impl Future<Output = ()> + 'static) -> Task {
         Task {
-            future: Box::pin(future)
+            future: Box::pin(future),
         }
     }
 

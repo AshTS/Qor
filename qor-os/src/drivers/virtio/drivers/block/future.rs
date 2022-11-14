@@ -1,18 +1,18 @@
 use super::*;
-use libutils::sync::semaphore::Semaphore;
 use core::future::Future;
 use core::pin::Pin;
-use core::task::Poll;
 use core::task::Context;
+use core::task::Poll;
+use libutils::sync::semaphore::Semaphore;
 
 /// Future for a block device write
 pub struct AsyncBlockWrite {
-    pub operation: Option<BlockOperation>
+    pub operation: Option<BlockOperation>,
 }
 
 /// Future for a block device read
 pub struct AsyncBlockRead {
-    pub operation: Option<BlockOperation>
+    pub operation: Option<BlockOperation>,
 }
 
 impl Future for AsyncBlockWrite {
@@ -26,12 +26,10 @@ impl Future for AsyncBlockWrite {
             if done {
                 self.operation = None;
                 Poll::Ready(())
-            }
-            else {
+            } else {
                 Poll::Pending
             }
-        }
-        else {
+        } else {
             unreachable!()
         }
     }
@@ -48,12 +46,10 @@ impl Future for AsyncBlockRead {
             if done {
                 self.operation = None;
                 Poll::Ready(())
-            }
-            else {
+            } else {
                 Poll::Pending
             }
-        }
-        else {
+        } else {
             unreachable!()
         }
     }

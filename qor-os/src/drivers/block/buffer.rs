@@ -1,12 +1,17 @@
 use super::*;
+use alloc::boxed::Box;
+use alloc::collections::btree_map::BTreeMap;
+use alloc::sync::Arc;
 use core::future::Future;
 use core::marker::PhantomData;
-use alloc::collections::btree_map::BTreeMap;
-use alloc::boxed::Box;
-use alloc::sync::Arc;
 use libutils::sync::Mutex;
 
-pub struct BlockDeviceBuffer<const BLOCK_SIZE: usize, R: Future<Output=()>, W: Future<Output=()>, BlkDev: BlockDevice<BLOCK_SIZE, R, W>> {
+pub struct BlockDeviceBuffer<
+    const BLOCK_SIZE: usize,
+    R: Future<Output = ()>,
+    W: Future<Output = ()>,
+    BlkDev: BlockDevice<BLOCK_SIZE, R, W>,
+> {
     cache: BTreeMap<usize, Box<[u8; BLOCK_SIZE]>>,
     dirty: BTreeMap<usize, ()>,
     blk_dev: Arc<Mutex<BlkDev>>,
@@ -14,7 +19,13 @@ pub struct BlockDeviceBuffer<const BLOCK_SIZE: usize, R: Future<Output=()>, W: F
     _1: PhantomData<W>,
 }
 
-impl<const BLOCK_SIZE: usize, R: Future<Output=()>, W: Future<Output=()>, BlkDev: BlockDevice<BLOCK_SIZE, R, W>> BlockDeviceBuffer<BLOCK_SIZE, R, W, BlkDev> {
+impl<
+        const BLOCK_SIZE: usize,
+        R: Future<Output = ()>,
+        W: Future<Output = ()>,
+        BlkDev: BlockDevice<BLOCK_SIZE, R, W>,
+    > BlockDeviceBuffer<BLOCK_SIZE, R, W, BlkDev>
+{
     /// Construct a new Buffered block device from a block device object
     pub fn new(blk_dev: Arc<Mutex<BlkDev>>) -> Self {
         Self {
@@ -22,7 +33,7 @@ impl<const BLOCK_SIZE: usize, R: Future<Output=()>, W: Future<Output=()>, BlkDev
             dirty: BTreeMap::new(),
             blk_dev,
             _0: PhantomData {},
-            _1: PhantomData {}
+            _1: PhantomData {},
         }
     }
 
@@ -31,15 +42,22 @@ impl<const BLOCK_SIZE: usize, R: Future<Output=()>, W: Future<Output=()>, BlkDev
         if !self.cache.contains_key(&block) {
             let mut buffer = Box::new([0u8; BLOCK_SIZE]);
 
-            unsafe { self.blk_dev.async_lock().await.async_read(buffer.as_mut_ptr(), BLOCK_SIZE as u32, block as u64 * BLOCK_SIZE as u64) }.unwrap().await;
+            unsafe {
+                self.blk_dev.async_lock().await.async_read(
+                    buffer.as_mut_ptr(),
+                    BLOCK_SIZE as u32,
+                    block as u64 * BLOCK_SIZE as u64,
+                )
+            }
+            .unwrap()
+            .await;
 
             self.cache.insert(block, buffer);
         }
 
         if let Some(buffer) = self.cache.get(&block) {
             &*buffer
-        }
-        else {
+        } else {
             unreachable!()
         }
     }
@@ -51,15 +69,22 @@ impl<const BLOCK_SIZE: usize, R: Future<Output=()>, W: Future<Output=()>, BlkDev
         if !self.cache.contains_key(&block) {
             let mut buffer = Box::new([0u8; BLOCK_SIZE]);
 
-            unsafe { self.blk_dev.async_lock().await.async_read(buffer.as_mut_ptr(), BLOCK_SIZE as u32, block as u64 * BLOCK_SIZE as u64) }.unwrap().await;
+            unsafe {
+                self.blk_dev.async_lock().await.async_read(
+                    buffer.as_mut_ptr(),
+                    BLOCK_SIZE as u32,
+                    block as u64 * BLOCK_SIZE as u64,
+                )
+            }
+            .unwrap()
+            .await;
 
             self.cache.insert(block, buffer);
         }
 
         if let Some(buffer) = self.cache.get_mut(&block) {
             &mut *buffer
-        }
-        else {
+        } else {
             unreachable!()
         }
     }
@@ -76,7 +101,14 @@ impl<const BLOCK_SIZE: usize, R: Future<Output=()>, W: Future<Output=()>, BlkDev
 
         for v in self.dirty.keys() {
             futures.push(
-                unsafe { self.blk_dev.async_lock().await.async_write( self.cache.get_mut(v).unwrap().as_mut_ptr(), BLOCK_SIZE as u32, *v as u64 * BLOCK_SIZE as u64) }.unwrap()
+                unsafe {
+                    self.blk_dev.async_lock().await.async_write(
+                        self.cache.get_mut(v).unwrap().as_mut_ptr(),
+                        BLOCK_SIZE as u32,
+                        *v as u64 * BLOCK_SIZE as u64,
+                    )
+                }
+                .unwrap(),
             )
         }
 

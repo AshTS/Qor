@@ -67,7 +67,7 @@ pub enum UnixErrorNumber {
     MachineIsNotOnTheNetwork,
     PackageNotInstalled,
     ObjectIsRemote,
-    LinkHasBeenSevered
+    LinkHasBeenSevered,
 }
 
 /// Syscall Result Type

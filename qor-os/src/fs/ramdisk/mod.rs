@@ -1,30 +1,32 @@
-use crate::fs::{FileMode, Permissions, DirectoryEntryType};
+use super::{
+    DirectoryEntry, FileStat, FileSystem, FilesystemInterface, FilesystemResult, InodePointer,
+};
+use crate::fs::{DirectoryEntryType, FileMode, Permissions};
 use crate::types::{DeviceIdentifier, TimeRepr};
-use super::{FileSystem, FilesystemResult, FilesystemInterface, InodePointer, FileStat, DirectoryEntry};
-use alloc::{boxed::Box, collections::BTreeMap};
+use alloc::string::*;
 use alloc::vec;
 use alloc::vec::Vec;
-use alloc::string::*;
+use alloc::{boxed::Box, collections::BTreeMap};
 
 use crate::*;
 
 #[derive(Debug, Clone)]
 pub enum RamFSFileData {
     FileData(Vec<u8>),
-    DirectoryData(Vec<(alloc::string::String, usize)>)
+    DirectoryData(Vec<(alloc::string::String, usize)>),
 }
 
 #[derive(Debug, Clone)]
 pub struct RamFSInode {
     filestat: FileStat,
-    file_data: RamFSFileData
+    file_data: RamFSFileData,
 }
 
 #[derive(Debug, Clone)]
 pub struct RamFS {
     mount_id: Option<usize>,
     inodes: BTreeMap<usize, RamFSInode>,
-    mounted_inodes: Vec<(InodePointer, InodePointer, String)>
+    mounted_inodes: Vec<(InodePointer, InodePointer, String)>,
 }
 
 impl RamFS {
@@ -33,16 +35,18 @@ impl RamFS {
         Self {
             mount_id: None,
             inodes: BTreeMap::new(),
-            mounted_inodes: Vec::new()
+            mounted_inodes: Vec::new(),
         }
     }
 
     /// Construct an inode within the current device
     pub fn inode(&self, inode: usize) -> FilesystemResult<InodePointer> {
         if let Some(mount_id) = self.mount_id {
-            Ok(InodePointer { device_id: mount_id, index: inode })
-        }
-        else {
+            Ok(InodePointer {
+                device_id: mount_id,
+                index: inode,
+            })
+        } else {
             Err(fs::FileSystemError::UnmountedDevice)
         }
     }
@@ -52,12 +56,10 @@ impl RamFS {
         if self.mount_id == Some(inode.device_id) {
             if let Some(f) = self.inodes.get(&inode.index) {
                 Ok(f)
-            }
-            else {
+            } else {
                 Err(fs::FileSystemError::BadInode(inode))
             }
-        }  
-        else {
+        } else {
             Err(fs::FileSystemError::UnmountedDevice)
         }
     }
@@ -67,12 +69,10 @@ impl RamFS {
         if self.mount_id == Some(inode.device_id) {
             if let Some(f) = self.inodes.get_mut(&inode.index) {
                 Ok(f)
-            }
-            else {
+            } else {
                 Err(fs::FileSystemError::BadInode(inode))
             }
-        }  
-        else {
+        } else {
             Err(fs::FileSystemError::UnmountedDevice)
         }
     }
@@ -95,14 +95,23 @@ impl FileSystem for RamFS {
     }
 
     /// Set the mount_if of the filesystem
-    async fn set_mount_id(&mut self, mount_id: DeviceIdentifier, _: &mut FilesystemInterface) -> FilesystemResult<()> {
+    async fn set_mount_id(
+        &mut self,
+        mount_id: DeviceIdentifier,
+        _: &mut FilesystemInterface,
+    ) -> FilesystemResult<()> {
         kdebugln!(unsafe "Setting mount_id to {}", mount_id);
 
         self.mount_id = Some(mount_id);
 
         let hello = FileStat {
             index: self.inode(2)?,
-            mode: FileMode::from_components(DirectoryEntryType::RegularFile, Permissions::read_write_execute(), Permissions::read_write_execute(), Permissions::read_write_execute()),
+            mode: FileMode::from_components(
+                DirectoryEntryType::RegularFile,
+                Permissions::read_write_execute(),
+                Permissions::read_write_execute(),
+                Permissions::read_write_execute(),
+            ),
             links: 1,
             uid: 1000,
             gid: 1000,
@@ -117,7 +126,12 @@ impl FileSystem for RamFS {
 
         let world = FileStat {
             index: self.inode(3)?,
-            mode: FileMode::from_components(DirectoryEntryType::RegularFile, Permissions::read_write_execute(), Permissions::read_write_execute(), Permissions::read_write_execute()),
+            mode: FileMode::from_components(
+                DirectoryEntryType::RegularFile,
+                Permissions::read_write_execute(),
+                Permissions::read_write_execute(),
+                Permissions::read_write_execute(),
+            ),
             links: 1,
             uid: 1000,
             gid: 1000,
@@ -130,12 +144,29 @@ impl FileSystem for RamFS {
             ctime: TimeRepr(0),
         };
 
-        self.inodes.insert(2, RamFSInode { filestat: hello, file_data: RamFSFileData::FileData(vec![b'H', b'e', b'l', b'l', b'o']) });
-        self.inodes.insert(3, RamFSInode { filestat: world, file_data: RamFSFileData::FileData(vec![b'W', b'o', b'r', b'l', b'd']) });
+        self.inodes.insert(
+            2,
+            RamFSInode {
+                filestat: hello,
+                file_data: RamFSFileData::FileData(vec![b'H', b'e', b'l', b'l', b'o']),
+            },
+        );
+        self.inodes.insert(
+            3,
+            RamFSInode {
+                filestat: world,
+                file_data: RamFSFileData::FileData(vec![b'W', b'o', b'r', b'l', b'd']),
+            },
+        );
 
         let directory = FileStat {
             index: self.inode(1)?,
-            mode: FileMode::from_components(DirectoryEntryType::Directory, Permissions::read_write_execute(), Permissions::read_write_execute(), Permissions::read_write_execute()),
+            mode: FileMode::from_components(
+                DirectoryEntryType::Directory,
+                Permissions::read_write_execute(),
+                Permissions::read_write_execute(),
+                Permissions::read_write_execute(),
+            ),
             links: 2,
             uid: 1000,
             gid: 1000,
@@ -148,7 +179,18 @@ impl FileSystem for RamFS {
             ctime: TimeRepr(0),
         };
 
-        self.inodes.insert(1, RamFSInode { filestat: directory, file_data: RamFSFileData::DirectoryData(vec![(".".to_string(), 1), ("..".to_string(), 1), ("hello".to_string(), 2), ("world".to_string(), 3)]) });
+        self.inodes.insert(
+            1,
+            RamFSInode {
+                filestat: directory,
+                file_data: RamFSFileData::DirectoryData(vec![
+                    (".".to_string(), 1),
+                    ("..".to_string(), 1),
+                    ("hello".to_string(), 2),
+                    ("world".to_string(), 3),
+                ]),
+            },
+        );
 
         Ok(())
     }
@@ -160,64 +202,82 @@ impl FileSystem for RamFS {
         self.inode(1)
     }
 
-
     /// Stat the given inode
     async fn stat_inode(&mut self, inode: InodePointer) -> FilesystemResult<FileStat> {
         if self.mount_id == Some(inode.device_id) {
             if let Some(f) = self.inodes.get(&inode.index) {
                 Ok(f.filestat)
-            }
-            else {
+            } else {
                 Err(fs::FileSystemError::BadInode(inode))
             }
-        }  
-        else {
+        } else {
             Err(fs::FileSystemError::UnmountedDevice)
         }
     }
-    
+
     /// Get the directory entries from the given inode
-    async fn dir_entries(&mut self, inode: InodePointer) -> FilesystemResult<alloc::vec::Vec<DirectoryEntry>> {
+    async fn dir_entries(
+        &mut self,
+        inode: InodePointer,
+    ) -> FilesystemResult<alloc::vec::Vec<DirectoryEntry>> {
         if self.mount_id == Some(inode.device_id) {
             if let Some(f) = self.inodes.get(&inode.index) {
                 let f = f.clone();
                 match &f.file_data {
-                    RamFSFileData::FileData(_) => Err(fs::FileSystemError::InodeIsADirectory(inode)),
+                    RamFSFileData::FileData(_) => {
+                        Err(fs::FileSystemError::InodeIsADirectory(inode))
+                    }
                     RamFSFileData::DirectoryData(entries) => {
                         let mut result = alloc::vec::Vec::new();
 
                         for (name, index) in entries {
                             let s = self.stat_inode(self.inode(*index)?).await?;
-                            result.push(DirectoryEntry { index: self.inode(*index)?, name: name.clone(), entry_type: s.mode.entry_type() })
+                            result.push(DirectoryEntry {
+                                index: self.inode(*index)?,
+                                name: name.clone(),
+                                entry_type: s.mode.entry_type(),
+                            })
                         }
 
                         Ok(result)
                     }
                 }
-            }
-            else {
+            } else {
                 Err(fs::FileSystemError::BadInode(inode))
             }
-        }  
-        else {
+        } else {
             Err(fs::FileSystemError::UnmountedDevice)
         }
     }
 
     /// Mount a filesystem at the given inode
-    async fn mount_fs_at(&mut self, inode: InodePointer, root: InodePointer, name: alloc::string::String) -> FilesystemResult<()> {
+    async fn mount_fs_at(
+        &mut self,
+        inode: InodePointer,
+        root: InodePointer,
+        name: alloc::string::String,
+    ) -> FilesystemResult<()> {
         self.mounted_inodes.push((inode, root, name));
 
         Ok(())
     }
 
     /// Allocate a new file with the given mode
-    async fn create_file(&mut self, inode: InodePointer, mode: FileMode, name: alloc::string::String) -> FilesystemResult<InodePointer> {
+    async fn create_file(
+        &mut self,
+        inode: InodePointer,
+        mode: FileMode,
+        name: alloc::string::String,
+    ) -> FilesystemResult<InodePointer> {
         todo!()
     }
 
     /// Allocate a new directory
-    async fn create_directory(&mut self, inode: InodePointer, name: alloc::string::String) -> FilesystemResult<InodePointer> {
+    async fn create_directory(
+        &mut self,
+        inode: InodePointer,
+        name: alloc::string::String,
+    ) -> FilesystemResult<InodePointer> {
         todo!()
     }
 
@@ -227,12 +287,10 @@ impl FileSystem for RamFS {
             if self.inodes.contains_key(&inode.index) {
                 self.inodes.remove(&inode.index);
                 Ok(())
-            }
-            else {
+            } else {
                 Err(fs::FileSystemError::BadInode(inode))
             }
-        }  
-        else {
+        } else {
             Err(fs::FileSystemError::UnmountedDevice)
         }
     }
@@ -253,7 +311,7 @@ impl FileSystem for RamFS {
     async fn read_inode(&mut self, inode: InodePointer) -> FilesystemResult<alloc::vec::Vec<u8>> {
         match &self.inode_ref(inode)?.file_data {
             RamFSFileData::DirectoryData(_) => Ok(Vec::new()),
-            RamFSFileData::FileData(data) => Ok(data.clone())
+            RamFSFileData::FileData(data) => Ok(data.clone()),
         }
     }
 

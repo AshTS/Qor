@@ -1,7 +1,7 @@
 use crate::*;
 
-use crate::drivers::BlockDevice;
 use crate::drivers::virtio::*;
+use crate::drivers::BlockDevice;
 
 use super::consts::*;
 use super::structs::*;
@@ -11,7 +11,7 @@ use super::*;
 /// Block Driver Operation Handle
 pub struct BlockOperation {
     request: *mut Request,
-    semaphore: libutils::sync::semaphore::UpdateSemaphore<u8>
+    semaphore: libutils::sync::semaphore::UpdateSemaphore<u8>,
 }
 
 unsafe impl Send for BlockOperation {}
@@ -21,18 +21,15 @@ impl libutils::sync::semaphore::Semaphore for BlockOperation {
     fn read(mut self) -> (bool, Option<Self>) {
         if unsafe { self.unchecked_read() } {
             (true, None)
-        }
-        else {
+        } else {
             (false, Some(self))
         }
     }
-    
+
     unsafe fn unchecked_read(&mut self) -> bool {
         if !self.semaphore.unchecked_read() {
-
             false
-        }
-        else {
+        } else {
             unsafe { drop(alloc::boxed::Box::from_raw(self.request)) };
 
             true
@@ -44,7 +41,10 @@ impl BlockOperation {
     pub unsafe fn new(request: *mut Request) -> Self {
         Self {
             request,
-            semaphore: libutils::sync::semaphore::UpdateSemaphore::new((request as *mut u8).add(STATUS_OFFSET), 111)
+            semaphore: libutils::sync::semaphore::UpdateSemaphore::new(
+                (request as *mut u8).add(STATUS_OFFSET),
+                111,
+            ),
         }
     }
 }
@@ -147,26 +147,34 @@ impl BlockDriver {
     }
 
     /// Send a read request to the block device
-    pub unsafe fn read(&mut self, buffer: *mut u8, size: u32, offset: u64) -> Option<BlockOperation> {
+    pub unsafe fn read(
+        &mut self,
+        buffer: *mut u8,
+        size: u32,
+        offset: u64,
+    ) -> Option<BlockOperation> {
         self.block_operation(buffer, size, offset, false)
     }
 
     /// Send a write request to the block device
-    pub unsafe fn write(&mut self, buffer: *mut u8, size: u32, offset: u64) -> Option<BlockOperation> {
+    pub unsafe fn write(
+        &mut self,
+        buffer: *mut u8,
+        size: u32,
+        offset: u64,
+    ) -> Option<BlockOperation> {
         self.block_operation(buffer, size, offset, true)
     }
 
     // Generic function to sync with a request finishing
     unsafe fn sync(mut request: BlockOperation) {
-        
         use libutils::sync::semaphore::Semaphore;
 
         loop {
             if let (b, Some(v)) = request.read() {
                 assert!(!b);
                 request = v;
-            }
-            else {
+            } else {
                 break;
             }
         }
@@ -174,14 +182,30 @@ impl BlockDriver {
         // while read_volatile(request.request).status.status == 111 {}
     }
 
-    pub unsafe fn async_read(&mut self, buffer: *mut u8, size: u32, offset: u64) -> Option<AsyncBlockRead> {
-        self.read(buffer, size, offset).map(|operation| AsyncBlockRead { operation: Some(operation) })
+    pub unsafe fn async_read(
+        &mut self,
+        buffer: *mut u8,
+        size: u32,
+        offset: u64,
+    ) -> Option<AsyncBlockRead> {
+        self.read(buffer, size, offset)
+            .map(|operation| AsyncBlockRead {
+                operation: Some(operation),
+            })
     }
 
-    pub unsafe fn async_write(&mut self, buffer: *mut u8, size: u32, offset: u64) -> Option<AsyncBlockWrite> {
-        self.write(buffer, size, offset).map(|operation| AsyncBlockWrite { operation: Some(operation) })
+    pub unsafe fn async_write(
+        &mut self,
+        buffer: *mut u8,
+        size: u32,
+        offset: u64,
+    ) -> Option<AsyncBlockWrite> {
+        self.write(buffer, size, offset)
+            .map(|operation| AsyncBlockWrite {
+                operation: Some(operation),
+            })
     }
-    
+
     // Synchronously read from the disk into a pointer based buffer
     pub unsafe fn sync_read(&mut self, buffer: *mut u8, size: u32, offset: u64) {
         Self::sync(self.read(buffer, size, offset).unwrap());
@@ -195,7 +219,13 @@ impl BlockDriver {
     pub fn sync_read_slice(&mut self, buffer: &mut [u8], offset: u64) -> Result<(), ()> {
         assert!(buffer.len() % 512 == 0);
 
-        unsafe { self.sync_read(buffer.as_mut() as *mut [u8] as *mut u8, buffer.len() as u32, offset) }
+        unsafe {
+            self.sync_read(
+                buffer.as_mut() as *mut [u8] as *mut u8,
+                buffer.len() as u32,
+                offset,
+            )
+        }
 
         Ok(())
     }
@@ -204,22 +234,40 @@ impl BlockDriver {
     pub fn sync_write_slice(&mut self, buffer: &[u8], offset: u64) -> Result<(), ()> {
         assert!(buffer.len() % 512 == 0);
 
-        unsafe { self.sync_write(buffer.as_ref() as *const [u8] as *mut u8, buffer.len() as u32, offset) }
+        unsafe {
+            self.sync_write(
+                buffer.as_ref() as *const [u8] as *mut u8,
+                buffer.len() as u32,
+                offset,
+            )
+        }
 
         Ok(())
     }
 }
 
-impl<const BLOCK_SIZE: usize> BlockDevice<BLOCK_SIZE, AsyncBlockRead, AsyncBlockWrite> for BlockDriver {
-    unsafe fn async_read(&mut self, buffer: *mut u8, size: u32, offset: u64) -> Option<AsyncBlockRead> {
+impl<const BLOCK_SIZE: usize> BlockDevice<BLOCK_SIZE, AsyncBlockRead, AsyncBlockWrite>
+    for BlockDriver
+{
+    unsafe fn async_read(
+        &mut self,
+        buffer: *mut u8,
+        size: u32,
+        offset: u64,
+    ) -> Option<AsyncBlockRead> {
         assert!(size as usize % BLOCK_SIZE == 0);
         assert!(size % 512 == 0);
         assert!(BLOCK_SIZE % 512 == 0);
-        
+
         self.async_read(buffer, size, offset)
     }
 
-    unsafe fn async_write(&mut self, buffer: *mut u8, size: u32, offset: u64) -> Option<AsyncBlockWrite> {
+    unsafe fn async_write(
+        &mut self,
+        buffer: *mut u8,
+        size: u32,
+        offset: u64,
+    ) -> Option<AsyncBlockWrite> {
         assert!(size as usize % BLOCK_SIZE == 0);
         assert!(size % 512 == 0);
         assert!(BLOCK_SIZE % 512 == 0);

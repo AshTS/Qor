@@ -1,4 +1,4 @@
-use crate::types::{DeviceIdentifier, UserIdentifier, TimeRepr};
+use crate::types::{DeviceIdentifier, TimeRepr, UserIdentifier};
 
 /// Inode Index
 pub type InodeIndex = usize;
@@ -8,7 +8,7 @@ pub type InodeIndex = usize;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InodePointer {
     pub device_id: DeviceIdentifier,
-    pub index: InodeIndex
+    pub index: InodeIndex,
 }
 
 /// Individual Permissions Value
@@ -32,7 +32,7 @@ pub enum DirectoryEntryType {
     BlockDevice,
     FirstInFirstOut,
     Socket,
-    SymbolicLink
+    SymbolicLink,
 }
 
 /// Directory Entry
@@ -40,7 +40,7 @@ pub enum DirectoryEntryType {
 pub struct DirectoryEntry {
     pub index: InodePointer,
     pub name: alloc::string::String,
-    pub entry_type: DirectoryEntryType
+    pub entry_type: DirectoryEntryType,
 }
 
 /// File Stat Data
@@ -58,7 +58,7 @@ pub struct FileStat {
     pub blocks_allocated: usize,
     pub atime: TimeRepr,
     pub mtime: TimeRepr,
-    pub ctime: TimeRepr
+    pub ctime: TimeRepr,
 }
 
 impl Permissions {
@@ -108,7 +108,12 @@ impl core::ops::BitOr for Permissions {
 
 impl FileMode {
     /// Create a new file mode from components
-    pub fn from_components(entry_type: DirectoryEntryType, user: Permissions, group: Permissions, owner: Permissions) -> Self {
+    pub fn from_components(
+        entry_type: DirectoryEntryType,
+        user: Permissions,
+        group: Permissions,
+        owner: Permissions,
+    ) -> Self {
         Self(((entry_type as u16) << 9) | (user.0 << 6) | (group.0 << 3) | (owner.0 << 0))
     }
 

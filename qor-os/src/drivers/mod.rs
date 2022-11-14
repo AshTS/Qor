@@ -45,7 +45,7 @@ pub mod interrupts {
 }
 
 /// VIRTIO Driver Collection
-/// 
+///
 static mut VIRTIO_DRIVER_COLLECTION: Option<Arc<DeviceCollection>> = None;
 
 /// Handle virtio device discovery, we take the InitThreadMarker to make sure we don't alias the reference

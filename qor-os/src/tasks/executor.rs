@@ -1,21 +1,21 @@
 use super::Task;
 use alloc::collections::VecDeque;
-use core::task::Waker;
-use core::task::RawWaker;
-use core::task::RawWakerVTable;
 use core::task::Context;
 use core::task::Poll;
+use core::task::RawWaker;
+use core::task::RawWakerVTable;
+use core::task::Waker;
 
 /// Kernel executor
 pub struct SimpleExecutor {
-    task_queue: VecDeque<Task>
+    task_queue: VecDeque<Task>,
 }
 
 impl SimpleExecutor {
     /// Construct a new empty executor
     pub fn new() -> SimpleExecutor {
         SimpleExecutor {
-            task_queue: VecDeque::new()
+            task_queue: VecDeque::new(),
         }
     }
 
@@ -31,10 +31,12 @@ impl SimpleExecutor {
             let mut context = Context::from_waker(&waker);
             match task.poll(&mut context) {
                 Poll::Ready(()) => Some(true),
-                Poll::Pending => { self.task_queue.push_back(task); Some(false) }
-            }            
-        }
-        else {
+                Poll::Pending => {
+                    self.task_queue.push_back(task);
+                    Some(false)
+                }
+            }
+        } else {
             None
         }
     }
@@ -58,8 +60,7 @@ impl SimpleExecutor {
             for _ in 0..remaining {
                 if let Some(b) = self.step() {
                     flag |= b;
-                }
-                else {
+                } else {
                     break 'outer false;
                 }
             }

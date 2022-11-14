@@ -11,11 +11,15 @@ pub fn discover_virtio_devices() -> Result<DeviceCollection, alloc::string::Stri
 
     while address >= VIRT_IO_END {
         let device = unsafe { VirtIOHelper::new(address) };
-        let device_type = unsafe { core::mem::transmute::<u32, VirtIODeviceType>(device.read_field(VirtIOMmioOffsets::DeviceId)) };
+        let device_type = unsafe {
+            core::mem::transmute::<u32, VirtIODeviceType>(
+                device.read_field(VirtIOMmioOffsets::DeviceId),
+            )
+        };
         let device_driver = VirtIODeviceDriver::new(device_type, device);
-        
+
         collection.add_device(device_driver)?;
-        
+
         address -= VIRT_IO_STEP;
     }
 
@@ -23,7 +27,10 @@ pub fn discover_virtio_devices() -> Result<DeviceCollection, alloc::string::Stri
 }
 
 impl DeviceCollection {
-    pub fn add_device(&mut self, mut device_driver: VirtIODeviceDriver) -> Result<(), alloc::string::String> {
+    pub fn add_device(
+        &mut self,
+        mut device_driver: VirtIODeviceDriver,
+    ) -> Result<(), alloc::string::String> {
         match device_driver.get_device_type() {
             // Initialize the device driver for a block device
             VirtIODeviceType::BlockDevice => {

@@ -24,7 +24,10 @@
 // Alloc Prelude
 extern crate alloc;
 
-use libutils::{sync::{InitThreadMarker, NoInterruptMarker}, paths::OwnedPath};
+use libutils::{
+    paths::OwnedPath,
+    sync::{InitThreadMarker, NoInterruptMarker},
+};
 
 use crate::fs::FilesystemInterface;
 
@@ -138,13 +141,13 @@ pub extern "C" fn kmain() {
     process::add_process(p);
 }
 
-
 async fn example_task() {
-    use fs::RamFS;
     use fs::generic::FileSystem;
+    use fs::RamFS;
 
     let driver = drivers::virtio_device_collection();
-    let mut buffer = crate::drivers::BlockDeviceBuffer::<1024, _, _, _>::new(driver.block_devices[0].clone());
+    let mut buffer =
+        crate::drivers::BlockDeviceBuffer::<1024, _, _, _>::new(driver.block_devices[0].clone());
 
     let mut vfs = FilesystemInterface::new();
 
@@ -152,6 +155,8 @@ async fn example_task() {
 
     ram_fs.init().await.unwrap();
 
-    vfs.mount_fs("/".into(), alloc::boxed::Box::new(ram_fs)).await.unwrap();
+    vfs.mount_fs("/".into(), alloc::boxed::Box::new(ram_fs))
+        .await
+        .unwrap();
     vfs.index().await.unwrap();
 }

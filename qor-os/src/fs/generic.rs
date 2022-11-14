@@ -2,7 +2,7 @@ use alloc::boxed::Box;
 
 use crate::types::DeviceIdentifier;
 
-use super::{InodePointer, FilesystemInterface, FileStat, DirectoryEntry, FileMode};
+use super::{DirectoryEntry, FileMode, FileStat, FilesystemInterface, InodePointer};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FileSystemError {
@@ -27,7 +27,11 @@ pub trait FileSystem: Send {
     async fn sync(&mut self) -> FilesystemResult<()>;
 
     /// Set the mount_if of the filesystem
-    async fn set_mount_id(&mut self, mount_id: DeviceIdentifier, interface: &mut FilesystemInterface) -> FilesystemResult<()>;
+    async fn set_mount_id(
+        &mut self,
+        mount_id: DeviceIdentifier,
+        interface: &mut FilesystemInterface,
+    ) -> FilesystemResult<()>;
 
     /// Get the root inode of the filesystem
     async fn get_root_inode(&mut self) -> FilesystemResult<InodePointer>;
@@ -36,16 +40,33 @@ pub trait FileSystem: Send {
     async fn stat_inode(&mut self, inode: InodePointer) -> FilesystemResult<FileStat>;
 
     /// Get the directory entries from the given inode
-    async fn dir_entries(&mut self, inode: InodePointer) -> FilesystemResult<alloc::vec::Vec<DirectoryEntry>>;
+    async fn dir_entries(
+        &mut self,
+        inode: InodePointer,
+    ) -> FilesystemResult<alloc::vec::Vec<DirectoryEntry>>;
 
     /// Mount a filesystem at the given inode
-    async fn mount_fs_at(&mut self, inode: InodePointer, root: InodePointer, name: alloc::string::String) -> FilesystemResult<()>;
+    async fn mount_fs_at(
+        &mut self,
+        inode: InodePointer,
+        root: InodePointer,
+        name: alloc::string::String,
+    ) -> FilesystemResult<()>;
 
     /// Allocate a new file with the given mode
-    async fn create_file(&mut self, inode: InodePointer, mode: FileMode, name: alloc::string::String) -> FilesystemResult<InodePointer>;
+    async fn create_file(
+        &mut self,
+        inode: InodePointer,
+        mode: FileMode,
+        name: alloc::string::String,
+    ) -> FilesystemResult<InodePointer>;
 
     /// Allocate a new directory
-    async fn create_directory(&mut self, inode: InodePointer, name: alloc::string::String) -> FilesystemResult<InodePointer>;
+    async fn create_directory(
+        &mut self,
+        inode: InodePointer,
+        name: alloc::string::String,
+    ) -> FilesystemResult<InodePointer>;
 
     /// Remove an inode
     async fn remove_inode(&mut self, inode: InodePointer) -> FilesystemResult<()>;
