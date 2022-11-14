@@ -24,14 +24,6 @@
 // Alloc Prelude
 extern crate alloc;
 
-use fs::FileSystem;
-use libutils::{
-    paths::OwnedPath,
-    sync::{InitThreadMarker, NoInterruptMarker},
-};
-
-use crate::fs::{FilesystemInterface, Minix3Filesystem};
-
 // Includes
 mod asm;
 mod debug;
@@ -54,10 +46,10 @@ mod types;
 #[repr(align(4))]
 pub extern "C" fn kinit() {
     // Safety: we can construct the `InitThreadMarker` since we are the init thread
-    let thread_marker = unsafe { InitThreadMarker::new() };
+    let thread_marker = unsafe { libutils::sync::InitThreadMarker::new() };
 
     // Safety: we can construct a 'NoInterruptMaker' since we are in the init thread and interrupts are disabled for early kernel boot
-    let interrupt_marker = unsafe { NoInterruptMarker::new() };
+    let interrupt_marker = unsafe { libutils::sync::NoInterruptMarker::new() };
 
     // Initialize the UART driver
     drivers::UART_DRIVER.init(thread_marker);
@@ -117,7 +109,7 @@ pub extern "C" fn kinit() {
 #[repr(align(4))]
 pub extern "C" fn kmain() {
     // Safety: we can construct the `InitThreadMarker` since we are the init thread
-    let thread_marker = unsafe { InitThreadMarker::new() };
+    let thread_marker = unsafe { libutils::sync::InitThreadMarker::new() };
 
     kdebugln!(thread_marker, Initialization, "Switch to Supervisor Mode");
 
@@ -148,6 +140,8 @@ pub extern "C" fn kmain() {
 
 /// Mount the boot filesystem
 async fn mount_filesystem() {
+    use fs::FileSystem;
+
     // Get the driver from the virtio collection
     let driver = drivers::virtio_device_collection().block_devices[0].clone();
 
@@ -161,7 +155,7 @@ async fn mount_filesystem() {
 
     // Construct and initialize the Minix3 filesystem
     kdebugln!(unsafe "Initializing Minix3 Filesystem");
-    let mut minix3 = Minix3Filesystem::new(buffer);
+    let mut minix3 = fs::minix3::Minix3Filesystem::new(buffer);
     minix3.init().await.unwrap();
 
     // Mount and index the filesystem

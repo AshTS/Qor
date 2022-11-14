@@ -265,9 +265,9 @@ impl FileSystem for RamFS {
     /// Allocate a new file with the given mode
     async fn create_file(
         &mut self,
-        inode: InodePointer,
-        mode: FileMode,
-        name: alloc::string::String,
+        _inode: InodePointer,
+        _mode: FileMode,
+        _name: alloc::string::String,
     ) -> FilesystemResult<InodePointer> {
         todo!()
     }
@@ -275,8 +275,8 @@ impl FileSystem for RamFS {
     /// Allocate a new directory
     async fn create_directory(
         &mut self,
-        inode: InodePointer,
-        name: alloc::string::String,
+        _inode: InodePointer,
+        _name: alloc::string::String,
     ) -> FilesystemResult<InodePointer> {
         todo!()
     }

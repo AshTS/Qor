@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use super::Semaphore;
 
 /// The read end of a signal semaphore
