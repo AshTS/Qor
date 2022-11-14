@@ -251,7 +251,7 @@ impl<const BLOCK_SIZE: usize> BlockDevice<BLOCK_SIZE, AsyncBlockRead, AsyncBlock
 {
     unsafe fn async_read(
         &mut self,
-        buffer: *mut u8,
+        buffer: usize,
         size: u32,
         offset: u64,
     ) -> Option<AsyncBlockRead> {
@@ -259,12 +259,12 @@ impl<const BLOCK_SIZE: usize> BlockDevice<BLOCK_SIZE, AsyncBlockRead, AsyncBlock
         assert!(size % 512 == 0);
         assert!(BLOCK_SIZE % 512 == 0);
 
-        self.async_read(buffer, size, offset)
+        self.async_read(buffer as *mut u8, size, offset)
     }
 
     unsafe fn async_write(
         &mut self,
-        buffer: *mut u8,
+        buffer: usize,
         size: u32,
         offset: u64,
     ) -> Option<AsyncBlockWrite> {
@@ -272,6 +272,8 @@ impl<const BLOCK_SIZE: usize> BlockDevice<BLOCK_SIZE, AsyncBlockRead, AsyncBlock
         assert!(size % 512 == 0);
         assert!(BLOCK_SIZE % 512 == 0);
 
-        self.async_write(buffer, size, offset)
+        self.async_write(buffer as *mut u8, size, offset)
     }
 }
+
+unsafe impl Send for BlockDriver {}

@@ -24,12 +24,13 @@
 // Alloc Prelude
 extern crate alloc;
 
+use fs::FileSystem;
 use libutils::{
     paths::OwnedPath,
     sync::{InitThreadMarker, NoInterruptMarker},
 };
 
-use crate::fs::FilesystemInterface;
+use crate::fs::{FilesystemInterface, Minix3Filesystem};
 
 // Includes
 mod asm;
@@ -142,21 +143,23 @@ pub extern "C" fn kmain() {
 }
 
 async fn example_task() {
-    use fs::generic::FileSystem;
-    use fs::RamFS;
-
     let driver = drivers::virtio_device_collection();
-    let mut buffer =
+    let buffer =
         crate::drivers::BlockDeviceBuffer::<1024, _, _, _>::new(driver.block_devices[0].clone());
 
     let mut vfs = FilesystemInterface::new();
 
-    let mut ram_fs = RamFS::new();
+    let mut minix3 = Minix3Filesystem::new(buffer);
+    minix3.init().await.unwrap();
 
-    ram_fs.init().await.unwrap();
-
-    vfs.mount_fs("/".into(), alloc::boxed::Box::new(ram_fs))
+    vfs.mount_fs("/".into(), alloc::boxed::Box::new(minix3))
         .await
         .unwrap();
     vfs.index().await.unwrap();
+
+    let inode = vfs.path_to_inode("/etc/startup.d/99_start.sh".into()).await.unwrap();
+
+    let data = vfs.read_inode(inode).await.unwrap();
+
+    kdebugln!(unsafe "{:?}", data);
 }

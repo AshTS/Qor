@@ -11,7 +11,9 @@ pub enum FileSystemError {
     UnmountedDevice,
     BadInode(InodePointer),
     InodeIsADirectory(InodePointer),
+    UninitializedFilesystem,
     BadPath,
+    BadFilesystemFormat,
 }
 
 /// Filesystem Result Type

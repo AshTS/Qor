@@ -114,18 +114,23 @@ impl FileMode {
         group: Permissions,
         owner: Permissions,
     ) -> Self {
-        Self(((entry_type as u16) << 9) | (user.0 << 6) | (group.0 << 3) | (owner.0 << 0))
+        Self(((entry_type as u16) << 13) | (user.0 << 6) | (group.0 << 3) | (owner.0 << 0))
+    }
+
+    /// Create a file mode from the raw bits
+    pub fn from_bits(data: u16) -> Self {
+        Self(data)
     }
 
     /// Get the entry type
     pub fn entry_type(&self) -> DirectoryEntryType {
-        unsafe { core::mem::transmute((self.0 >> 9) & 0b111) }
+        unsafe { core::mem::transmute((self.0 >> 13) & 0b111) }
     }
 
     /// Set the entry type
     pub fn set_entry_type(&mut self, entry_type: DirectoryEntryType) {
         self.0 &= 0b000_111_111_111;
-        self.0 |= (entry_type as u16) << 9;
+        self.0 |= (entry_type as u16) << 13;
     }
 
     /// Get the user permissions

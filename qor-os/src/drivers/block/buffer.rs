@@ -8,8 +8,8 @@ use libutils::sync::Mutex;
 
 pub struct BlockDeviceBuffer<
     const BLOCK_SIZE: usize,
-    R: Future<Output = ()>,
-    W: Future<Output = ()>,
+    R: Future<Output = ()> + Send,
+    W: Future<Output = ()> + Send,
     BlkDev: BlockDevice<BLOCK_SIZE, R, W>,
 > {
     cache: BTreeMap<usize, Box<[u8; BLOCK_SIZE]>>,
@@ -21,8 +21,8 @@ pub struct BlockDeviceBuffer<
 
 impl<
         const BLOCK_SIZE: usize,
-        R: Future<Output = ()>,
-        W: Future<Output = ()>,
+        R: Future<Output = ()> + Send,
+        W: Future<Output = ()> + Send,
         BlkDev: BlockDevice<BLOCK_SIZE, R, W>,
     > BlockDeviceBuffer<BLOCK_SIZE, R, W, BlkDev>
 {
@@ -40,19 +40,14 @@ impl<
     /// Read a block from the device
     pub async fn read_block(&mut self, block: usize) -> &[u8; BLOCK_SIZE] {
         if !self.cache.contains_key(&block) {
+            let mut dev = self.blk_dev.async_lock().await;
             let mut buffer = Box::new([0u8; BLOCK_SIZE]);
-
-            unsafe {
-                self.blk_dev.async_lock().await.async_read(
-                    buffer.as_mut_ptr(),
-                    BLOCK_SIZE as u32,
-                    block as u64 * BLOCK_SIZE as u64,
-                )
-            }
-            .unwrap()
-            .await;
-
+            let ptr = buffer.as_mut_ptr() as usize;
             self.cache.insert(block, buffer);
+
+            unsafe { dev.async_read(ptr, BLOCK_SIZE as u32, block as u64 * BLOCK_SIZE as u64) }
+                .unwrap()
+                .await;
         }
 
         if let Some(buffer) = self.cache.get(&block) {
@@ -68,10 +63,11 @@ impl<
 
         if !self.cache.contains_key(&block) {
             let mut buffer = Box::new([0u8; BLOCK_SIZE]);
+            let ptr = buffer.as_mut_ptr() as usize;
 
             unsafe {
                 self.blk_dev.async_lock().await.async_read(
-                    buffer.as_mut_ptr(),
+                    ptr,
                     BLOCK_SIZE as u32,
                     block as u64 * BLOCK_SIZE as u64,
                 )
@@ -103,7 +99,7 @@ impl<
             futures.push(
                 unsafe {
                     self.blk_dev.async_lock().await.async_write(
-                        self.cache.get_mut(v).unwrap().as_mut_ptr(),
+                        self.cache.get_mut(v).unwrap().as_mut_ptr() as usize,
                         BLOCK_SIZE as u32,
                         *v as u64 * BLOCK_SIZE as u64,
                     )

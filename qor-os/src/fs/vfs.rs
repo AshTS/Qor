@@ -64,7 +64,7 @@ impl FilesystemInterface {
             if self.root.is_some() {
                 let (path_start, name) = path.split_last();
 
-                let inode = self.path_to_inode(&path_start)?;
+                let inode = self.path_to_inode(path_start).await?;
                 self.mount_fs_at(inode, root_inode, name.to_string())
                     .await?;
 
@@ -151,7 +151,6 @@ impl FilesystemInterface {
         let root = self.get_root_inode().await?;
         self.index_from("".into(), root).await?;
 
-        kprintln!(unsafe "{:#?}", self.index);
         Ok(())
     }
 
@@ -173,11 +172,32 @@ impl FilesystemInterface {
     }
 
     /// Path to inode
-    pub fn path_to_inode(&mut self, path: PathBuffer) -> FilesystemResult<InodePointer> {
-        self.index
-            .get(&path)
-            .ok_or(FileSystemError::BadPath)
-            .copied()
+    pub async fn path_to_inode(&mut self, path: OwnedPath) -> FilesystemResult<InodePointer> {
+        if let Some(index) = self.index.get(&path) {
+            Ok(*index)
+        }
+        else {
+            let mut ptr = self.get_root_inode().await?;
+
+            for element in path.iter() {
+                let directory_entries = self.dir_entries(ptr).await?;
+                let mut flag = false;
+
+                for dir_ent in directory_entries {
+                    if dir_ent.name == element {
+                        flag = true;
+                        ptr = dir_ent.index;
+                        break;
+                    }
+                }
+
+                if !flag {
+                    break;
+                }
+            }
+
+            Err(FileSystemError::BadPath)
+        }
     }
 
     /// Attempt to get a path from an inode
