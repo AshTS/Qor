@@ -119,47 +119,56 @@ pub extern "C" fn kmain() {
     // Safety: we can construct the `InitThreadMarker` since we are the init thread
     let thread_marker = unsafe { InitThreadMarker::new() };
 
-    kdebugln!(thread_marker, "Switch to Supervisor Mode");
+    kdebugln!(thread_marker, Initialization, "Switch to Supervisor Mode");
 
     // Initialize the global filesystem
-    kdebugln!(thread_marker, "Initializing Virtual Filesystem");
+    kdebugln!(thread_marker, Initialization, "Initializing Virtual Filesystem");
     fs::init_global_filesystem(thread_marker);
 
-    let mut executor = tasks::SimpleExecutor::new();
-    executor.spawn(tasks::Task::new(example_task()));
-    executor.run();
+    // Mount the boot filesystem
+    tasks::execute_task(mount_filesystem());
 
+    // Setup the PLIC timer
+    kdebugln!(thread_marker, Initialization, "Initialize PLIC Timer");
     drivers::PLIC_DRIVER.enable_with_priority(
         drivers::interrupts::UART_INTERRUPT,
         drivers::InterruptPriority::Priority7,
     );
     drivers::PLIC_DRIVER.set_threshold(drivers::InterruptPriority::Priority1);
 
-    drivers::CLINT_DRIVER.set_remaining(0, 10_000_000);
-
+    // Spawn cleanup process
+    kdebugln!(thread_marker, Initialization, "Spawning Cleanup Process");
     let p = process::Process::from_raw(asm::init_proc_location, mem::PageCount::new(1));
-
     process::add_process(p);
+
+    // Start the context switch timer
+    kdebugln!(thread_marker, Initialization, "Starting Process Switch Timer");
+    drivers::CLINT_DRIVER.set_remaining(0, 10_000_000);
 }
 
-async fn example_task() {
-    let driver = drivers::virtio_device_collection();
+/// Mount the boot filesystem
+async fn mount_filesystem() {
+    // Get the driver from the virtio collection
+    let driver = drivers::virtio_device_collection().block_devices[0].clone();
+
+    // Construct a buffered block device wrapper
     let buffer =
-        crate::drivers::BlockDeviceBuffer::<1024, _, _, _>::new(driver.block_devices[0].clone());
+        crate::drivers::BlockDeviceBuffer::<1024, _, _, _>::new(driver);
 
-    let mut vfs = FilesystemInterface::new();
+    // Access the virtual file system and acquire the lock on it
+    let vfs_arc = fs::global_filesystem_arc();
+    let mut vfs = vfs_arc.async_lock().await;
 
+    // Construct and initialize the Minix3 filesystem
+    kdebugln!(unsafe "Initializing Minix3 Filesystem");
     let mut minix3 = Minix3Filesystem::new(buffer);
     minix3.init().await.unwrap();
 
+    // Mount and index the filesystem
+    kdebugln!(unsafe "Mounting Minix3 Filesystem");
     vfs.mount_fs("/".into(), alloc::boxed::Box::new(minix3))
         .await
         .unwrap();
     vfs.index().await.unwrap();
 
-    let inode = vfs.path_to_inode("/etc/startup.d/99_start.sh".into()).await.unwrap();
-
-    let data = vfs.read_inode(inode).await.unwrap();
-
-    kdebugln!(unsafe "{:?}", data);
 }
