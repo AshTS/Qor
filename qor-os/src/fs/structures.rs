@@ -5,7 +5,7 @@ pub type InodeIndex = usize;
 
 /// Pointer to a device and an inode
 #[repr(C)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InodePointer {
     pub device_id: DeviceIdentifier,
     pub index: InodeIndex

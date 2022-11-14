@@ -24,7 +24,9 @@
 // Alloc Prelude
 extern crate alloc;
 
-use libutils::{sync::{InitThreadMarker, NoInterruptMarker}};
+use libutils::{sync::{InitThreadMarker, NoInterruptMarker}, paths::OwnedPath};
+
+use crate::fs::FilesystemInterface;
 
 // Includes
 mod asm;
@@ -113,9 +115,10 @@ pub extern "C" fn kmain() {
     // Safety: we can construct the `InitThreadMarker` since we are the init thread
     let thread_marker = unsafe { InitThreadMarker::new() };
 
-    kdebugln!(thread_marker, "Switch to supervisor mode");
+    kdebugln!(thread_marker, "Switch to Supervisor Mode");
 
     // Initialize the global filesystem
+    kdebugln!(thread_marker, "Initializing Virtual Filesystem");
     fs::init_global_filesystem(thread_marker);
 
     let mut executor = tasks::SimpleExecutor::new();
@@ -137,6 +140,18 @@ pub extern "C" fn kmain() {
 
 
 async fn example_task() {
+    use fs::RamFS;
+    use fs::generic::FileSystem;
+
     let driver = drivers::virtio_device_collection();
     let mut buffer = crate::drivers::BlockDeviceBuffer::<1024, _, _, _>::new(driver.block_devices[0].clone());
+
+    let mut vfs = FilesystemInterface::new();
+
+    let mut ram_fs = RamFS::new();
+
+    ram_fs.init().await.unwrap();
+
+    vfs.mount_fs("/".into(), alloc::boxed::Box::new(ram_fs)).await.unwrap();
+    vfs.index().await.unwrap();
 }

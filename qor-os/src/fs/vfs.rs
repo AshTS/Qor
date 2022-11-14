@@ -1,13 +1,13 @@
-use alloc::sync::Arc;
 use alloc::{collections::BTreeMap, string::ToString};
 use alloc::boxed::Box;
 use atomic::Atomic;
 use libutils::paths::{OwnedPath, PathBuffer};
-use libutils::sync::{Mutex, InitThreadMarker, MutexGuard};
+use alloc::format;
+use crate::*;
 
 use crate::{types::DeviceIdentifier, kdebugln, fs::FileSystemError};
 
-use super::{FileSystem, InodeIndex, FilesystemResult};
+use super::{FileSystem, FilesystemResult, InodePointer, FileStat, DirectoryEntry};
 
 // Next Device id
 static NEXT_DEVICE_ID: Atomic<DeviceIdentifier> = Atomic::new(1);
@@ -20,8 +20,8 @@ fn next_device_id() -> DeviceIdentifier {
 pub struct FilesystemInterface {
     mounts: BTreeMap<DeviceIdentifier, Option<Box<dyn FileSystem>>>,
     root: Option<DeviceIdentifier>,
-    index: BTreeMap<OwnedPath, InodeIndex>,
-    indexed: BTreeMap<InodeIndex, OwnedPath>
+    index: BTreeMap<OwnedPath, InodePointer>,
+    indexed: BTreeMap<InodePointer, OwnedPath>
 }
 
 impl FilesystemInterface {
@@ -36,17 +36,17 @@ impl FilesystemInterface {
     }
 
     /// Mount a filesystem
-    pub fn mount_fs(&mut self, path: PathBuffer, mut fs: Box<dyn FileSystem>) -> FilesystemResult<DeviceIdentifier> {
+    pub async fn mount_fs(&mut self, path: OwnedPath, mut fs: Box<dyn FileSystem>) -> FilesystemResult<DeviceIdentifier> {
         // Get the next device id
         let device_id = next_device_id();
         
         kdebugln!(unsafe Filesystem, "Mounting filesystem with device id {} to {}", device_id, path);
 
         // Set the mount id on the filesystem
-        fs.set_mount_id(device_id, self)?;
+        fs.set_mount_id(device_id, self).await?;
 
         // Get the root inode from the filesystem
-        let root_inode = fs.get_root_inode()?;
+        let root_inode = fs.get_root_inode().await?;
 
         // Insert the device
         self.mounts.insert(device_id, Some(fs));
@@ -61,8 +61,8 @@ impl FilesystemInterface {
             if self.root.is_some() {
                 let (path_start, name) = path.split_last();
 
-                // TODO: let inode = self.path_to_inode(&path_start)?;
-                // TODO: self.mount_fs_at(inode, root_inode, name.to_string());
+                let inode = self.path_to_inode(&path_start)?;
+                self.mount_fs_at(inode, root_inode, name.to_string()).await?;
 
                 Ok(device_id)
             }
@@ -91,24 +91,92 @@ impl FilesystemInterface {
     pub fn root_fs_error(&mut self) -> FilesystemResult<&mut Box<dyn FileSystem>> {
         self.root.ok_or(FileSystemError::MissingRootMount).map(|id| self.fs_from_device_error(id))?
     }
+
+    /// Index the filesystem starting at the given inode, giving it the desired path
+    #[async_recursion::async_recursion]
+    pub async fn index_from(&mut self, path: OwnedPath, inode: InodePointer) -> FilesystemResult<()> {
+        // If we have already indexed this path, skip
+        if self.indexed.contains_key(&inode) {
+            return Ok(());
+        }
+
+        // Put the current path into the index
+        if !path.as_str().is_empty() {
+            self.index.insert(path.clone(), inode);
+        }
+        // Do the reverse as well
+        self.indexed.insert(inode, path.clone());
+
+        // Iterate down through the directory entries
+        match self.dir_entries(inode).await {
+            Ok(entries) => {
+                self.index.insert(OwnedPath::new(path.as_str().to_string() + "/"), inode);
+
+                for entry in entries {
+                    self.index_from(OwnedPath::new(format!("{}/{}", path, entry.name)), entry.index).await?;
+                }
+
+                Ok(())
+            },
+            Err(FileSystemError::InodeIsADirectory(_)) => Ok(()),
+            Err(e) => Err(e)
+        }
+    }
+
+    /// Index the entire filesystem
+    pub async fn index(&mut self) -> FilesystemResult<()> {
+        // Clear out the current index
+        self.index.clear();
+        self.indexed.clear();
+
+        // Index starting from the root
+        let root = self.get_root_inode().await?;
+        self.index_from("".into(), root).await?;
+
+        kprintln!(unsafe "{:#?}", self.index);
+        Ok(())
+    }
+
+    /// Invalidate part of the index
+    pub fn invalidate_index(&mut self, path: PathBuffer) -> FilesystemResult<()> {
+        let mut to_remove = alloc::vec::Vec::new();
+
+        for p in self.index.keys() {
+            if p.as_str().starts_with(path.as_str()) {
+                to_remove.push(p.clone());
+            }
+        }
+
+        for path in to_remove {
+            self.index.remove(&path);
+        }
+
+        Ok(())
+    }
+
+    /// Path to inode
+    pub fn path_to_inode(&mut self, path: PathBuffer) -> FilesystemResult<InodePointer> {
+        self.index.get(&path).ok_or(FileSystemError::BadPath).copied()
+    }
 }
 
+#[async_trait::async_trait]
 impl FileSystem for FilesystemInterface {
     /// Initialize the filesystem on the current disk
-    fn init(&mut self) -> FilesystemResult<()> {
+    async fn init(&mut self) -> FilesystemResult<()> {
         kdebugln!(unsafe Filesystem, "Initialize Virtual Filesystem");
 
         Ok(())
     }
 
     /// Sync the filesystem on the current disk
-    fn sync(&mut self) -> FilesystemResult<()> {
+    async fn sync(&mut self) -> FilesystemResult<()> {
         kdebugln!(unsafe Filesystem, "Syncing Virtual Filesystem");
 
         // Sync the filesystem by syncing all of the mounted file systems
         for (_, fs) in &mut self.mounts {
             if let Some(fs) = fs {
-                fs.sync()?;
+                fs.sync().await?;
             }
         }
 
@@ -116,12 +184,27 @@ impl FileSystem for FilesystemInterface {
     }
 
     /// Set the mount_if of the filesystem
-    fn set_mount_id(&mut self, _mount_id: DeviceIdentifier, _interface: &mut FilesystemInterface) -> FilesystemResult<()> {
+    async fn set_mount_id(&mut self, _mount_id: DeviceIdentifier, _interface: &mut FilesystemInterface) -> FilesystemResult<()> {
         panic!("Cannot mount the filesystem interface")
     }
 
     /// Get the root inode of the filesystem
-    fn get_root_inode(&mut self) -> FilesystemResult<super::InodePointer> {
-        self.root_fs_error()?.get_root_inode()
+    async fn get_root_inode(&mut self) -> FilesystemResult<super::InodePointer> {
+        self.root_fs_error()?.get_root_inode().await
+    }
+
+    /// Stat the given inode
+    async fn stat_inode(&mut self, inode: InodePointer) -> FilesystemResult<FileStat> {
+        self.fs_from_device_error(inode.device_id)?.stat_inode(inode).await
+    }
+
+    /// Get the directory entries from the given inode
+    async fn dir_entries(&mut self, inode: InodePointer) -> FilesystemResult<alloc::vec::Vec<DirectoryEntry>> {
+        self.fs_from_device_error(inode.device_id)?.dir_entries(inode).await
+    }
+
+    /// Mount a filesystem at the given inode
+    async fn mount_fs_at(&mut self, inode: InodePointer, root: InodePointer, name: alloc::string::String) -> FilesystemResult<()> {
+        self.fs_from_device_error(inode.device_id)?.mount_fs_at(inode, root, name).await
     }
 }

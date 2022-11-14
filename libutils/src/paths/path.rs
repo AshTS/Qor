@@ -77,6 +77,12 @@ impl OwnedPath {
     }
 }
 
+impl core::convert::From<&str> for OwnedPath {
+    fn from(value: &str) -> Self {
+        Self::new(value)
+    }
+}
+
 impl core::fmt::Display for OwnedPath {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         write!(f, "{}", self.path)

@@ -1,6 +1,9 @@
 pub mod generic;
 pub use generic::*;
 
+pub mod ramdisk;
+pub use ramdisk::*;
+
 pub mod structures;
 pub use structures::*;
 
