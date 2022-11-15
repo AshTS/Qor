@@ -8,3 +8,6 @@ pub mod no_interrupt;
 pub use no_interrupt::*;
 
 pub mod semaphore;
+
+pub mod synccell;
+pub use synccell::*;
