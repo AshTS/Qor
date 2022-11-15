@@ -120,6 +120,10 @@ pub extern "C" fn kmain() {
     // Mount the boot filesystem
     tasks::execute_task(mount_filesystem());
 
+    // Initialize the global executor
+    kdebugln!(thread_marker, Initialization, "Initializing Global Executor");
+    tasks::init_global_executor(thread_marker);
+
     // Setup the PLIC timer
     kdebugln!(thread_marker, Initialization, "Initialize PLIC Timer");
     drivers::PLIC_DRIVER.enable_with_priority(
@@ -164,5 +168,4 @@ async fn mount_filesystem() {
         .await
         .unwrap();
     vfs.index().await.unwrap();
-
 }
