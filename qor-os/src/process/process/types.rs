@@ -5,11 +5,13 @@ pub type ProcessIdentifier = u64;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WaitReason {
     ForChildren,
+    Semaphore
 }
 
 /// Process State
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProcessState {
+    Pending,
     Running,
     Zombie,
     Waiting(WaitReason),
@@ -18,6 +20,6 @@ pub enum ProcessState {
 
 impl core::default::Default for ProcessState {
     fn default() -> Self {
-        ProcessState::Running
+        ProcessState::Pending
     }
 }

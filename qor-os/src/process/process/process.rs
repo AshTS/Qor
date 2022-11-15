@@ -1,4 +1,4 @@
-use libutils::sync::{Mutex, MutexGuard, NoInterruptMarker};
+use libutils::sync::{Mutex, MutexGuard, NoInterruptMarker, semaphore::SignalSemaphoreSender};
 
 use crate::{
     mem::{self, KernelPageBox, KernelPageSeq, PageCount, PAGE_SIZE},
@@ -77,6 +77,11 @@ impl Process {
 impl Process {
     // Atomic Data:
 
+    /// Check the child pending semaphore
+    pub fn check_child_semaphore(&self) -> bool {
+        self.atomic_data.check_child_semaphore()
+    }
+
     /// Get the current process state
     pub fn state(&self) -> ProcessState {
         self.atomic_data.state()
@@ -85,6 +90,16 @@ impl Process {
     /// Set the current process state
     pub fn set_state(&self, state: ProcessState) {
         self.atomic_data.set_state(state)
+    }
+
+    /// Check the optional waiting semaphore
+    pub fn check_wait_semaphore(&self) -> Option<bool> {
+        self.atomic_data.check_wait_semaphore()
+    }
+
+    /// Get a new sender for the wait semaphore
+    pub fn new_wait_semaphore(&self) -> SignalSemaphoreSender {
+        self.atomic_data.new_wait_semaphore()
     }
 
     // Const Data:

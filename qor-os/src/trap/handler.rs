@@ -96,7 +96,5 @@ extern "C" fn m_trap(
 pub fn timer_tick() {
     kwarn!(unsafe ".");
 
-    if let Some(p) = crate::process::get_process(0) {
-        unsafe { p.switch_to() };
-    }
+    super::context_switch();
 }

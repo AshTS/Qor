@@ -12,13 +12,19 @@ pub struct SignalSemaphoreSender {
     flag: alloc::sync::Arc<core::sync::atomic::AtomicBool>
 }
 
+impl SignalSemaphore {
+    pub fn read_atomic(&self) -> bool {
+        self.flag.swap(false, core::sync::atomic::Ordering::SeqCst)
+    }
+}
+
 impl Semaphore for SignalSemaphore {
     fn read(self) -> (bool, Option<Self>) {
         (self.flag.swap(false, core::sync::atomic::Ordering::SeqCst), Some(self))
     }
 
     unsafe fn unchecked_read(&mut self) -> bool {
-        self.flag.swap(false, core::sync::atomic::Ordering::SeqCst)
+        self.read_atomic()
     }
 }
 
