@@ -32,7 +32,8 @@ impl Process {
 
     /// Construct from raw values
     pub fn from_raw(fn_ptr: unsafe extern "C" fn(), stack_size: crate::mem::PageCount) -> Self {
-        kdebugln!(unsafe "Constructing Process for code at {:x} with stack of size {}", fn_ptr as usize, stack_size);
+        let pid = crate::process::next_process_id();
+        kdebugln!(unsafe "Constructing Process for code at {:x} with stack of size {}, giving it PID {}", fn_ptr as usize, stack_size, pid);
 
         let mut page_table = KernelPageBox::new(mem::PageTable::new())
             .expect("Unable to allocate page table for process");
@@ -46,10 +47,19 @@ impl Process {
         let stack =
             KernelPageSeq::new(stack_size).expect("Unable to allocate page table for process");
 
-        let trap_frame = TrapFrame::new(
+        page_table.identity_map(
+            stack.raw() as usize,
+            stack.raw() as usize + 1,
+            mem::RWXFlags::ReadWriteExecute,
+            mem::UGFlags::UserGlobal,
+        );
+
+        let mut trap_frame = TrapFrame::new(
             unsafe { NoInterruptMarker::new() },
             PageCount::new(2).convert(),
         );
+
+        trap_frame.pid = pid;
 
         let mut trap_frame =
             KernelPageBox::new(trap_frame).expect("Unable to allocate space for trap stack");
@@ -60,7 +70,7 @@ impl Process {
 
         Self::new(
             AtomicProcessData::new(),
-            ConstantProcessData::new(crate::process::next_process_id()),
+            ConstantProcessData::new(pid),
             MutableProcessData::new(execution_state, page_table),
         )
     }
@@ -114,5 +124,11 @@ impl Process {
     /// Get the mutex guard for the mutable data
     pub fn lock_mutable(&self) -> MutexGuard<'_, MutableProcessData> {
         self.mutable_data.spin_lock()
+    }
+}
+
+impl core::ops::Drop for Process {
+    fn drop(&mut self) {
+        kdebugln!(unsafe "Droping PID {}", self.pid());
     }
 }

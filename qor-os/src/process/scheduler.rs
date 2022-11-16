@@ -2,24 +2,31 @@ use super::{ProcessIdentifier, WaitReason};
 
 /// Schedule the next process and switch to it, or return if no process is ready or it is unable to access the process map
 pub fn schedule() {
+    let mut scheduled_pid = None;
+
     if let Some(proc_map) = crate::process::process_map().attempt_shared() {
         for (pid, interface) in proc_map.iter() {
+
+            crate::kdebugln!(unsafe "Schedule Time {} {:?}", pid, interface.state());
             match interface.state() {
                 // If a process is pending, it is ready to run now
                 super::ProcessState::Pending => {
-                    unsafe { interface.switch_to() };
+                    scheduled_pid = Some(*pid);
+                    break;
                 }
                 
                 // If a process is waiting for its children, check to see if it has had children die
                 super::ProcessState::Waiting(WaitReason::ForChildren) => {
                     if interface.check_child_semaphore() {
-                        unsafe { interface.switch_to() };
+                        scheduled_pid = Some(*pid);
+                        break;
                     }
                 }
 
                 super::ProcessState::Waiting(WaitReason::Semaphore) => {
                     if interface.check_wait_semaphore() == Some(true) {
-                        unsafe { interface.switch_to() };
+                        scheduled_pid = Some(*pid);
+                        break;
                     }
                 }
 
@@ -35,6 +42,13 @@ pub fn schedule() {
                 // If a process is running, we can ignore it
                 super::ProcessState::Running => {},
             }
+        }
+    }
+
+    // If a context switch has been requested, do the context switch
+    if let Some(pid) = scheduled_pid {
+        if let Some(proc) = super::get_process(pid) {
+            unsafe { proc.switch_to() };
         }
     }
 }

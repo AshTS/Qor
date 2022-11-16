@@ -11,7 +11,7 @@ use alloc::sync::Arc;
 use atomic::Atomic;
 
 static mut PROCESS_MAP: Option<Arc<SyncCell<BTreeMap<ProcessIdentifier, ProcessInterface>>>> = None;
-
+ 
 static NEXT_PID: Atomic<ProcessIdentifier> = Atomic::new(0);
 
 /// Initialize the process map
@@ -48,5 +48,5 @@ pub fn add_process(process: Process) {
 
 /// Get the process interface for the given pid
 pub fn get_process(pid: ProcessIdentifier) -> Option<ProcessInterface> {
-    process_map().spin_unique().get(&pid).map(|v| v.clone())
+    process_map().spin_shared().get(&pid).map(|v| v.clone())
 }

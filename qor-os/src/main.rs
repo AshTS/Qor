@@ -139,7 +139,7 @@ pub extern "C" fn kmain() {
 
     // Start the context switch timer
     kdebugln!(thread_marker, Initialization, "Starting Process Switch Timer");
-    drivers::CLINT_DRIVER.set_remaining(0, 10_000_000);
+    drivers::CLINT_DRIVER.set_remaining(0, 10);
 }
 
 /// Mount the boot filesystem

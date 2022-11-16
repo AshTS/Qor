@@ -16,7 +16,7 @@ impl AtomicProcessData {
         let (read, write) = libutils::sync::semaphore::signal_semaphor_pair();
 
         Self {
-            state: Atomic::new(ProcessState::Running),
+            state: Atomic::new(ProcessState::Pending),
             child_semaphore: read,
             child_semaphore_send: write,
             waiting_semaphore: SyncCell::new(None)

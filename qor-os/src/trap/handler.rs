@@ -1,3 +1,5 @@
+use crate::process;
+use crate::process::ProcessState;
 use crate::trap::TrapCause;
 use crate::trap::TrapFrame;
 
@@ -8,8 +10,11 @@ extern "C" fn m_trap(
     cause: TrapCause,
     hart: usize,
     status: usize,
-    _frame: &mut TrapFrame,
+    frame: &mut TrapFrame,
 ) -> usize {
+    let from_user = (status >> 11) & 0b11 == 0;
+    let pid = if from_user { Some(frame.pid) } else { None };
+
     match cause {
         TrapCause::BreakPoint => {
             kerrorln!(unsafe "Breakpoint Triggered At {:#x}", epc);
@@ -57,7 +62,13 @@ extern "C" fn m_trap(
             panic!();
         }
         TrapCause::MachineTimer => {
-            crate::drivers::CLINT_DRIVER.set_remaining(hart, 10_000_000);
+            // If we came from a userland process, switch it into the Pending state
+            kdebugln!(unsafe "Timer: {:?}", pid);
+            if let Some(pid) = pid {
+                if let Some(proc) = process::get_process(pid) {
+                    proc.set_state(ProcessState::Pending);
+                }
+            }
 
             timer_tick();
 
@@ -96,5 +107,6 @@ extern "C" fn m_trap(
 pub fn timer_tick() {
     kwarn!(unsafe ".");
 
+    crate::drivers::CLINT_DRIVER.set_remaining(0, 10_000_000);
     super::context_switch();
 }
