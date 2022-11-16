@@ -1,7 +1,7 @@
 use super::{ProcessIdentifier, WaitReason};
 
 /// Schedule the next process and switch to it, or return if no process is ready or it is unable to access the process map
-pub fn schedule() {
+pub fn schedule(hart: usize) {
     let mut scheduled_pid = None;
 
     if let Some(proc_map) = crate::process::process_map().attempt_shared() {
@@ -48,6 +48,7 @@ pub fn schedule() {
     // If a context switch has been requested, do the context switch
     if let Some(pid) = scheduled_pid {
         if let Some(proc) = super::get_process(pid) {
+            crate::drivers::CLINT_DRIVER.set_remaining(hart, 10_000_000);
             unsafe { proc.switch_to() };
         }
     }

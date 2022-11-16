@@ -70,7 +70,7 @@ extern "C" fn m_trap(
                 }
             }
 
-            timer_tick();
+            timer_tick(hart);
 
             epc
         }
@@ -104,9 +104,8 @@ extern "C" fn m_trap(
 }
 
 /// Timer Callback
-pub fn timer_tick() {
+pub fn timer_tick(hart: usize) {
     kwarn!(unsafe ".");
 
-    crate::drivers::CLINT_DRIVER.set_remaining(0, 10_000_000);
-    super::context_switch();
+    super::context_switch(hart);
 }
