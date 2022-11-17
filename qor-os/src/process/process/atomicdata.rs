@@ -1,11 +1,7 @@
-use atomic::Atomic;
 use libutils::sync::{semaphore::{SignalSemaphore, SignalSemaphoreSender}, SyncCell};
-
-use super::*;
 
 /// Atomic Process Data
 pub struct AtomicProcessData {
-    state: Atomic<ProcessState>,
     child_semaphore: SignalSemaphore,
     pub child_semaphore_send: SignalSemaphoreSender,
     waiting_semaphore: SyncCell<Option<SignalSemaphore>>
@@ -16,7 +12,6 @@ impl AtomicProcessData {
         let (read, write) = libutils::sync::semaphore::signal_semaphor_pair();
 
         Self {
-            state: Atomic::new(ProcessState::Pending),
             child_semaphore: read,
             child_semaphore_send: write,
             waiting_semaphore: SyncCell::new(None)
@@ -26,17 +21,6 @@ impl AtomicProcessData {
 
 // Getters and setters
 impl AtomicProcessData {
-    /// Get the current process state
-    pub fn state(&self) -> ProcessState {
-        self.state.load(core::sync::atomic::Ordering::SeqCst)
-    }
-
-    /// Set the current process state
-    pub fn set_state(&self, state: ProcessState) {
-        self.state
-            .store(state, core::sync::atomic::Ordering::SeqCst)
-    }
-
     /// Check the child pending semaphore
     pub fn check_child_semaphore(&self) -> bool {
         self.child_semaphore.read_atomic()

@@ -9,6 +9,8 @@ use super::*;
 
 /// Inner process structure
 pub struct Process {
+
+    state: Mutex<ProcessState>,
     atomic_data: AtomicProcessData,
     const_data: ConstantProcessData,
     mutable_data: Mutex<MutableProcessData>,
@@ -24,6 +26,7 @@ impl Process {
         mutable_data: MutableProcessData,
     ) -> Self {
         Self {
+            state: Mutex::new(ProcessState::Pending),
             atomic_data,
             const_data,
             mutable_data: Mutex::new(mutable_data),
@@ -85,21 +88,29 @@ impl Process {
 
 // Getters and Setters
 impl Process {
+    // State:
+    
+    /// Get the current process state mutex
+    pub fn state_mutex(&self) -> &Mutex<ProcessState> {
+        &self.state
+    }
+
+    /// Get the state of the process asyncronously
+    pub async fn async_state(&self) -> MutexGuard<ProcessState> {
+        self.state.async_lock().await
+    }
+
+    /// Syncronously set the state of the process
+    pub fn set_state(&self, state: ProcessState) {
+        *self.state.spin_lock() = state;
+    }
+
+
     // Atomic Data:
 
     /// Check the child pending semaphore
     pub fn check_child_semaphore(&self) -> bool {
         self.atomic_data.check_child_semaphore()
-    }
-
-    /// Get the current process state
-    pub fn state(&self) -> ProcessState {
-        self.atomic_data.state()
-    }
-
-    /// Set the current process state
-    pub fn set_state(&self, state: ProcessState) {
-        self.atomic_data.set_state(state)
     }
 
     /// Check the optional waiting semaphore

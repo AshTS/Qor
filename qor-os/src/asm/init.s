@@ -7,3 +7,4 @@ init_proc_location:
     li a0, 0
     li a7, 61
     ecall
+    j init_proc_location

@@ -1,4 +1,4 @@
-use libutils::sync::semaphore::SignalSemaphore;
+use libutils::sync::{semaphore::SignalSemaphore};
 
 use crate::mem::{KernelPageBox, PageTable};
 
@@ -8,7 +8,7 @@ use super::ExecutionState;
 pub struct MutableProcessData {
     execution_state: ExecutionState,
     memory_map: KernelPageBox<PageTable>,
-    wait_semaphore: Option<SignalSemaphore>
+    wait_semaphore: Option<SignalSemaphore>,
 }
 
 impl MutableProcessData {
@@ -17,7 +17,7 @@ impl MutableProcessData {
         Self {
             execution_state,
             memory_map,
-            wait_semaphore: None
+            wait_semaphore: None,
         }
     }
 

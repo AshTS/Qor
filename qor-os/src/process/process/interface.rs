@@ -1,4 +1,4 @@
-use libutils::sync::{MutexGuard, semaphore::SignalSemaphoreSender};
+use libutils::sync::{MutexGuard, semaphore::SignalSemaphoreSender, Mutex};
 
 use super::*;
 
@@ -25,14 +25,19 @@ impl ProcessInterface {
         self.inner.pid()
     }
 
-    /// Get the state of the process
-    pub fn state(&self) -> ProcessState {
-        self.inner.state()
+    /// Get the current process state mutex
+    pub fn state_mutex(&self) -> &Mutex<ProcessState> {
+        self.inner.state_mutex()
     }
 
-    /// Set the state of the process
+    /// Get the state of the process asyncronously
+    pub async fn async_state(&self) -> MutexGuard<ProcessState> {
+        self.inner.async_state().await
+    }
+
+    /// Syncronously set the state of the process
     pub fn set_state(&self, state: ProcessState) {
-        self.inner.set_state(state)
+        self.inner.set_state(state);
     }
 
     /// Obtain a lock on the mutable data for the process
