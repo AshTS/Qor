@@ -18,23 +18,23 @@ impl OwnedPath {
     /// Convert the path to an iter
     pub fn iter(&self) -> PathIterator {
         PathIterator {
-            path: &self,
+            path: self,
             iter_index: None,
         }
     }
 
     /// Canonicalize the path given a CWD
     pub fn canonicalize(&mut self, cwd: PathBuffer) {
-        if !self.path.starts_with("/") {
-            let sep = if cwd.path.ends_with("/") { "" } else { "/" };
+        if !self.path.starts_with('/') {
+            let sep = if cwd.path.ends_with('/') { "" } else { "/" };
             self.path = format!("{}{}{}", cwd, sep, self.path);
         }
     }
 
     /// Canonicalize the path given a CWD
     pub fn canonicalized(&mut self, cwd: PathBuffer) -> OwnedPath {
-        if !self.path.starts_with("/") {
-            let sep = if cwd.path.ends_with("/") { "" } else { "/" };
+        if !self.path.starts_with('/') {
+            let sep = if cwd.path.ends_with('/') { "" } else { "/" };
             OwnedPath::new(format!("{}{}{}", cwd, sep, self.path))
         } else {
             self.clone()
@@ -44,12 +44,12 @@ impl OwnedPath {
     /// Get the path to the parent of the given path, and the name of the final
     /// element of the path
     pub fn split_last(&self) -> (OwnedPath, &str) {
-        if self.path.len() == 0 || self.path == "/" {
+        if self.path.is_empty() || self.path == "/" {
             return (OwnedPath::new(""), "");
         }
 
         // If the path ends with a '/', step back one more character
-        let end_index = self.path.len() - 1 - if self.path.ends_with("/") { 1 } else { 0 };
+        let end_index = self.path.len() - 1 - if self.path.ends_with('/') { 1 } else { 0 };
 
         // Set the starting index to match
         let mut start_index = end_index;

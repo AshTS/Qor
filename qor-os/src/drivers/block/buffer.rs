@@ -39,11 +39,11 @@ impl<
 
     /// Read a block from the device
     pub async fn read_block(&mut self, block: usize) -> &[u8; BLOCK_SIZE] {
-        if !self.cache.contains_key(&block) {
+        if let alloc::collections::btree_map::Entry::Vacant(e) = self.cache.entry(block) {
             let mut dev = self.blk_dev.async_lock().await;
             let mut buffer = Box::new([0u8; BLOCK_SIZE]);
             let ptr = buffer.as_mut_ptr() as usize;
-            self.cache.insert(block, buffer);
+            e.insert(buffer);
 
             unsafe { dev.async_read(ptr, BLOCK_SIZE as u32, block as u64 * BLOCK_SIZE as u64) }
                 .unwrap()
@@ -51,7 +51,7 @@ impl<
         }
 
         if let Some(buffer) = self.cache.get(&block) {
-            &*buffer
+            buffer
         } else {
             unreachable!()
         }
@@ -61,7 +61,7 @@ impl<
     pub async fn read_block_mut(&mut self, block: usize) -> &mut [u8; BLOCK_SIZE] {
         self.dirty.insert(block, ());
 
-        if !self.cache.contains_key(&block) {
+        if let alloc::collections::btree_map::Entry::Vacant(e) = self.cache.entry(block) {
             let mut buffer = Box::new([0u8; BLOCK_SIZE]);
             let ptr = buffer.as_mut_ptr() as usize;
 
@@ -75,7 +75,7 @@ impl<
             .unwrap()
             .await;
 
-            self.cache.insert(block, buffer);
+            e.insert(buffer);
         }
 
         if let Some(buffer) = self.cache.get_mut(&block) {

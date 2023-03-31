@@ -60,18 +60,16 @@ impl FilesystemInterface {
             self.root = Some(device_id);
 
             Ok(device_id)
+        } else if self.root.is_some() {
+            let (path_start, name) = path.split_last();
+
+            let inode = self.path_to_inode(path_start).await?;
+            self.mount_fs_at(inode, root_inode, name.to_string())
+                .await?;
+
+            Ok(device_id)
         } else {
-            if self.root.is_some() {
-                let (path_start, name) = path.split_last();
-
-                let inode = self.path_to_inode(path_start).await?;
-                self.mount_fs_at(inode, root_inode, name.to_string())
-                    .await?;
-
-                Ok(device_id)
-            } else {
-                Err(FileSystemError::MissingRootMount)
-            }
+            Err(FileSystemError::MissingRootMount)
         }
     }
 
@@ -221,10 +219,8 @@ impl FileSystem for FilesystemInterface {
         kdebugln!(unsafe Filesystem, "Syncing Virtual Filesystem");
 
         // Sync the filesystem by syncing all of the mounted file systems
-        for (_, fs) in &mut self.mounts {
-            if let Some(fs) = fs {
-                fs.sync().await?;
-            }
+        for fs in self.mounts.values_mut().flatten() {
+            fs.sync().await?;
         }
 
         Ok(())

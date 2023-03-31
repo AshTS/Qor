@@ -3,7 +3,7 @@ use core::cell::UnsafeCell;
 use super::Mutex;
 use super::MutexGuard;
 
-/// A syncronization primitive similar to the `Mutex`, but allows simultaneous
+/// A synchronization primitive similar to the `Mutex`, but allows simultaneous
 /// shared reads, with locking to allow unique references to be created.
 /// Because of the presence of the shared access, atomic reference counting is
 /// used to keep track of the shared references. There are two forms of guards
@@ -27,7 +27,7 @@ impl<T> SyncCell<T> {
     }
 
     /// Attempt to get a `SharedGuard`
-    pub fn attempt_shared<'a>(&'a self) -> Option<SharedGuard<'a, T>> {
+    pub fn attempt_shared(&self) -> Option<SharedGuard<T>> {
         if let Some(lock) = self.lock.attempt_lock() {
 
             if self.strong_wait.load(core::sync::atomic::Ordering::SeqCst) != 0 {
@@ -48,7 +48,7 @@ impl<T> SyncCell<T> {
     }
 
     /// Attempt to get the lock on the wrapped `Mutex`, returning `None` if it is not possible
-    fn attempt_unique_internal<'a>(&'a self) -> Option<UniqueGuard<'a, T>> {
+    fn attempt_unique_internal(&self) -> Option<UniqueGuard<T>> {
         self.lock.attempt_lock().map(|l| {
             if self.reference_count.load(core::sync::atomic::Ordering::SeqCst) == 0 {
                 self.pop_strong_wait();
@@ -61,7 +61,7 @@ impl<T> SyncCell<T> {
     }
 
     /// Attempt to get the lock on the wrapped `Mutex`, returning `None` if it is not possible
-    pub fn attempt_unique<'a>(&'a self) -> Option<UniqueGuard<'a, T>> {
+    pub fn attempt_unique(&self) -> Option<UniqueGuard<T>> {
         self.push_strong_wait();
 
         if let Some(v) = self.attempt_unique_internal() {
@@ -84,18 +84,18 @@ impl<T> SyncCell<T> {
     }
 
     /// Asynchronously request shared access
-    pub fn async_shared<'a>(&'a self) -> SyncCellSharedFuture<'a, T> {
+    pub fn async_shared(&self) -> SyncCellSharedFuture<T> {
         SyncCellSharedFuture { synccell: self }
     }
 
     /// Asynchronously request unique access
-    pub fn async_unique<'a>(&'a self) -> SyncCellUniqueFuture<'a, T> {
+    pub fn async_unique(&self) -> SyncCellUniqueFuture<T> {
         self.push_strong_wait();
         SyncCellUniqueFuture { synccell: self }
     }
 
     /// Spin until shared access can be acquired
-    pub fn spin_shared<'a>(&'a self) -> SharedGuard<'a, T> {
+    pub fn spin_shared(&self) -> SharedGuard<T> {
         loop {
             if let Some(guard) = self.attempt_shared() {
                 return guard;
@@ -104,7 +104,7 @@ impl<T> SyncCell<T> {
     }
 
     /// Spin until unique access can be acquired
-    pub fn spin_unique<'a>(&'a self) -> UniqueGuard<'a, T> {
+    pub fn spin_unique(&self) -> UniqueGuard<T> {
         self.push_strong_wait();
         loop {
             if let Some(guard) = self.attempt_unique_internal() {

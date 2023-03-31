@@ -5,7 +5,7 @@ use crate::*;
 /// Trait for all tests
 #[cfg(test)]
 pub trait TestFunction {
-    fn run(&self) -> ();
+    fn run(&self);
 }
 
 // Implement testable

@@ -24,7 +24,7 @@ pub struct Data {
 
 impl Data {
     pub fn new() -> Self {
-        Self { data: 0 as *mut u8 }
+        Self { data: core::ptr::null_mut::<u8>() }
     }
 }
 

@@ -194,10 +194,7 @@ impl<
         let directory_entries =
             unsafe { core::mem::transmute::<&[u8], &[Minix3DirEntry]>(data.as_slice()) };
 
-        Ok((&directory_entries[0..data.len() / 64])
-            .iter()
-            .cloned()
-            .collect())
+        Ok(directory_entries[0..data.len() / 64].to_vec())
     }
 }
 
@@ -289,6 +286,8 @@ impl<
         let mut result = alloc::vec::Vec::new();
 
         for dir_ent in orig_dir_ents {
+            use crate::alloc::string::ToString;
+            
             let this_inode_ptr = self.inode(dir_ent.inode as usize)?;
             let this_inode = self.inode_at(this_inode_ptr).await?;
 

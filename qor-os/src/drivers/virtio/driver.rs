@@ -8,6 +8,7 @@ use super::structs::*;
 
 use alloc::format;
 use alloc::string::String;
+use alloc::string::ToString;
 use alloc::vec::Vec;
 
 use crate::mem::PAGE_SIZE;
@@ -60,9 +61,7 @@ impl VirtIODeviceDriver {
         self.device.write_field(Field::QueueNum, VIRTIO_QUEUE_SIZE);
 
         if VIRTIO_QUEUE_SIZE > largest_allowable_queue {
-            Err(format!(
-                "Max queue size {} < {}",
-                largest_allowable_queue, VIRTIO_QUEUE_SIZE
+            Err(format!("Max queue size {largest_allowable_queue} < {VIRTIO_QUEUE_SIZE}"
             ))
         } else {
             Ok(())
@@ -216,7 +215,7 @@ impl VirtIODeviceDriver {
         // 6. Re-read device status to ensure the FEATURES_OK bit is still set
         let status = self.device.read_field(Field::Status);
         if status & VIRTIO_STATUS_FEATURES_OK == 0 {
-            return Err(format!("Device Refuse Features"));
+            return Err("Device Refuse Features".to_string());
         }
 
         Ok(features & accepted_features)

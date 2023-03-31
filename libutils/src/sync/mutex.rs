@@ -20,16 +20,16 @@ impl<T> Mutex<T> {
     }
 
     /// Spin until the lock can be acquired, returning a `MutexGuard` for the wrapped data
-    pub fn spin_lock<'a>(&'a self) -> MutexGuard<'a, T> {
+    pub fn spin_lock(&self) -> MutexGuard<T> {
         while !self.acquire_lock() {}
 
-        MutexGuard { reference: &self }
+        MutexGuard { reference: self }
     }
 
     /// Attempt to get the lock on the `Mutex`, returning `None` if it is not possible
-    pub fn attempt_lock<'a>(&'a self) -> Option<MutexGuard<'a, T>> {
+    pub fn attempt_lock(&self) -> Option<MutexGuard<T>> {
         if self.acquire_lock() {
-            Some(MutexGuard { reference: &self })
+            Some(MutexGuard { reference: self })
         }
         else {
             None
@@ -37,7 +37,7 @@ impl<T> Mutex<T> {
     }
 
     /// Asynchronously access the lock on the `Mutex`
-    pub fn async_lock<'a>(&'a self) -> MutexFuture<'a, T> {
+    pub fn async_lock(&self) -> MutexFuture<T> {
         MutexFuture { mutex: self }
     }
 

@@ -188,7 +188,7 @@ impl TableEntry {
     }
 
     /// Get a mutable reference to the next level of the page table
-    pub unsafe fn next_level_mut(&self) -> &mut PageTable {
+    pub unsafe fn next_level_mut(&mut self) -> &mut PageTable {
         (((self.full_ppn() << 12) as usize) as *mut PageTable)
             .as_mut()
             .unwrap()
@@ -353,9 +353,9 @@ impl PageTable {
         let vpn0 = virt.vpn(MemoryPageLevel::Level0);
 
         // Next, start going down the table of entries at each level
-        let entry_level2 = self.0[(vpn2 % 512) as usize];
+        let mut entry_level2 = self.0[(vpn2 % 512) as usize];
         // If the entry is not valid, we will return a page fault
-        if entry_level2.valid() == false {
+        if !entry_level2.valid() {
             return None;
         }
         // If the entry is a leaf, we will break out here, returning the physical address
@@ -370,9 +370,9 @@ impl PageTable {
         let level2_table = unsafe { entry_level2.next_level_mut() };
 
         // Next, start going down the table of entries at each level
-        let entry_level1 = level2_table.0[(vpn1 % 512) as usize];
+        let mut entry_level1 = level2_table.0[(vpn1 % 512) as usize];
         // If the entry is not valid, we will return a page fault
-        if entry_level1.valid() == false {
+        if !entry_level1.valid() {
             return None;
         }
         // If the entry is a leaf, we will break out here, returning the physical address
@@ -390,7 +390,7 @@ impl PageTable {
         // Next, start going down the table of entries at each level
         let entry_level0 = level1_table.0[(vpn0 % 512) as usize];
         // If the entry is not valid, we will return a page fault
-        if entry_level0.valid() == false {
+        if !entry_level0.valid() {
             return None;
         }
         // If the entry is a leaf, we will break out here, returning the physical address
@@ -429,7 +429,7 @@ impl PageTable {
         let levels = [MemoryPageLevel::Level1, MemoryPageLevel::Level0];
         for level in &levels[..2 - level.index()] {
             // If the current entry is invalid, we need to allocate a new page table for the next level
-            if entry.valid() == false {
+            if !entry.valid() {
                 // Allocate the next level
                 let next_level = libutils::sync::no_interrupts_supervisor(|no_interrupts| {
                     crate::mem::PAGE_ALLOCATOR.allocate_static(no_interrupts, PageTable::new())
@@ -531,7 +531,7 @@ impl PageTable {
 impl core::fmt::Display for PageTable {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         for (i, entry) in self.0.iter().enumerate() {
-            writeln!(f, "{:#05x}  {}", i, entry)?;
+            writeln!(f, "{i:#05x}  {entry}")?;
         }
 
         Ok(())

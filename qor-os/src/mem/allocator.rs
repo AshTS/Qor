@@ -190,7 +190,7 @@ impl Allocator {
         let mut walking_reference = &mut self.root;
 
         while let Some(walking) = walking_reference {
-            let found = walking.free == false && walking.contains_ptr(ptr);
+            let found = !walking.free && walking.contains_ptr(ptr);
 
             if found {
                 walking.free = true;
@@ -233,7 +233,7 @@ impl core::fmt::Display for Allocator {
         let mut walking_reference = &self.root;
 
         while let Some(walking) = walking_reference {
-            writeln!(f, "{}", walking)?;
+            writeln!(f, "{walking}")?;
 
             if let Some(next) = walking.next {
                 walking_reference = unsafe { next.as_ptr().as_ref().unwrap() };

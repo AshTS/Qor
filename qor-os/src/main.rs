@@ -7,8 +7,6 @@
 #![feature(fn_align)]
 // To allow functions to be forced to a 4 byte boundary
 
-// Use the default allocation error handler
-#![feature(default_alloc_error_handler)]
 // Allow dead code for partial implementations
 #![allow(dead_code)]
 // Use the _start symbol instead of main

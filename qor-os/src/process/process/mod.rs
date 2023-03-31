@@ -13,8 +13,8 @@ pub use interface::*;
 pub mod mutabledata;
 pub use mutabledata::*;
 
-pub mod process;
-pub use process::*;
+pub mod process_object;
+pub use process_object::*;
 
 pub mod types;
 pub use types::*;

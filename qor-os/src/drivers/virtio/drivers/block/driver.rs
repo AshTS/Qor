@@ -95,17 +95,17 @@ impl BlockDriver {
         let blk_request = alloc::boxed::Box::leak(alloc::boxed::Box::new(Request::new()));
 
         let desc = VirtIODescriptor {
-            addr: &(*blk_request).header as *const Header as u64,
+            addr: &blk_request.header as *const Header as u64,
             len: core::mem::size_of::<Header>() as u32,
             flags: VIRTIO_DESC_F_NEXT,
             next: 0,
         };
 
         let head_idx = self.device.add_descriptor_to_queue(0, desc);
-        (*blk_request).header.sector = sector;
+        blk_request.header.sector = sector;
 
         // A write is an "out" direction, whereas a read is an "in" direction.
-        (*blk_request).header.blktype = if true == write {
+        blk_request.header.blktype = if write {
             VIRTIO_BLK_T_OUT
         } else {
             VIRTIO_BLK_T_IN
@@ -113,14 +113,14 @@ impl BlockDriver {
         // We put 111 in the status. Whenever the device finishes, it will write into
         // status. If we read status and it is 111, we know that it wasn't written to by
         // the device.
-        (*blk_request).data.data = buffer;
-        (*blk_request).header.reserved = 0;
-        (*blk_request).status.status = 111;
+        blk_request.data.data = buffer;
+        blk_request.header.reserved = 0;
+        blk_request.status.status = 111;
         let desc = VirtIODescriptor {
             addr: buffer as u64,
             len: size,
             flags: VIRTIO_DESC_F_NEXT
-                | if false == write {
+                | if !write {
                     VIRTIO_DESC_F_WRITE
                 } else {
                     0
@@ -131,7 +131,7 @@ impl BlockDriver {
         let _data_idx = self.device.add_descriptor_to_queue(0, desc);
 
         let desc = VirtIODescriptor {
-            addr: &(*blk_request).status as *const Status as u64,
+            addr: &blk_request.status as *const Status as u64,
             len: core::mem::size_of::<Status>() as u32,
             flags: VIRTIO_DESC_F_WRITE,
             next: 0,
@@ -170,13 +170,9 @@ impl BlockDriver {
     unsafe fn sync(mut request: BlockOperation) {
         use libutils::sync::semaphore::Semaphore;
 
-        loop {
-            if let (b, Some(v)) = request.read() {
-                assert!(!b);
-                request = v;
-            } else {
-                break;
-            }
+        while let (b, Some(v)) = request.read() {
+            assert!(!b);
+            request = v;
         }
 
         // while read_volatile(request.request).status.status == 111 {}
@@ -221,7 +217,7 @@ impl BlockDriver {
 
         unsafe {
             self.sync_read(
-                buffer.as_mut() as *mut [u8] as *mut u8,
+                buffer as *mut [u8] as *mut u8,
                 buffer.len() as u32,
                 offset,
             )
@@ -236,7 +232,7 @@ impl BlockDriver {
 
         unsafe {
             self.sync_write(
-                buffer.as_ref() as *const [u8] as *mut u8,
+                buffer as *const [u8] as *mut u8,
                 buffer.len() as u32,
                 offset,
             )

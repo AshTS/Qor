@@ -114,7 +114,7 @@ impl FileMode {
         group: Permissions,
         owner: Permissions,
     ) -> Self {
-        Self(((entry_type as u16) << 13) | (user.0 << 6) | (group.0 << 3) | (owner.0 << 0))
+        Self(((entry_type as u16) << 13) | (user.0 << 6) | (group.0 << 3) | owner.0)
     }
 
     /// Create a file mode from the raw bits
@@ -128,6 +128,7 @@ impl FileMode {
     }
 
     /// Set the entry type
+    #[allow(clippy::unusual_byte_groupings)]
     pub fn set_entry_type(&mut self, entry_type: DirectoryEntryType) {
         self.0 &= 0b000_111_111_111;
         self.0 |= (entry_type as u16) << 13;
@@ -139,6 +140,7 @@ impl FileMode {
     }
 
     /// Set the user permissions
+    #[allow(clippy::unusual_byte_groupings)]
     pub fn set_user_perms(&mut self, perms: Permissions) {
         self.0 &= 0b111_000_111_111;
         self.0 |= perms.0 << 6;
@@ -150,6 +152,7 @@ impl FileMode {
     }
 
     /// Set the group permissions
+    #[allow(clippy::unusual_byte_groupings)]
     pub fn set_group_perms(&mut self, perms: Permissions) {
         self.0 &= 0b111_111_000_111;
         self.0 |= perms.0 << 3;
@@ -157,12 +160,13 @@ impl FileMode {
 
     /// Get the owner permissions
     pub fn owner_perms(&self) -> Permissions {
-        Permissions((self.0 >> 0) & 0b111)
+        Permissions(self.0 & 0b111)
     }
 
     /// Set the owner permissions
+    #[allow(clippy::unusual_byte_groupings)]
     pub fn set_owner_perms(&mut self, perms: Permissions) {
         self.0 &= 0b111_111_111_000;
-        self.0 |= perms.0 << 0;
+        self.0 |= perms.0;
     }
 }

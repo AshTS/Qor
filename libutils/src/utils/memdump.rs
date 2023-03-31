@@ -10,7 +10,8 @@ pub struct MemoryDump {
 impl MemoryDump {
     /// Construct a new memory dump object
     ///
-    /// Safety: the address range must point to valid memory
+    /// # Safety
+    /// The address range must point to valid memory
     pub unsafe fn new(base_address: usize, length: usize) -> Self {
         Self {
             start_address: base_address,
@@ -22,7 +23,8 @@ impl MemoryDump {
 
     /// Construct a new memory dump object with a virtual address displayed
     ///
-    /// Safety: the address range must point to valid memory
+    /// # Safety
+    /// The address range must point to valid memory
     pub unsafe fn new_virtual(base_address: usize, virtual_address: usize, length: usize) -> Self {
         Self {
             start_address: base_address,
@@ -33,6 +35,9 @@ impl MemoryDump {
     }
 
     /// Read a byte at the given address, or return None if is it not in the memory bank
+    /// 
+    /// # Safety
+    /// The address range must point to valid memory
     unsafe fn read_byte(&self, addr: usize) -> Option<u8> {
         if addr >= self.start_address && addr < self.start_address + self.length {
             Some((addr as *const u8).read())
@@ -52,11 +57,11 @@ impl core::fmt::Display for MemoryDump {
         for line in start_line..=end_line {
             let line = line * 16;
             let display_line = line - start_line * 16 + display_off;
-            write!(f, "  {:x} ", display_line)?;
+            write!(f, "  {display_line:x} ")?;
 
             for offset in 0..16 {
                 if let Some(v) = unsafe { self.read_byte(line + offset) } {
-                    write!(f, "{:02x} ", v)?;
+                    write!(f, "{v:02x} ")?;
                 } else {
                     write!(f, "   ")?;
                 }

@@ -48,7 +48,7 @@ impl SimpleExecutor {
 
     /// Run through the queue until all tasks are pending
     pub fn run_until_pending(&mut self) -> bool {
-        if self.task_queue.len() == 0 {
+        if self.task_queue.is_empty() {
             return false;
         }
 
@@ -79,7 +79,7 @@ fn dummy_raw_waker() -> RawWaker {
     }
 
     let vtable = &RawWakerVTable::new(clone, no_op, no_op, no_op);
-    RawWaker::new(0 as *const (), vtable)
+    RawWaker::new(core::ptr::null::<()>(), vtable)
 }
 
 fn dummy_waker() -> Waker {

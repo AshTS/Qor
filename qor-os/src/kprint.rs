@@ -10,7 +10,7 @@ macro_rules! kprint
 
         // Safety: This is safe because overlapping writes is acceptable if annoying
         #[allow(unused_unsafe)]
-		let _ = write!(unsafe { crate::drivers::UART_DRIVER.unsafe_writer() }, $($args)+);
+		let _ = write!(unsafe { $crate::drivers::UART_DRIVER.unsafe_writer() }, $($args)+);
     });
 
     ($thread_marker:expr, $($args:tt)+) => ({
@@ -18,7 +18,9 @@ macro_rules! kprint
         use libutils::sync::InitThreadMarker;
 
         // Safety: This is safe because overlapping writes is acceptable if annoying
-		let _ = (|_: InitThreadMarker| { write!(unsafe { crate::drivers::UART_DRIVER.unsafe_writer() }, $($args)+) })($thread_marker);
+        // We allow the redundant closure call because we need to consume the thread marker for safety 
+        #[allow(clippy::redundant_closure_call)]
+		let _ = (|_: InitThreadMarker| { write!(unsafe { $crate::drivers::UART_DRIVER.unsafe_writer() }, $($args)+) })($thread_marker);
     });
 }
 
@@ -29,21 +31,21 @@ macro_rules! kprintln
     (unsafe) => ({kprint!("\r\n")});
 
     (unsafe $fmt:expr) => ({
-        crate::kprint!(unsafe concat!($fmt, "\r\n"))
+        $crate::kprint!(unsafe concat!($fmt, "\r\n"))
     });
 
     (unsafe $fmt:expr, $($args:tt)+) => ({
-        crate::kprint!(unsafe concat!($fmt, "\r\n"), $($args)+)
+        $crate::kprint!(unsafe concat!($fmt, "\r\n"), $($args)+)
     });
 
     ($thread_marker:expr) => ({kprint!($thread_marker, "\r\n")});
 
     ($thread_marker:expr, $fmt:expr) => ({
-        crate::kprint!($thread_marker, concat!($fmt, "\r\n"))
+        $crate::kprint!($thread_marker, concat!($fmt, "\r\n"))
     });
 
     ($thread_marker:expr, $fmt:expr, $($args:tt)+) => ({
-        crate::kprint!($thread_marker, concat!($fmt, "\r\n"), $($args)+)
+        $crate::kprint!($thread_marker, concat!($fmt, "\r\n"), $($args)+)
     });
 }
 
@@ -52,75 +54,75 @@ macro_rules! kprintln
 macro_rules! kdebug
 {
     (unsafe $mode:ident, $fmt:expr, $($args:tt)+) => ({
-        if crate::debug::check_debug(crate::debug::DebugCategories::$mode)
+        if $crate::debug::check_debug($crate::debug::DebugCategories::$mode)
         {
-            if crate::kprint::COLORED
+            if $crate::kprint::COLORED
             {
-                crate::kprint!(unsafe concat!("\x1B[34m", $fmt, "\x1B[m"), $($args)+)
+                $crate::kprint!(unsafe concat!("\x1B[34m", $fmt, "\x1B[m"), $($args)+)
             }
             else
             {
-                crate::kprint!(unsafe $fmt, $($args)+);
+                $crate::kprint!(unsafe $fmt, $($args)+);
             }
         }
     });
 
     (unsafe $mode:ident, $fmt:expr) => ({
-        if crate::debug::check_debug(crate::debug::DebugCategories::$mode)
+        if $crate::debug::check_debug($crate::debug::DebugCategories::$mode)
         {
-            if crate::kprint::COLORED
+            if $crate::kprint::COLORED
             {
-                crate::kprint!(unsafe concat!("\x1B[34m", $fmt, "\x1B[m"))
+                $crate::kprint!(unsafe concat!("\x1B[34m", $fmt, "\x1B[m"))
             }
             else
             {
-                crate::kprint!(unsafe $fmt);
+                $crate::kprint!(unsafe $fmt);
             }
         }
     });
 
     ($thread_marker:expr, $mode:ident, $fmt:expr, $($args:tt)+) => ({
-        if crate::debug::check_debug(crate::debug::DebugCategories::$mode)
+        if $crate::debug::check_debug($crate::debug::DebugCategories::$mode)
         {
-            if crate::kprint::COLORED
+            if $crate::kprint::COLORED
             {
-                crate::kprint!($thread_marker, concat!("\x1B[34m", $fmt, "\x1B[m"), $($args)+)
+                $crate::kprint!($thread_marker, concat!("\x1B[34m", $fmt, "\x1B[m"), $($args)+)
             }
             else
             {
-                crate::kprint!($thread_marker, $fmt, $($args)+);
+                $crate::kprint!($thread_marker, $fmt, $($args)+);
             }
         }
     });
 
     ($thread_marker:expr, $mode:ident, $fmt:expr) => ({
-        if crate::debug::check_debug(crate::debug::DebugCategories::$mode)
+        if $crate::debug::check_debug($crate::debug::DebugCategories::$mode)
         {
-            if crate::kprint::COLORED
+            if $crate::kprint::COLORED
             {
-                crate::kprint!($thread_marker, concat!("\x1B[34m", $fmt, "\x1B[m"))
+                $crate::kprint!($thread_marker, concat!("\x1B[34m", $fmt, "\x1B[m"))
             }
             else
             {
-                crate::kprint!($thread_marker, $fmt);
+                $crate::kprint!($thread_marker, $fmt);
             }
         }
     });
 
     (unsafe $fmt:expr, $($args:tt)+) => ({
-        crate::kdebug!(unsafe Other, $fmt, $($args)+)
+        $crate::kdebug!(unsafe Other, $fmt, $($args)+)
     });
 
     (unsafe $fmt:expr) => ({
-        crate::kdebug!(unsafe Other, $fmt)
+        $crate::kdebug!(unsafe Other, $fmt)
     });
 
     ($thread_marker:expr, $fmt:expr, $($args:tt)+) => ({
-        crate::kdebug!($thread_marker, Other, $fmt, $($args)+)
+        $crate::kdebug!($thread_marker, Other, $fmt, $($args)+)
     });
 
     ($thread_marker:expr, $fmt:expr) => ({
-        crate::kdebug!($thread_marker, Other, $fmt)
+        $crate::kdebug!($thread_marker, Other, $fmt)
     });
 }
 
@@ -131,42 +133,42 @@ macro_rules! kdebugln
     (unsafe $mode:ident) => ({kdebug!(unsafe $mode, "\r\n")});
 
     (unsafe $mode:ident, $fmt:expr) => ({
-        crate::kdebug!(unsafe $mode, concat!($fmt, "\r\n"))
+        $crate::kdebug!(unsafe $mode, concat!($fmt, "\r\n"))
     });
 
     (unsafe $mode:ident, $fmt:expr, $($args:tt)+) => ({
-        crate::kdebug!(unsafe $mode, concat!($fmt, "\r\n"), $($args)+)
+        $crate::kdebug!(unsafe $mode, concat!($fmt, "\r\n"), $($args)+)
     });
 
     (unsafe) => ({kdebug!(unsafe Other, "\r\n")});
 
     (unsafe $fmt:expr) => ({
-        crate::kdebug!(unsafe Other, concat!($fmt, "\r\n"))
+        $crate::kdebug!(unsafe Other, concat!($fmt, "\r\n"))
     });
 
     (unsafe $fmt:expr, $($args:tt)+) => ({
-        crate::kdebug!(unsafe Other, concat!($fmt, "\r\n"), $($args)+)
+        $crate::kdebug!(unsafe Other, concat!($fmt, "\r\n"), $($args)+)
     });
 
     //
     ($thread_marker:expr, $mode:ident) => ({kdebug!($thread_marker, $mode, "\r\n")});
 
     ($thread_marker:expr, $mode:ident, $fmt:expr) => ({
-        crate::kdebug!($thread_marker, $mode, concat!($fmt, "\r\n"))
+        $crate::kdebug!($thread_marker, $mode, concat!($fmt, "\r\n"))
     });
 
     ($thread_marker:expr, $mode:ident, $fmt:expr, $($args:tt)+) => ({
-        crate::kdebug!($thread_marker, $mode, concat!($fmt, "\r\n"), $($args)+)
+        $crate::kdebug!($thread_marker, $mode, concat!($fmt, "\r\n"), $($args)+)
     });
 
     ($thread_marker:expr) => ({kdebug!($thread_marker, Other, "\r\n")});
 
     ($thread_marker:expr, $fmt:expr) => ({
-        crate::kdebug!($thread_marker, Other, concat!($fmt, "\r\n"))
+        $crate::kdebug!($thread_marker, Other, concat!($fmt, "\r\n"))
     });
 
     ($thread_marker:expr, $fmt:expr, $($args:tt)+) => ({
-        crate::kdebug!($thread_marker, Other, concat!($fmt, "\r\n"), $($args)+)
+        $crate::kdebug!($thread_marker, Other, concat!($fmt, "\r\n"), $($args)+)
     });
 }
 
@@ -175,46 +177,46 @@ macro_rules! kdebugln
 macro_rules! kwarn
 {
     (unsafe $fmt:expr, $($args:tt)+) => ({
-        if crate::kprint::COLORED
+        if $crate::kprint::COLORED
         {
-            crate::kprint!(unsafe concat!("\x1B[33m", $fmt, "\x1B[m"), $($args)+)
+            $crate::kprint!(unsafe concat!("\x1B[33m", $fmt, "\x1B[m"), $($args)+)
         }
         else
         {
-            crate::kprint!(unsafe $fmt, $($args)+);
+            $crate::kprint!(unsafe $fmt, $($args)+);
         }
     });
 
     (unsafe $fmt:expr) => ({
-        if crate::kprint::COLORED
+        if $crate::kprint::COLORED
         {
-            crate::kprint!(unsafe concat!("\x1B[33m", $fmt, "\x1B[m"))
+            $crate::kprint!(unsafe concat!("\x1B[33m", $fmt, "\x1B[m"))
         }
         else
         {
-            crate::kprint!(unsafe $fmt);
+            $crate::kprint!(unsafe $fmt);
         }
     });
 
     ($thread_marker:expr, $fmt:expr, $($args:tt)+) => ({
-        if crate::kprint::COLORED
+        if $crate::kprint::COLORED
         {
-            crate::kprint!(concat!("\x1B[33m", $fmt, "\x1B[m"), $($args)+)
+            $crate::kprint!(concat!("\x1B[33m", $fmt, "\x1B[m"), $($args)+)
         }
         else
         {
-            crate::kprint!($fmt, $($args)+);
+            $crate::kprint!($fmt, $($args)+);
         }
     });
 
     ($thread_marker:expr, $fmt:expr) => ({
-        if crate::kprint::COLORED
+        if $crate::kprint::COLORED
         {
-            crate::kprint!($thread_marker, concat!("\x1B[33m", $fmt, "\x1B[m"))
+            $crate::kprint!($thread_marker, concat!("\x1B[33m", $fmt, "\x1B[m"))
         }
         else
         {
-            crate::kprint!($thread_marker, $fmt);
+            $crate::kprint!($thread_marker, $fmt);
         }
     });
 }
@@ -223,24 +225,24 @@ macro_rules! kwarn
 #[macro_export]
 macro_rules! kwarnln
 {
-    (unsafe) => ({crate::kwarn!(unsafe "\r\n")});
+    (unsafe) => ({$crate::kwarn!(unsafe "\r\n")});
 
     (unsafe $fmt:expr) => ({
-        crate::kwarn!(unsafe concat!($fmt, "\r\n"))
+        $crate::kwarn!(unsafe concat!($fmt, "\r\n"))
     });
 
     (unsafe $fmt:expr, $($args:tt)+) => ({
-        crate::kwarn!(unsafe concat!($fmt, "\r\n"), $($args)+)
+        $crate::kwarn!(unsafe concat!($fmt, "\r\n"), $($args)+)
     });
 
-    ($thread_marker:expr) => ({crate::kwarn!($thread_marker, "\r\n")});
+    ($thread_marker:expr) => ({$crate::kwarn!($thread_marker, "\r\n")});
 
     ($thread_marker:expr, $fmt:expr) => ({
-        crate::kwarn!($thread_marker, concat!($fmt, "\r\n"))
+        $crate::kwarn!($thread_marker, concat!($fmt, "\r\n"))
     });
 
     ($thread_marker:expr, $fmt:expr, $($args:tt)+) => ({
-        crate::kwarn!($thread_marker, concat!($fmt, "\r\n"), $($args)+)
+        $crate::kwarn!($thread_marker, concat!($fmt, "\r\n"), $($args)+)
     });
 }
 
@@ -249,46 +251,46 @@ macro_rules! kwarnln
 macro_rules! kerror
 {
     (unsafe $fmt:expr, $($args:tt)+) => ({
-        if crate::kprint::COLORED
+        if $crate::kprint::COLORED
         {
-            crate::kprint!(unsafe concat!("\x1B[31m", $fmt, "\x1B[m"), $($args)+)
+            $crate::kprint!(unsafe concat!("\x1B[31m", $fmt, "\x1B[m"), $($args)+)
         }
         else
         {
-            crate::kprint!(unsafe $fmt, $($args)+);
+            $crate::kprint!(unsafe $fmt, $($args)+);
         }
     });
 
     (unsafe $fmt:expr) => ({
-        if crate::kprint::COLORED
+        if $crate::kprint::COLORED
         {
-            crate::kprint!(unsafe concat!("\x1B[31m", $fmt, "\x1B[m"))
+            $crate::kprint!(unsafe concat!("\x1B[31m", $fmt, "\x1B[m"))
         }
         else
         {
-            crate::kprint!(unsafe $fmt);
+            $crate::kprint!(unsafe $fmt);
         }
     });
 
     ($thread_marker:expr, $fmt:expr, $($args:tt)+) => ({
-        if crate::kprint::COLORED
+        if $crate::kprint::COLORED
         {
-            crate::kprint!(concat!("\x1B[31m", $fmt, "\x1B[m"), $($args)+)
+            $crate::kprint!(concat!("\x1B[31m", $fmt, "\x1B[m"), $($args)+)
         }
         else
         {
-            crate::kprint!($fmt, $($args)+);
+            $crate::kprint!($fmt, $($args)+);
         }
     });
 
     ($thread_marker:expr, $fmt:expr) => ({
-        if crate::kprint::COLORED
+        if $crate::kprint::COLORED
         {
-            crate::kprint!($thread_marker, concat!("\x1B[31m", $fmt, "\x1B[m"))
+            $crate::kprint!($thread_marker, concat!("\x1B[31m", $fmt, "\x1B[m"))
         }
         else
         {
-            crate::kprint!($thread_marker, $fmt);
+            $crate::kprint!($thread_marker, $fmt);
         }
     });
 }
@@ -297,23 +299,23 @@ macro_rules! kerror
 #[macro_export]
 macro_rules! kerrorln
 {
-    (unsafe) => ({crate::kerror!(unsafe "\r\n")});
+    (unsafe) => ({$crate::kerror!(unsafe "\r\n")});
 
     (unsafe $fmt:expr) => ({
-        crate::kerror!(unsafe concat!($fmt, "\r\n"))
+        $crate::kerror!(unsafe concat!($fmt, "\r\n"))
     });
 
     (unsafe $fmt:expr, $($args:tt)+) => ({
-        crate::kerror!(unsafe concat!($fmt, "\r\n"), $($args)+)
+        $crate::kerror!(unsafe concat!($fmt, "\r\n"), $($args)+)
     });
 
-    ($thread_marker:expr) => ({crate::kerror!($thread_marker, "\r\n")});
+    ($thread_marker:expr) => ({$crate::kerror!($thread_marker, "\r\n")});
 
     ($thread_marker:expr, $fmt:expr) => ({
-        crate::kerror!($thread_marker, concat!($fmt, "\r\n"))
+        $crate::kerror!($thread_marker, concat!($fmt, "\r\n"))
     });
 
     ($thread_marker:expr, $fmt:expr, $($args:tt)+) => ({
-        crate::kerror!($thread_marker, concat!($fmt, "\r\n"), $($args)+)
+        $crate::kerror!($thread_marker, concat!($fmt, "\r\n"), $($args)+)
     });
 }

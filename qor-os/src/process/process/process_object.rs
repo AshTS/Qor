@@ -41,7 +41,7 @@ impl Process {
             .expect("Unable to allocate page table for process");
         page_table.identity_map(
             (fn_ptr as usize) & (!(mem::PAGE_SIZE - 1)),
-            (fn_ptr as usize) & (!(mem::PAGE_SIZE - 1)) + 1,
+            (fn_ptr as usize) & ((!(mem::PAGE_SIZE - 1)) + 1),
             mem::RWXFlags::ReadWriteExecute,
             mem::UGFlags::UserGlobal,
         );

@@ -4,6 +4,9 @@ pub trait Semaphore: Send + Sync + Sized {
     fn read(self) -> (bool, Option<Self>);
 
     /// Read the state of the semaphore, returning the result of the semaphore, without checking if the semaphore needs to be consumed
+    /// 
+    /// # Safety
+    /// The semaphore might need to be consumed if it is read to have changed
     unsafe fn unchecked_read(&mut self) -> bool;
 }
 

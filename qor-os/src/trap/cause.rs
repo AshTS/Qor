@@ -1,3 +1,4 @@
+#[allow(clippy::enum_clike_unportable_variant)]
 #[repr(usize)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TrapCause {

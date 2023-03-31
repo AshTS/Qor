@@ -8,6 +8,9 @@ pub struct UpdateSemaphore<T: Copy + PartialEq> {
 
 impl<T: Copy + PartialEq> UpdateSemaphore<T> {
     /// Construct a new update semaphore
+    /// 
+    /// # Safety
+    /// The pointer must point to valid memory
     pub unsafe fn new(ptr: *mut T, original: T) -> Self {
         Self {
             ptr,
@@ -16,6 +19,9 @@ impl<T: Copy + PartialEq> UpdateSemaphore<T> {
     }
 
     // Construct a new update semaphore and read the initial value
+    /// 
+    /// # Safety
+    /// The pointer must point to valid memory
     pub unsafe fn new_read(ptr: *mut T) -> Self {
         Self {
             ptr,

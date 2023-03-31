@@ -1,5 +1,3 @@
-use alloc::string::String;
-
 /// Minix3 Superblock
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
@@ -56,12 +54,12 @@ pub struct Minix3DirEntry {
     pub name: [u8; 60],
 }
 
-impl Minix3DirEntry {
-    pub fn to_string(&self) -> String {
-        self.name
-            .iter()
-            .filter(|v| **v != 0)
-            .map(|v| *v as char)
-            .collect()
+impl core::fmt::Display for Minix3DirEntry {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        for c in self.name.iter().filter(|v| **v != 0).map(|v| *v as char) {
+            write!(f, "{c}")?;
+        }
+
+        Ok(())
     }
 }

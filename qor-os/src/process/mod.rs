@@ -1,3 +1,4 @@
+#[allow(clippy::module_inception)]
 pub mod process;
 use libutils::sync::{InitThreadMarker, SyncCell};
 pub use process::*;
@@ -48,5 +49,5 @@ pub fn add_process(process: Process) {
 
 /// Get the process interface for the given pid
 pub fn get_process(pid: ProcessIdentifier) -> Option<ProcessInterface> {
-    process_map().spin_shared().get(&pid).map(|v| v.clone())
+    process_map().spin_shared().get(&pid).cloned()
 }
