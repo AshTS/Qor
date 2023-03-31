@@ -1,6 +1,9 @@
 use libutils::sync::NoInterruptMarker;
 
-use crate::{mem::{KernelPageBox, KiByteCount, PageCount, PAGE_SIZE}, process::ProcessIdentifier};
+use crate::{
+    mem::{KernelPageBox, KiByteCount, PageCount, PAGE_SIZE},
+    process::ProcessIdentifier,
+};
 
 #[repr(C)]
 #[derive(Debug, Clone)]
@@ -11,7 +14,7 @@ pub struct TrapFrame {
     pub trap_stack: *mut u8,
     pub hartid: usize,
     pub trap_stack_size: usize,
-    pub pid: ProcessIdentifier
+    pub pid: ProcessIdentifier,
 }
 
 impl TrapFrame {
@@ -34,7 +37,7 @@ impl TrapFrame {
             trap_stack: stack,
             hartid: 0,
             trap_stack_size: stack_size.raw(),
-            pid: 0
+            pid: 0,
         }
     }
 }

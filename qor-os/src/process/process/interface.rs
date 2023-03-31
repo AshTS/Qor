@@ -1,4 +1,4 @@
-use libutils::sync::{MutexGuard, semaphore::SignalSemaphoreSender, Mutex};
+use libutils::sync::{semaphore::SignalSemaphoreSender, Mutex, MutexGuard};
 
 use super::*;
 

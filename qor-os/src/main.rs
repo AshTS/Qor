@@ -114,14 +114,22 @@ pub extern "C" fn kmain() {
     kdebugln!(thread_marker, Initialization, "Switch to Supervisor Mode");
 
     // Initialize the global filesystem
-    kdebugln!(thread_marker, Initialization, "Initializing Virtual Filesystem");
+    kdebugln!(
+        thread_marker,
+        Initialization,
+        "Initializing Virtual Filesystem"
+    );
     fs::init_global_filesystem(thread_marker);
 
     // Mount the boot filesystem
     tasks::execute_task(mount_filesystem());
 
     // Initialize the global executor
-    kdebugln!(thread_marker, Initialization, "Initializing Global Executor");
+    kdebugln!(
+        thread_marker,
+        Initialization,
+        "Initializing Global Executor"
+    );
     tasks::init_global_executor(thread_marker);
 
     // Setup the PLIC timer
@@ -138,7 +146,11 @@ pub extern "C" fn kmain() {
     process::add_process(p);
 
     // Start the context switch timer
-    kdebugln!(thread_marker, Initialization, "Starting Process Switch Timer");
+    kdebugln!(
+        thread_marker,
+        Initialization,
+        "Starting Process Switch Timer"
+    );
     drivers::CLINT_DRIVER.set_remaining(0, 10);
 }
 
@@ -150,8 +162,7 @@ async fn mount_filesystem() {
     let driver = drivers::virtio_device_collection().block_devices[0].clone();
 
     // Construct a buffered block device wrapper
-    let buffer =
-        crate::drivers::BlockDeviceBuffer::<1024, _, _, _>::new(driver);
+    let buffer = crate::drivers::BlockDeviceBuffer::<1024, _, _, _>::new(driver);
 
     // Access the virtual file system and acquire the lock on it
     let vfs_arc = fs::global_filesystem_arc();

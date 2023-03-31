@@ -1,4 +1,4 @@
-use libutils::sync::{semaphore::SignalSemaphore};
+use libutils::sync::semaphore::SignalSemaphore;
 
 use crate::mem::{KernelPageBox, PageTable};
 

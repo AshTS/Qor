@@ -1,10 +1,13 @@
-use libutils::sync::{semaphore::{SignalSemaphore, SignalSemaphoreSender}, SyncCell};
+use libutils::sync::{
+    semaphore::{SignalSemaphore, SignalSemaphoreSender},
+    SyncCell,
+};
 
 /// Atomic Process Data
 pub struct AtomicProcessData {
     child_semaphore: SignalSemaphore,
     pub child_semaphore_send: SignalSemaphoreSender,
-    waiting_semaphore: SyncCell<Option<SignalSemaphore>>
+    waiting_semaphore: SyncCell<Option<SignalSemaphore>>,
 }
 
 impl AtomicProcessData {
@@ -14,7 +17,7 @@ impl AtomicProcessData {
         Self {
             child_semaphore: read,
             child_semaphore_send: write,
-            waiting_semaphore: SyncCell::new(None)
+            waiting_semaphore: SyncCell::new(None),
         }
     }
 }
@@ -28,7 +31,9 @@ impl AtomicProcessData {
 
     /// Check the waiting semaphore
     pub fn check_wait_semaphore(&self) -> Option<bool> {
-        self.waiting_semaphore.attempt_shared().map(|g| g.as_ref().map(|s| s.read_atomic()))?
+        self.waiting_semaphore
+            .attempt_shared()
+            .map(|g| g.as_ref().map(|s| s.read_atomic()))?
     }
 
     /// Get a new sender for the wait semaphore

@@ -175,8 +175,7 @@ impl FilesystemInterface {
     pub async fn path_to_inode(&mut self, path: OwnedPath) -> FilesystemResult<InodePointer> {
         if let Some(index) = self.index.get(&path) {
             Ok(*index)
-        }
-        else {
+        } else {
             let mut ptr = self.get_root_inode().await?;
 
             for element in path.iter() {

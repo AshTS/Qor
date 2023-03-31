@@ -11,8 +11,8 @@ use alloc::boxed::Box;
 use core::future::Future;
 
 use super::{
-    DirectoryEntry, FileMode, FileStat, FileSystem, FileSystemError, FilesystemInterface,
-    FilesystemResult, InodePointer, DirectoryEntryType,
+    DirectoryEntry, DirectoryEntryType, FileMode, FileStat, FileSystem, FileSystemError,
+    FilesystemInterface, FilesystemResult, InodePointer,
 };
 
 pub struct Minix3Filesystem<
@@ -184,15 +184,19 @@ impl<
     }
 
     /// Get the directory entries in minix3 format for the given inode
-    async fn minix3_dir_ents(&mut self, inode: InodePointer) -> FilesystemResult<alloc::vec::Vec<Minix3DirEntry>> {
+    async fn minix3_dir_ents(
+        &mut self,
+        inode: InodePointer,
+    ) -> FilesystemResult<alloc::vec::Vec<Minix3DirEntry>> {
         let inode = self.inode_at(inode).await?;
         let data = self.file_contents(inode).await?;
 
         let directory_entries =
             unsafe { core::mem::transmute::<&[u8], &[Minix3DirEntry]>(data.as_slice()) };
 
-        Ok((&directory_entries[0..data.len()/64])
-            .iter().cloned()
+        Ok((&directory_entries[0..data.len() / 64])
+            .iter()
+            .cloned()
             .collect())
     }
 }
@@ -291,7 +295,7 @@ impl<
             result.push(DirectoryEntry {
                 index: this_inode_ptr,
                 name: dir_ent.to_string(),
-                entry_type: FileMode::from_bits(this_inode.mode).entry_type()
+                entry_type: FileMode::from_bits(this_inode.mode).entry_type(),
             })
         }
 

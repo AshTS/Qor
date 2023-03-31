@@ -11,7 +11,7 @@ use alloc::sync::Arc;
 use atomic::Atomic;
 
 static mut PROCESS_MAP: Option<Arc<SyncCell<BTreeMap<ProcessIdentifier, ProcessInterface>>>> = None;
- 
+
 static NEXT_PID: Atomic<ProcessIdentifier> = Atomic::new(0);
 
 /// Initialize the process map

@@ -1,4 +1,4 @@
-use libutils::sync::{Mutex, MutexGuard, NoInterruptMarker, semaphore::SignalSemaphoreSender};
+use libutils::sync::{semaphore::SignalSemaphoreSender, Mutex, MutexGuard, NoInterruptMarker};
 
 use crate::{
     mem::{self, KernelPageBox, KernelPageSeq, PageCount, PAGE_SIZE},
@@ -9,7 +9,6 @@ use super::*;
 
 /// Inner process structure
 pub struct Process {
-
     state: Mutex<ProcessState>,
     atomic_data: AtomicProcessData,
     const_data: ConstantProcessData,
@@ -89,7 +88,7 @@ impl Process {
 // Getters and Setters
 impl Process {
     // State:
-    
+
     /// Get the current process state mutex
     pub fn state_mutex(&self) -> &Mutex<ProcessState> {
         &self.state
@@ -104,7 +103,6 @@ impl Process {
     pub fn set_state(&self, state: ProcessState) {
         *self.state.spin_lock() = state;
     }
-
 
     // Atomic Data:
 
