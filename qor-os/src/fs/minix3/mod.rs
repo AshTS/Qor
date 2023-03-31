@@ -74,7 +74,7 @@ impl<
                 .read_block(first_inode_block + inode_block_index)
                 .await;
 
-            // Safety: Becaue the inode structure is composed of numbers, without illegal states, we can safely transmute
+            // Safety: Because the inode structure is composed of numbers, without illegal states, we can safely transmute
             let inodes = unsafe { core::mem::transmute::<&[u8; 1024], &[Minix3Inode; 16]>(block) };
 
             Ok(inodes[inode_offset_index])
@@ -100,7 +100,7 @@ impl<
                 .read_block_mut(first_inode_block + inode_block_index)
                 .await;
 
-            // Safety: Becaue the inode structure is composed of numbers, without illegal states, we can safely transmute
+            // Safety: Because the inode structure is composed of numbers, without illegal states, we can safely transmute
             let inodes =
                 unsafe { core::mem::transmute::<&mut [u8; 1024], &mut [Minix3Inode; 16]>(block) };
 
@@ -149,7 +149,7 @@ impl<
             // Read in the data from the block as u32's
             let block = self.blockdevice.read_block(block_index).await;
 
-            // Safety: Becaue the inode structure is composed of numbers, without illegal states, we can safely transmute
+            // Safety: Because the inode structure is composed of numbers, without illegal states, we can safely transmute
             let indexes = unsafe { core::mem::transmute::<&[u8; 1024], &[u32; 256]>(block) };
 
             // Loop over the indexes, reading from the nonzero ones
@@ -219,7 +219,7 @@ impl<
             return Err(FileSystemError::BadFilesystemFormat);
         }
 
-        // Finaly, insert the superblock
+        // Finally, insert the superblock
         self.superblock = Some(*superblock);
 
         kdebugln!(unsafe "{:#?}", self.superblock);
@@ -287,7 +287,7 @@ impl<
 
         for dir_ent in orig_dir_ents {
             use crate::alloc::string::ToString;
-            
+
             let this_inode_ptr = self.inode(dir_ent.inode as usize)?;
             let this_inode = self.inode_at(this_inode_ptr).await?;
 

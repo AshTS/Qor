@@ -57,7 +57,7 @@ impl<
         }
     }
 
-    /// Read a block from the device and get a mutable referene to its contents
+    /// Read a block from the device and get a mutable reference to its contents
     pub async fn read_block_mut(&mut self, block: usize) -> &mut [u8; BLOCK_SIZE] {
         self.dirty.insert(block, ());
 

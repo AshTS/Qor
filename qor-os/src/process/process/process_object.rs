@@ -94,12 +94,12 @@ impl Process {
         &self.state
     }
 
-    /// Get the state of the process asyncronously
+    /// Get the state of the process asynchronously
     pub async fn async_state(&self) -> MutexGuard<ProcessState> {
         self.state.async_lock().await
     }
 
-    /// Syncronously set the state of the process
+    /// Synchronously set the state of the process
     pub fn set_state(&self, state: ProcessState) {
         *self.state.spin_lock() = state;
     }
@@ -138,6 +138,6 @@ impl Process {
 
 impl core::ops::Drop for Process {
     fn drop(&mut self) {
-        kdebugln!(unsafe "Droping PID {}", self.pid());
+        kdebugln!(unsafe "Dropping PID {}", self.pid());
     }
 }

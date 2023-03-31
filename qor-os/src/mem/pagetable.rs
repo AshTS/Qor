@@ -207,7 +207,7 @@ impl core::fmt::Display for TableEntry {
             write!(f, " {:#x}", self.full_ppn() << 12)?;
 
             if self.is_leaf() {
-                // daguxrwv
+                // d a g u x r w v
                 write!(f, " ")?;
                 write!(f, "{}", if self.dirty() { "d" } else { "-" })?;
                 write!(f, "{}", if self.accessed() { "a" } else { "-" })?;

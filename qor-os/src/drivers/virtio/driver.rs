@@ -26,7 +26,7 @@ pub struct VirtIODeviceDriver {
 }
 
 impl VirtIODeviceDriver {
-    /// Create a new driver arround a VirtIOHelper
+    /// Create a new driver around a VirtIOHelper
     pub fn new(device_type: VirtIODeviceType, device: VirtIOHelper) -> Self {
         Self {
             device_type,
@@ -137,7 +137,7 @@ impl VirtIODeviceDriver {
     pub fn add_descriptor_to_queue(&mut self, queue: usize, descriptor: VirtIODescriptor) -> usize {
         kdebugln!(unsafe VirtIO, "Adding descriptor to queue {} on driver at 0x{:x}", queue, self.device.base);
 
-        // Incremement the index
+        // Increment the index
         self.queue_aux_data[queue].index += 1;
         self.queue_aux_data[queue].index %= VIRTIO_QUEUE_SIZE as usize;
         let idx = self.queue_aux_data[queue].index;

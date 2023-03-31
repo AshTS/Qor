@@ -94,7 +94,7 @@ impl AllocationChunk {
         }
     }
 
-    /// Check if this chunk has the proper alignment and size, returning the eventually needed size if it workss
+    /// Check if this chunk has the proper alignment and size, returning the eventually needed size if it works
     pub fn check_layout(&self, layout: &alloc::alloc::Layout) -> Option<usize> {
         let overlap = self.ptr & (layout.align() - 1);
         let extra = (layout.align() - overlap) % layout.align();
