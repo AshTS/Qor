@@ -101,7 +101,7 @@ _other_hart_boot:
     mv s0, t0
 
     la sp, _stack_end
-    li t0, -0x80000
+    li t0, -0x200000
     add sp, sp, t0
 
     # Initialize the stack pointer

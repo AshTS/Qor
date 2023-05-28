@@ -19,7 +19,7 @@ pub struct TrapFrame {
 
 impl TrapFrame {
     /// Create a new trap frame, allocating a stack of the given size
-    pub fn new(no_interrupts: NoInterruptMarker, stack_size: KiByteCount) -> Self {
+    pub fn new(no_interrupts: NoInterruptMarker, stack_size: KiByteCount, hartid: usize) -> Self {
         // Convert the stack over to pages
         let stack_size: PageCount = stack_size.convert();
 
@@ -35,7 +35,7 @@ impl TrapFrame {
             fregs: [0.0f64; 32],
             satp: 0,
             trap_stack: stack,
-            hartid: 0,
+            hartid,
             trap_stack_size: stack_size.raw(),
             pid: 0,
         }
@@ -49,15 +49,30 @@ impl core::ops::Drop for TrapFrame {
 }
 
 /// Initialize the global trap frame
-pub fn initialize_trap_frame(no_interrupts: NoInterruptMarker) {
+pub fn initialize_trap_frame(no_interrupts: NoInterruptMarker, hartid: usize) {
     // Construct the new trap frame
-    let frame = TrapFrame::new(no_interrupts, PageCount::new(1).convert());
+    let frame = TrapFrame::new(no_interrupts, PageCount::new(1).convert(), hartid);
 
     // Statically allocate the trap frame
     let static_allocated = crate::mem::PAGE_ALLOCATOR
         .allocate_static(no_interrupts, frame)
         .expect("Unable to allocate space for global trap frame");
 
+    kdebugln!(unsafe "Setting mscratch to {}", static_allocated as *mut _ as usize);
+
     // Write that value to the mscratch register
     riscv::register::mscratch::write(static_allocated as *mut _ as usize);
+}
+
+/// Get the hartid from the current scratch register
+pub fn scratch_register_hartid() -> usize {
+    let ptr = riscv::register::sscratch::read();
+    let ptr = ptr as *mut TrapFrame;
+
+    let trap_frame = unsafe { ptr.read_volatile() };
+    let hart_id = trap_frame.hartid;
+
+    core::mem::forget(trap_frame);
+
+    hart_id
 }

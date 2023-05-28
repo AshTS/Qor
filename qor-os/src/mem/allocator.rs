@@ -19,7 +19,7 @@ pub struct Allocator {
 
 /// Structure to hold the kernel heap allocator
 pub struct GlobalAllocator {
-    allocator: core::cell::UnsafeCell<Option<Allocator>>,
+    allocators: [core::cell::UnsafeCell<Option<Allocator>>; 2],
 }
 
 impl AllocationChunk {
@@ -250,7 +250,7 @@ impl GlobalAllocator {
     /// Construct a new, empty global allocator
     pub const fn new() -> Self {
         Self {
-            allocator: core::cell::UnsafeCell::new(None),
+            allocators: [core::cell::UnsafeCell::new(None), core::cell::UnsafeCell::new(None)],
         }
     }
 
@@ -260,6 +260,7 @@ impl GlobalAllocator {
         _init_thread: InitThreadMarker,
         no_interrupts: NoInterruptMarker,
         pages: PageCount,
+        index: usize,
     ) {
         // Allocate the proper number of pages
         let entries = crate::mem::PAGE_ALLOCATOR
@@ -272,7 +273,7 @@ impl GlobalAllocator {
             .as_ptr();
 
         unsafe {
-            self.allocator
+            self.allocators[index]
                 .get()
                 .as_mut()
                 .unwrap()
@@ -289,10 +290,12 @@ unsafe impl core::alloc::GlobalAlloc for GlobalAllocator {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
         // Get a critical section, this is not technically enough, we also need to make sure we are in the proper thread, for now we will ignore this, but in future, each thread needs to be given its own allocator
         libutils::sync::no_interrupts_supervisor(|_| {
-            if let Some(allocator) = self.allocator.get().as_mut().unwrap() {
+            let hart = crate::trap::scratch_register_hartid();
+
+            if let Some(allocator) = self.allocators[hart].get().as_mut().unwrap() {
                 allocator.allocate_memory(layout).unwrap() as *mut u8
             } else {
-                panic!("Global Allocator Not Initialized")
+                panic!("Global Allocator {} Not Initialized", hart)
             }
         })
     }
@@ -300,10 +303,12 @@ unsafe impl core::alloc::GlobalAlloc for GlobalAllocator {
     unsafe fn dealloc(&self, data_ptr: *mut u8, _layout: core::alloc::Layout) {
         // Get a critical section, this is not technically enough, we also need to make sure we are in the proper thread, for now we will ignore this, but in future, each thread needs to be given its own allocator
         libutils::sync::no_interrupts_supervisor(|_| {
-            if let Some(allocator) = self.allocator.get().as_mut().unwrap() {
+            let hart = crate::trap::scratch_register_hartid();
+
+            if let Some(allocator) = self.allocators[hart].get().as_mut().unwrap() {
                 allocator.free_memory(data_ptr as usize)
             } else {
-                panic!("Global Allocator Not Initialized")
+                panic!("Global Allocator {} Not Initialized", hart)
             }
         })
     }

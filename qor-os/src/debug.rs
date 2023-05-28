@@ -27,7 +27,7 @@ pub const BLOCK_DEVICE: bool = false;
 pub const BLOCK_DEVICE: bool = false;
 
 #[cfg(not(test))]
-pub const BYTE_MEMORY_ALLOCATION: bool = false;
+pub const BYTE_MEMORY_ALLOCATION: bool = true;
 #[cfg(test)]
 pub const BYTE_MEMORY_ALLOCATION: bool = false;
 
@@ -52,12 +52,12 @@ pub const INTERRUPTS: bool = false;
 pub const INTERRUPTS: bool = false;
 
 #[cfg(not(test))]
-pub const KERNEL_PAGE_TABLE: bool = false;
+pub const KERNEL_PAGE_TABLE: bool = true;
 #[cfg(test)]
 pub const KERNEL_PAGE_TABLE: bool = false;
 
 #[cfg(not(test))]
-pub const MEMORY_ALLOCATION: bool = false;
+pub const MEMORY_ALLOCATION: bool = true;
 #[cfg(test)]
 pub const MEMORY_ALLOCATION: bool = false;
 

@@ -66,18 +66,6 @@ pub extern "C" fn kinit() {
         "Global Page Allocator Initialized"
     );
 
-    // Initialize the global allocator
-    mem::GLOBAL_ALLOCATOR.initialize(
-        thread_marker,
-        interrupt_marker,
-        mem::KiByteCount::new(8192).convert(),
-    );
-    kdebugln!(
-        thread_marker,
-        Initialization,
-        "Global Allocator Initialized"
-    );
-
     // Initialize the global page table
     kdebugln!(
         thread_marker,
@@ -92,7 +80,20 @@ pub extern "C" fn kinit() {
 
     // Initialize a trap frame
     kdebugln!(thread_marker, Initialization, "Initializing Trap Frame");
-    trap::initialize_trap_frame(interrupt_marker);
+    trap::initialize_trap_frame(interrupt_marker, 0);
+
+    // Initialize the global allocator
+    mem::GLOBAL_ALLOCATOR.initialize(
+        thread_marker,
+        interrupt_marker,
+        mem::KiByteCount::new(8192).convert(),
+        0
+    );
+    kdebugln!(
+        thread_marker,
+        Initialization,
+        "Global Allocator Initialized"
+    );
 
     // Initialize the process map
     kdebugln!(thread_marker, Initialization, "Initializing Process Map");
@@ -150,7 +151,7 @@ pub extern "C" fn kmain() {
         Initialization,
         "Starting Process Switch Timer"
     );
-    drivers::CLINT_DRIVER.set_remaining(0, 10);
+    // drivers::CLINT_DRIVER.set_remaining(0, 10);
 
     // We can now let the other threads know they can start safely
     WAITING_FLAG.store(true, atomic::Ordering::Relaxed);
@@ -192,12 +193,20 @@ pub static WAITING_FLAG: core::sync::atomic::AtomicBool = core::sync::atomic::At
 #[repr(align(4))]
 pub extern "C" fn kinit2(hart: usize) {
     kprintln!(unsafe "Hello From Thread ID{}", hart);
-
+    
     // Initialize a trap frame
     kdebugln!(unsafe Initialization, "Initializing Trap Frame for TID{}", hart);
     no_interrupts(|interrupt_marker| {
-        trap::initialize_trap_frame(interrupt_marker);
+        trap::initialize_trap_frame(interrupt_marker, hart);
     });
+
+    // Initialize the global allocator
+    mem::GLOBAL_ALLOCATOR.initialize(
+        unsafe { libutils::sync::InitThreadMarker::new() },
+        unsafe { libutils::sync::NoInterruptMarker::new() },
+        mem::KiByteCount::new(8192).convert(),
+        hart
+    );
 }
 
 /// Kernel Main Function
@@ -205,6 +214,6 @@ pub extern "C" fn kinit2(hart: usize) {
 #[repr(align(4))]
 pub extern "C" fn kmain2(hart: usize) {
     kprintln!(unsafe "Hello Again From Thread ID{}", hart);
-    drivers::CLINT_DRIVER.set_remaining(hart, 5_000_000);
-    loop {}
+    drivers::CLINT_DRIVER.set_remaining(hart, 10);
+    drivers::CLINT_DRIVER.set_remaining(0, 10);
 }

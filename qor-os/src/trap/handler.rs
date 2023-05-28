@@ -15,7 +15,7 @@ extern "C" fn m_trap(
     let from_user = (status >> 11) & 0b11 == 0;
     let pid = if from_user { Some(frame.pid) } else { None };
 
-    kerror!(unsafe "HART{}: ", hart);
+    kprintln!(unsafe "#");
 
     match cause {
         TrapCause::BreakPoint => {
@@ -65,17 +65,19 @@ extern "C" fn m_trap(
         }
         TrapCause::MachineTimer => {
             // If we came from a userland process, switch it into the Pending state
-            kdebugln!(unsafe "Timer: {:?} HART{}", pid, hart);
             if let Some(pid) = pid {
                 if let Some(proc) = process::get_process(pid) {
-                    kdebugln!(unsafe "Freeing PID{}", pid);
+                    kdebugln!(unsafe "Freeing PID{} from HART{}", pid, hart);
                     proc.set_state(ProcessState::Pending);
+                    timer_tick(hart); 
                 }
             }
+            else {
+                kdebugln!(unsafe "HART{} Switching to Process from Kernel Mode", hart);
+                timer_tick(hart); 
+            }
 
-            timer_tick(hart);
-
-            epc
+            unreachable!()
         }
         TrapCause::MachineExternal => {
             if let Some(interrupt) = crate::drivers::PLIC_DRIVER.next_interrupt() {

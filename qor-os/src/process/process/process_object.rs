@@ -59,6 +59,7 @@ impl Process {
         let mut trap_frame = TrapFrame::new(
             unsafe { NoInterruptMarker::new() },
             PageCount::new(2).convert(),
+            0
         );
 
         trap_frame.pid = pid;
