@@ -4,6 +4,7 @@
 .section .text
 .global init_proc_location
 init_proc_location:
+    ebreak
     li a0, 0
     li a7, 61
     ecall

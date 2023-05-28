@@ -15,6 +15,8 @@ extern "C" fn m_trap(
     let from_user = (status >> 11) & 0b11 == 0;
     let pid = if from_user { Some(frame.pid) } else { None };
 
+    kerror!(unsafe "HART{}: ", hart);
+
     match cause {
         TrapCause::BreakPoint => {
             kerrorln!(unsafe "Breakpoint Triggered At {:#x}", epc);
@@ -63,9 +65,10 @@ extern "C" fn m_trap(
         }
         TrapCause::MachineTimer => {
             // If we came from a userland process, switch it into the Pending state
-            kdebugln!(unsafe "Timer: {:?}", pid);
+            kdebugln!(unsafe "Timer: {:?} HART{}", pid, hart);
             if let Some(pid) = pid {
                 if let Some(proc) = process::get_process(pid) {
+                    kdebugln!(unsafe "Freeing PID{}", pid);
                     proc.set_state(ProcessState::Pending);
                 }
             }
@@ -93,6 +96,16 @@ extern "C" fn m_trap(
             }
 
             epc
+        }
+        TrapCause::UserEnvironmentCall => {
+            if let Some(pid) = pid {
+                kwarnln!(unsafe "HART{} - PID{} Syscall", hart, pid);
+                epc + 4
+            }
+            else {
+                kerrorln!(unsafe "HART {} Triggered User Environment Call without a PID set", hart);
+                epc + 4
+            }
         }
         _ => {
             kerrorln!(unsafe "Unhandled Trap {:?}:", cause);

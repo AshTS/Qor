@@ -66,7 +66,7 @@ SECTIONS
   PROVIDE(_stack_start = _bss_end);
 
   . = _stack_start;
-  . = . + 0x80000;
+  . = . + 0x100000;
 
   PROVIDE(_stack_end = .);
   PROVIDE(_memory_end = ORIGIN(ram) + LENGTH(ram));

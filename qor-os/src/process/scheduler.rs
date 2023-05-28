@@ -7,7 +7,7 @@ pub fn schedule(hart: usize) {
     if let Some(proc_map) = crate::process::process_map().attempt_shared() {
         for (pid, interface) in proc_map.iter() {
             if let Some(mut state) = interface.state_mutex().attempt_lock() {
-                crate::kdebugln!(unsafe "Schedule Time {} {:?}", pid, *state);
+                // crate::kdebugln!(unsafe "Schedule Time HART{} {} {:?}", hart, pid, *state);
 
                 match *state {
                     // If a process is pending, it is ready to run now
@@ -47,7 +47,7 @@ pub fn schedule(hart: usize) {
                     super::ProcessState::Running => {}
                 }
             } else {
-                crate::kdebugln!(unsafe "Schedule Time {} Unable to get State", pid);
+                // crate::kdebugln!(unsafe "Schedule Time HART{} {} Unable to get State", hart, pid);
             }
         }
     }
@@ -55,6 +55,7 @@ pub fn schedule(hart: usize) {
     // If a context switch has been requested, do the context switch
     if let Some(pid) = scheduled_pid {
         if let Some(proc) = super::get_process(pid) {
+            crate::kdebugln!(unsafe "Scheduling PID {} on HART {}", pid, hart);
             crate::drivers::CLINT_DRIVER.set_remaining(hart, 10_000_000);
             unsafe { proc.switch_to() };
         }

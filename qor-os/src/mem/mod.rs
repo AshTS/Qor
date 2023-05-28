@@ -28,8 +28,8 @@ pub mod units;
 pub use units::*;
 
 /// Set a page table as the global page table
-pub fn set_page_table(page_table: &PageTable) {
-    let addr = page_table as *const PageTable as usize;
+pub fn set_page_table(page_table: KernelPageBox<PageTable>) {
+    let addr = page_table.leak() as *const PageTable as usize;
 
     unsafe { riscv::register::satp::set(riscv::register::satp::Mode::Sv39, 0, addr >> 12) };
 }

@@ -20,6 +20,9 @@
 #![reexport_test_harness_main = "test_main"]
 
 // Alloc Prelude
+
+use drivers::virtio::driver;
+use libutils::sync::no_interrupts;
 extern crate alloc;
 
 // Includes
@@ -85,9 +88,7 @@ pub extern "C" fn kinit() {
         .allocate(interrupt_marker, mem::PageTable::new())
         .expect("Unable to allocate Global Page Table");
     mem::identity_map_kernel(&mut page_table);
-    mem::set_page_table(&page_table);
-
-    page_table.leak();
+    mem::set_page_table(page_table);
 
     // Initialize a trap frame
     kdebugln!(thread_marker, Initialization, "Initializing Trap Frame");
@@ -150,6 +151,9 @@ pub extern "C" fn kmain() {
         "Starting Process Switch Timer"
     );
     drivers::CLINT_DRIVER.set_remaining(0, 10);
+
+    // We can now let the other threads know they can start safely
+    WAITING_FLAG.store(true, atomic::Ordering::Relaxed);
 }
 
 /// Mount the boot filesystem
@@ -177,4 +181,30 @@ async fn mount_filesystem() {
         .await
         .unwrap();
     vfs.index().await.unwrap();
+}
+
+#[no_mangle]
+#[used]
+pub static WAITING_FLAG: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+
+/// Kernel Initialize Function (Called immediately after boot)
+#[no_mangle]
+#[repr(align(4))]
+pub extern "C" fn kinit2(hart: usize) {
+    kprintln!(unsafe "Hello From Thread ID{}", hart);
+
+    // Initialize a trap frame
+    kdebugln!(unsafe Initialization, "Initializing Trap Frame for TID{}", hart);
+    no_interrupts(|interrupt_marker| {
+        trap::initialize_trap_frame(interrupt_marker);
+    });
+}
+
+/// Kernel Main Function
+#[no_mangle]
+#[repr(align(4))]
+pub extern "C" fn kmain2(hart: usize) {
+    kprintln!(unsafe "Hello Again From Thread ID{}", hart);
+    drivers::CLINT_DRIVER.set_remaining(hart, 5_000_000);
+    loop {}
 }
