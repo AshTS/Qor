@@ -18,7 +18,7 @@ _start:
     # Make sure only hart 0 will boot
     csrr t0, mhartid
     # If we are not on hart 0, we will jump to the alternative boot sequence
-    bnez t0, _start_wfi_loop
+    bnez t0, _start_init2
 
     # Clear the BSS section by writing 8 byte double words to it
 
@@ -45,7 +45,7 @@ _start_init:
     li t0, 0b11 << 11 | (1 << 7) | (1 << 3)
     csrw mstatus, t0
 
-    # Set the mret address to kmain
+    # Set the mret address to kinit
     la t1, kinit
     csrw mepc, t1
 
@@ -69,6 +69,65 @@ _start_kinit_return:
 
     # Set the mret address to kmain
     la t1, kmain
+    csrw mepc, t1
+
+    # Enable Interrupts
+    li t3, (1 << 3) | (1 << 8) | (1 << 7) | (1 << 11)
+    csrw mie, t3
+
+    # Set up the PMP registers correctly
+    li t4, 31
+    csrw pmpcfg0, t4
+    li t5, (1 << 55) - 1
+    csrw pmpaddr0, t5
+
+    # Set up the return address for when kmain returns
+    la ra, _start_wfi_loop
+    
+    # Jump to kmain
+    mret
+
+_start_init2:
+    # Wait for the main thread to finish zeroing BSS
+    la a0, WAITING_FLAG
+    li a1, 1
+ .LBB1_1:
+    ld a2, 0(a0)
+    bne a2, a1, .LBB1_1
+
+    # Initialize the stack pointer
+    la sp, _stack_end
+    li a0, 0x10000
+    sub sp, sp, a0
+    
+    # Set up the machine status register
+    li t0, 0b11 << 11 | (1 << 7) | (1 << 3)
+    csrw mstatus, t0
+
+    # Set the mret address to kinit2
+    la t1, kinit2
+    csrw mepc, t1
+
+    # Set the trap vector to the proper address
+    la t2, asm_trap_vector
+    csrw mtvec, t2
+
+    # Make sure no interrupts occur during initialization
+    csrw mie, zero
+
+    # Set up the return address for when kinit returns
+    la ra, _start_kinit_return
+
+    # Call kinit
+    mret
+
+_start_kinit_return2:
+    # Switch to supervisor mode 
+    li t0, (1 << 11) | (1 << 5)
+    csrw mstatus, t0
+
+    # Set the mret address to kmain2
+    la t1, kmain2
     csrw mepc, t1
 
     # Enable Interrupts

@@ -23,12 +23,15 @@
 
 // extern crate alloc;
 
+use crate::debug::INITIALIZATION;
+
 // Includes
 mod asm;
 mod debug;
 mod drivers;
 mod errno;
 mod halt;
+mod harts;
 #[macro_use]
 mod kprint;
 mod panic;
@@ -38,7 +41,19 @@ mod test;
 #[no_mangle]
 #[repr(align(4))]
 pub extern "C" fn kinit() {
-    kprintln!(unsafe "Hello World!");
+    // We get the init thread marker until we allow the other harts to start at the end of this function because we are the only thread that will be running
+    let init_thread_marker = unsafe { libutils::sync::InitThreadMarker::new() };
+
+    // We get the no interrupts marker because within the init function, we have interrupts disabled
+    let no_interrupt_marker = unsafe { libutils::sync::NoInterruptMarker::new() };
+
+    // Initialize the UART Driver
+    drivers::UART_DRIVER.init(init_thread_marker);
+    kdebugln!(init_thread_marker, "Initialized UART Driver");
+
+    // At the end of the kinit function, we can allow the other harts to begin running
+    kdebugln!(init_thread_marker, Initialization, "Enabling Secondary Harts");
+    harts::enable_other_harts();
     loop {}
 }
 
@@ -52,7 +67,7 @@ pub extern "C" fn kmain() {
 #[no_mangle]
 #[repr(align(4))]
 pub extern "C" fn kinit2() {
-    kprintln!(unsafe "Hello World!");
+    kprint!(unsafe "*");
     loop {}
 }
 
