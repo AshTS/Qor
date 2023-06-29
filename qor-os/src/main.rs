@@ -23,8 +23,6 @@
 
 // extern crate alloc;
 
-use crate::debug::INITIALIZATION;
-
 // Includes
 mod asm;
 mod debug;
@@ -51,9 +49,16 @@ pub extern "C" fn kinit() {
     drivers::UART_DRIVER.init(init_thread_marker);
     kdebugln!(init_thread_marker, "Initialized UART Driver");
 
+    // Run any tests if testing is requested
+    #[cfg(test)]
+    test_main();
+
     // At the end of the kinit function, we can allow the other harts to begin running
     kdebugln!(init_thread_marker, Initialization, "Enabling Secondary Harts");
     harts::enable_other_harts();
+
+    #[cfg(test)]
+    test::sync_test_runner(&[&sync_test_a]);
     loop {}
 }
 
@@ -68,6 +73,9 @@ pub extern "C" fn kmain() {
 #[repr(align(4))]
 pub extern "C" fn kinit2() {
     kprint!(unsafe "*");
+    #[cfg(test)]
+    test::sync_test_runner(&[&sync_test_a]);
+    
     loop {}
 }
 
@@ -81,4 +89,19 @@ pub extern "C" fn kmain2() {
 #[no_mangle]
 #[repr(align(4))]
 pub extern "C" fn m_trap() {
+}
+
+#[test_case]
+pub fn test_this() {
+    assert_eq!(2, 2);
+}
+
+#[test_case]
+pub fn test_this_other_thing() {
+    assert_eq!(2, 2);
+}
+
+#[cfg(test)]
+pub fn sync_test_a() {
+    assert_eq!(2, 2);
 }
