@@ -1,6 +1,7 @@
 //! Test Running Framework
 #[cfg(test)]
 use crate::*;
+use crate::harts::machine_mode_sync;
 
 /// Trait for all tests
 #[cfg(test)]
@@ -24,20 +25,17 @@ impl<T: Fn()> TestFunction for T {
     fn sync_run(&self) {
         let is_primary_hart = riscv::register::mhartid::read() == 0;
 
+        machine_mode_sync();
+
         if is_primary_hart {
-            SYNC_TEST_FLAG.store(false, core::sync::atomic::Ordering::Release);
-            SYNC_TEST_FLAG.store(true, core::sync::atomic::Ordering::Release);
-
-            
             crate::kprint!(unsafe "Running Sync Test {}......\t", core::any::type_name::<T>());
-            self();
-            crate::kprintln!(unsafe "\x1b[32m[DONE]\x1b[m");
         }
-        else {
-            while SYNC_TEST_FLAG.load(core::sync::atomic::Ordering::Acquire) {}
-            while !SYNC_TEST_FLAG.load(core::sync::atomic::Ordering::Acquire) {}
 
-            self();
+        self();
+        machine_mode_sync();
+         
+        if is_primary_hart {
+            crate::kprintln!(unsafe "\x1b[32m[DONE]\x1b[m");
         }
     }
 }
