@@ -1,3 +1,5 @@
+use crate::{kprintln, kprint};
+
 pub const CORE_COUNT: usize = 2;
 
 #[no_mangle]
@@ -18,14 +20,14 @@ pub fn machine_mode_sync() {
         SYNC_COUNT.store(0, core::sync::atomic::Ordering::Release);
 
         SYNC_FLAG.store(false, core::sync::atomic::Ordering::Release);
-        SYNC_FLAG.store(true, core::sync::atomic::Ordering::Release);
 
         while SYNC_COUNT.load(core::sync::atomic::Ordering::Acquire) + 1 < CORE_COUNT { core::hint::spin_loop() }
+
+        SYNC_FLAG.store(true, core::sync::atomic::Ordering::Release);
     }
     else {
         while SYNC_FLAG.load(core::sync::atomic::Ordering::Acquire) { core::hint::spin_loop() }
-        while !SYNC_FLAG.load(core::sync::atomic::Ordering::Acquire) { core::hint::spin_loop() }
-
         SYNC_COUNT.fetch_add(1, core::sync::atomic::Ordering::AcqRel);
+        while !SYNC_FLAG.load(core::sync::atomic::Ordering::Acquire) { core::hint::spin_loop() }
     }
 }
