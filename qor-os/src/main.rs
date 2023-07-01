@@ -6,6 +6,12 @@
 #![feature(ptr_internals)] // For pointer types
 #![feature(fn_align)]
 // To allow functions to be forced to a 4 byte boundary
+#![feature(slice_split_at_unchecked)] // More efficient splitting
+#![feature(strict_provenance)] // Allow more explicit pointer manipulations
+#![feature(strict_provenance_atomic_ptr)]
+
+#![feature(ptr_sub_ptr)] // For pointer manipulations to create more ergonomic static construction of allocators
+#![feature(const_ptr_sub_ptr)]
 
 // Allow dead code for partial implementations
 #![allow(dead_code)]
@@ -23,6 +29,8 @@
 
 // extern crate alloc;
 
+use crate::harts::machine_mode_sync;
+
 // Includes
 mod asm;
 mod debug;
@@ -32,7 +40,9 @@ mod halt;
 mod harts;
 #[macro_use]
 mod kprint;
+mod mem;
 mod panic;
+#[cfg(test)]
 mod test;
 
 /// Kernel Initialize Function (Called immediately after boot)
@@ -57,9 +67,15 @@ pub extern "C" fn kinit() {
     kdebugln!(init_thread_marker, Initialization, "Enabling Secondary Harts");
     harts::enable_other_harts();
 
+    harts::machine_mode_sync();
+
     #[cfg(test)]
-    test::sync_test_runner(&[&sync_test_a]);
-    loop {}
+    test::sync_test_runner();
+
+    #[cfg(test)]
+    crate::drivers::POWER_DRIVER.shutdown_success();
+
+    loop { core::hint::spin_loop() }
 }
 
 /// Kernel Main Function (Called in supervisor mode)
@@ -72,11 +88,12 @@ pub extern "C" fn kmain() {
 #[no_mangle]
 #[repr(align(4))]
 pub extern "C" fn kinit2() {
-    kprint!(unsafe "*");
-    #[cfg(test)]
-    test::sync_test_runner(&[&sync_test_a]);
+    harts::machine_mode_sync();
     
-    loop {}
+    #[cfg(test)]
+    test::sync_test_runner();
+
+    loop { core::hint::spin_loop() }
 }
 
 /// Kernel Main Function (Called in supervisor mode)
@@ -89,16 +106,6 @@ pub extern "C" fn kmain2() {
 #[no_mangle]
 #[repr(align(4))]
 pub extern "C" fn m_trap() {
-}
-
-#[test_case]
-pub fn test_this() {
-    assert_eq!(2, 2);
-}
-
-#[test_case]
-pub fn test_this_other_thing() {
-    assert_eq!(2, 2);
 }
 
 #[cfg(test)]

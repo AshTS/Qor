@@ -91,14 +91,17 @@ _start_init2:
     # Wait for the main thread to finish zeroing BSS
     la a0, WAITING_FLAG
     li a1, 1
- .LBB1_1:
+ .rept:
     ld a2, 0(a0)
-    bne a2, a1, .LBB1_1
+    bne a2, a1, .rept
+
+    fence
 
     # Initialize the stack pointer
-    la sp, _stack_end
-    li a0, 0x10000
-    sub sp, sp, a0
+    la a0, STACK_COUNTER
+    lui     a1, 16
+    neg     a1, a1
+    amoadd.d        sp, a1, (a0)
     
     # Set up the machine status register
     li t0, 0b11 << 11 | (1 << 7) | (1 << 3)

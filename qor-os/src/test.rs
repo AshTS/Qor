@@ -1,20 +1,14 @@
 //! Test Running Framework
-#[cfg(test)]
 use crate::*;
 use crate::harts::machine_mode_sync;
 
 /// Trait for all tests
-#[cfg(test)]
 pub trait TestFunction {
     fn run(&self);
     fn sync_run(&self);
 }
 
-#[cfg(test)]
-pub static SYNC_TEST_FLAG: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(true);
-
 // Implement testable
-#[cfg(test)]
 impl<T: Fn()> TestFunction for T {
     fn run(&self) {
         crate::kprint!(unsafe "Running Test {}......\t", core::any::type_name::<T>());
@@ -33,7 +27,8 @@ impl<T: Fn()> TestFunction for T {
 
         self();
         machine_mode_sync();
-         
+        
+ 
         if is_primary_hart {
             crate::kprintln!(unsafe "\x1b[32m[DONE]\x1b[m");
         }
@@ -41,7 +36,6 @@ impl<T: Fn()> TestFunction for T {
 }
 
 /// Test Runner
-#[cfg(test)]
 pub fn test_runner(tests: &[&dyn TestFunction]) {
     kprintln!(unsafe "Running {} Tests", tests.len());
 
@@ -53,8 +47,7 @@ pub fn test_runner(tests: &[&dyn TestFunction]) {
 }
 
 /// Test Runner
-#[cfg(test)]
-pub fn sync_test_runner(tests: &[&dyn TestFunction]) {
+fn priv_sync_test_runner(tests: &[&dyn TestFunction]) {
     let is_primary_hart = riscv::register::mhartid::read() == 0;
 
     if is_primary_hart {
@@ -65,15 +58,18 @@ pub fn sync_test_runner(tests: &[&dyn TestFunction]) {
         test.sync_run();
     }
 
+    machine_mode_sync();
+
     if is_primary_hart {
-        SYNC_TEST_FLAG.store(false, core::sync::atomic::Ordering::Release);
-        SYNC_TEST_FLAG.store(true, core::sync::atomic::Ordering::Release);
         kprintln!(unsafe "Sync Testing Complete");
     }
 }
 
+pub fn sync_test_runner() {
+    priv_sync_test_runner(&[&crate::mem::bump::sync_test::collective_test]);
+}
+
 /// Finish Testing
-#[cfg(test)]
 pub fn finish_testing() {
     kprintln!(unsafe "All Testing Complete");
     halt::kernel_halt();

@@ -17,11 +17,20 @@ impl PowerDriver
     }
 
     /// Shutdown the virtual machine
-    pub fn shutdown(&self)
+    pub fn shutdown_success(&self)
     {
         unsafe
         {
             (self.base as *mut u32).write_volatile(0x5555);
+        }
+    }
+
+    /// Shutdown the virtual machine
+    pub fn shutdown_failure(&self)
+    {
+        unsafe
+        {
+            (self.base as *mut u32).write_volatile(0x13333);
         }
     }
 }
