@@ -1,3 +1,5 @@
+use libutils::sync::InitThreadMarker;
+
 include!(concat!(env!("OUT_DIR"), "/core_count.rs"));
 
 #[no_mangle]
@@ -12,7 +14,7 @@ pub static STACK_COUNTER: core::sync::atomic::AtomicUsize = core::sync::atomic::
 pub static SYNC_FLAG: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(true);
 pub static SYNC_COUNT: core::sync::atomic::AtomicUsize = core::sync::atomic::AtomicUsize::new(0);
 
-pub fn enable_other_harts() {
+pub fn enable_other_harts(_marker: InitThreadMarker) {
     STACK_COUNTER.store(unsafe { crate::asm::KERNEL_STACK_END } - 0x10000, core::sync::atomic::Ordering::Release);
     WAITING_FLAG.store(1, core::sync::atomic::Ordering::Release);
 }

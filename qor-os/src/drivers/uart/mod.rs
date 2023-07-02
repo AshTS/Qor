@@ -40,7 +40,7 @@ impl UARTDriver {
     }
 
     /// Initialize the UART Driver
-    pub fn init(&self, _marker: InitThreadMarker) {
+    pub fn init(&self, _marker: &InitThreadMarker) {
         // Safety: The base address must be valid per the safety requirements of the `UARTDriver` constructor, and there are no other threads as we have ownership of an `InitThreadMarker`
         unsafe { raw::init(self.base_address) }
 
@@ -65,7 +65,7 @@ impl UARTDriver {
     }
 
     /// Write a byte to the UART port
-    pub fn write_byte(&self, _marker: InitThreadMarker, byte: u8) -> Result<(), UARTDriverError> {
+    pub fn write_byte(&self, _marker: &InitThreadMarker, byte: u8) -> Result<(), UARTDriverError> {
         // Ensure initialization requirement
         self.ensure_init()?;
 
@@ -89,7 +89,7 @@ impl UARTDriver {
     /// Write a slice of bytes to the UART port
     pub fn write_bytes(
         &self,
-        marker: InitThreadMarker,
+        marker: &InitThreadMarker,
         bytes: &[u8],
     ) -> Result<(), UARTDriverError> {
         for byte in bytes {

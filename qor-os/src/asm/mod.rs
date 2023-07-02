@@ -11,8 +11,8 @@ global_asm!(include_str!("init.s"));
 
 // Values defined in assembly which now need to be brought into rust
 extern "C" {
-    pub static HEAP_START: *mut Page;
-    pub static HEAP_END: *mut Page;
+    pub static HEAP_START: *const Page;
+    pub static HEAP_END: *const Page;
     pub static KERNEL_STACK_END: usize;
 }
 

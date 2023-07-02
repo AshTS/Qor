@@ -56,17 +56,22 @@ pub extern "C" fn kinit() {
     let no_interrupt_marker = unsafe { libutils::sync::NoInterruptMarker::new() };
 
     // Initialize the UART Driver
-    drivers::UART_DRIVER.init(init_thread_marker);
-    kdebugln!(init_thread_marker, "Initialized UART Driver");
+    drivers::UART_DRIVER.init(&init_thread_marker);
+    kdebugln!(&init_thread_marker, "Initialized UART Driver");
 
     // Run any tests if testing is requested
     #[cfg(test)]
     test_main();
 
-    // At the end of the kinit function, we can allow the other harts to begin running
-    kdebugln!(init_thread_marker, Initialization, "Enabling Secondary Harts");
-    harts::enable_other_harts();
+    // Initialize the Kernel Static Page Bump Allocator
+    kdebugln!(&init_thread_marker, Initialization, "Initialize Page Bump Allocator");
+    mem::initialize_kernel_bump_allocator();
 
+    // At the end of the kinit function, we can allow the other harts to begin running, here we destroy the `init_thread_marker`
+    kdebugln!(&init_thread_marker, Initialization, "Enabling Secondary Harts");
+    harts::enable_other_harts(init_thread_marker);
+
+    // Synchronize the other harts
     harts::machine_mode_sync();
 
     #[cfg(test)]

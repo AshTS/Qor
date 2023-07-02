@@ -1,4 +1,4 @@
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct InitThreadMarker {
     _empty: (),
 }

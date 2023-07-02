@@ -2,6 +2,8 @@ use core::{sync::atomic::Ordering, ops::Range};
 
 use super::{Page, PAGE_SIZE};
 
+/// Kernel space static allocator of page-scale regions of memory which cannot
+/// be freed.
 #[derive(Debug)]
 pub struct KernelPageStaticBumpAllocator {
     pages_walking_pointer: core::sync::atomic::AtomicPtr<Page>,
@@ -25,12 +27,18 @@ impl KernelPageStaticBumpAllocator {
         }
     }
 
+    /// Update the allocator to point to a new range of memory.
+    /// 
+    /// # Safety
+    /// The pointer must point to the beginning of a region of memory only
+    /// available to this allocator, with a length of `count` pages.
     pub unsafe fn update(&self, page_range: Range<*const Page>) {
         self.pages_walking_pointer.store(page_range.start as *mut Page, Ordering::Release);
         self.pages_end.store(page_range.end as *mut Page, Ordering::Release);
         self.total.store(page_range.end.sub_ptr(page_range.start), Ordering::Release);
     }
 
+    /// Get the number of free pages.
     pub fn free(&self) -> usize {
         let current = self.pages_walking_pointer.load(Ordering::Acquire).addr();
         let end = self.pages_end.load(Ordering::Acquire).addr();
@@ -43,10 +51,18 @@ impl KernelPageStaticBumpAllocator {
         }
     }
 
+    /// Get the total number of pages assigned to the allocator
     pub fn total(&self) -> usize {
         self.total.load(Ordering::Acquire)
     }
 
+    /// Allocate `count` pages of memory, returning a static, mutable reference
+    /// to the region of memory `count` pages long.
+    /// 
+    /// # Errors
+    /// 
+    /// If there are not enough pages remaining to allocate `count` pages of
+    /// memory, a `KernelPageStaticBumpAllocatorError` is returned.
     pub fn alloc_pages(&self, count: usize) -> Result<&'static mut [Page], KernelPageStaticBumpAllocatorError> {
         // Atomically increment the pointer
         let pointer = self.pages_walking_pointer.fetch_ptr_add(count, Ordering::Release);
@@ -64,6 +80,8 @@ impl KernelPageStaticBumpAllocator {
     }
 }
 
+/// Potential errors which can be returned when attempting an allocation via a
+/// `KernelPageStaticBumpAllocator`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KernelPageStaticBumpAllocatorError {
     OutOfMemoryError{requested: usize, remaining: usize, total: usize}
@@ -163,4 +181,17 @@ pub mod sync_test {
             assert_eq!(BUMP_ALLOC.free(), 8);
         }
     }
+}
+
+/// Initialize a `KernelPageStaticBumpAllocator` to point to the heap referenced by the linker script
+pub fn initialize_kernel_bump_allocator() {
+    use crate::asm::*;
+
+    // Construct a pointer range over the heap
+    let start = unsafe { HEAP_START };
+    let end = unsafe { HEAP_START };
+    let range = core::ops::Range { start, end};
+
+    // Initialize the allocator
+    unsafe { super::BUMP_ALLOC.update(range); }
 }

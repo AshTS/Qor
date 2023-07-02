@@ -20,7 +20,7 @@ macro_rules! kprint
         // Safety: This is safe because overlapping writes is acceptable if annoying
         // We allow the redundant closure call because we need to consume the thread marker for safety 
         #[allow(clippy::redundant_closure_call)]
-		let _ = (|_: InitThreadMarker| { write!(unsafe { $crate::drivers::UART_DRIVER.unsafe_writer() }, $($args)+) })($thread_marker);
+		let _ = (|_: &InitThreadMarker| { write!(unsafe { $crate::drivers::UART_DRIVER.unsafe_writer() }, $($args)+) })($thread_marker);
     });
 }
 
