@@ -15,8 +15,8 @@ pub static SYNC_FLAG: core::sync::atomic::AtomicBool = core::sync::atomic::Atomi
 pub static SYNC_COUNT: core::sync::atomic::AtomicUsize = core::sync::atomic::AtomicUsize::new(0);
 
 pub fn enable_other_harts(_marker: InitThreadMarker) {
-    STACK_COUNTER.store(unsafe { crate::asm::KERNEL_STACK_END } - 0x10000, core::sync::atomic::Ordering::Release);
-    WAITING_FLAG.store(1, core::sync::atomic::Ordering::Release);
+    STACK_COUNTER.store(unsafe { crate::asm::KERNEL_STACK_END } - 0x10000, core::sync::atomic::Ordering::SeqCst);
+    WAITING_FLAG.store(1, core::sync::atomic::Ordering::SeqCst);
 }
 
 pub fn machine_mode_is_primary_hart() -> bool {
@@ -34,7 +34,7 @@ pub fn machine_mode_sync() {
 
         loop {
             let v = SYNC_COUNT.load(core::sync::atomic::Ordering::SeqCst);
-            // kdebugln!(unsafe "{}", v);
+            // kprint!(unsafe "{}", v);
             if v + 1 >= CORE_COUNT { break; }
         }
 
@@ -42,6 +42,9 @@ pub fn machine_mode_sync() {
     }
     else {
         while SYNC_FLAG.load(core::sync::atomic::Ordering::SeqCst) {  core::hint::spin_loop() }
+        for _ in 0..10 {
+            core::hint::black_box(4096);
+        }
         SYNC_COUNT.fetch_add(1, core::sync::atomic::Ordering::SeqCst);
         while !SYNC_FLAG.load(core::sync::atomic::Ordering::SeqCst) { core::hint::spin_loop() }
     }
