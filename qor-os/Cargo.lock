@@ -12,6 +12,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "atomic"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c59bdb34bc650a32731b31bd8f0829cc15d24a708ee31559e0bb34f2bc320cba"
+
+[[package]]
 name = "bare-metal"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -46,6 +52,7 @@ checksum = "0ee1c47aaa256ecabcaea351eae4a9b01ef39ed810004e298d2511ed284b1525"
 name = "qor-os"
 version = "0.1.0"
 dependencies = [
+ "atomic",
  "lazy_static",
  "libutils",
  "riscv",

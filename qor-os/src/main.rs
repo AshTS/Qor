@@ -12,6 +12,7 @@
 
 #![feature(ptr_sub_ptr)] // For pointer manipulations to create more ergonomic static construction of allocators
 #![feature(const_ptr_sub_ptr)]
+#![feature(slice_from_ptr_range)]
 
 // Allow dead code for partial implementations
 #![allow(dead_code)]
@@ -28,8 +29,6 @@
 // Alloc Prelude
 
 // extern crate alloc;
-
-use crate::harts::machine_mode_sync;
 
 // Includes
 mod asm;
@@ -53,7 +52,7 @@ pub extern "C" fn kinit() {
     let init_thread_marker = unsafe { libutils::sync::InitThreadMarker::new() };
 
     // We get the no interrupts marker because within the init function, we have interrupts disabled
-    let no_interrupt_marker = unsafe { libutils::sync::NoInterruptMarker::new() };
+    let _no_interrupt_marker = unsafe { libutils::sync::NoInterruptMarker::new() };
 
     // Initialize the UART Driver
     drivers::UART_DRIVER.init(&init_thread_marker);

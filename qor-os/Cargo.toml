@@ -22,7 +22,7 @@ features = ["spin_no_std"]
 [dependencies]
 # async-trait="0.1.58"
 # async-recursion="1.0"
-# atomic = "0.5"
+atomic = "0.5"
 libutils = { path = "../libutils" }
 riscv = "0.7.0"
 # spin = "0.9.0"

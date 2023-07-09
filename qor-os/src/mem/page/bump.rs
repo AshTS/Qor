@@ -100,8 +100,8 @@ impl core::fmt::Display for KernelPageStaticBumpAllocatorError {
 #[cfg(test)]
 mod test {
     use super::*;
-    static FIVE_PAGES: [Page; 5] = [[0; PAGE_SIZE]; 5];
-    static EIGHT_PAGES: [Page; 8] = [[0; PAGE_SIZE]; 8];
+    static FIVE_PAGES: [Page; 5] = [Page([0; PAGE_SIZE]); 5];
+    static EIGHT_PAGES: [Page; 8] = [Page([0; PAGE_SIZE]); 8];
 
     #[test_case]
     fn success() {
@@ -151,7 +151,7 @@ pub mod sync_test {
 
     use super::KernelPageStaticBumpAllocator;
 
-    static FIVE_PAGES: [Page; 5] = [[0; PAGE_SIZE]; 5];
+    static FIVE_PAGES: [Page; 5] = [Page([0; PAGE_SIZE]); 5];
 
     static BUMP_ALLOC: KernelPageStaticBumpAllocator = unsafe { KernelPageStaticBumpAllocator::new(FIVE_PAGES.as_ptr_range()) };
     pub fn collective_test() {
