@@ -1,3 +1,6 @@
+pub mod bitmap;
+pub use bitmap::*;
+
 pub mod bump;
 pub use bump::*;
 

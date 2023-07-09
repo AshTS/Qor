@@ -154,6 +154,7 @@ pub mod sync_test {
     static FIVE_PAGES: [Page; 5] = [Page([0; PAGE_SIZE]); 5];
 
     static BUMP_ALLOC: KernelPageStaticBumpAllocator = unsafe { KernelPageStaticBumpAllocator::new(FIVE_PAGES.as_ptr_range()) };
+    
     pub fn collective_test() {
         let heap_size: usize = unsafe { (crate::asm::HEAP_END as usize - crate::asm::HEAP_START as usize)/PAGE_SIZE };
         if machine_mode_is_primary_hart() {    
@@ -172,6 +173,34 @@ pub mod sync_test {
             machine_mode_sync();
             for _ in 0..count / harts::CORE_COUNT {
                 assert!(BUMP_ALLOC.alloc_pages(1).is_ok());
+            }
+        }
+
+        machine_mode_sync();
+
+        if machine_mode_is_primary_hart() {
+            assert_eq!(BUMP_ALLOC.free(), 8);
+        }
+    }
+
+    pub fn collective_test_wide_pages() {
+        let heap_size: usize = unsafe { (crate::asm::HEAP_END as usize - crate::asm::HEAP_START as usize)/PAGE_SIZE };
+        if machine_mode_is_primary_hart() {    
+            unsafe { BUMP_ALLOC.update(core::ops::Range { start: HEAP_START, end: HEAP_END }) }
+        }
+
+        let count = heap_size - 8;
+
+        if machine_mode_is_primary_hart() {
+            machine_mode_sync();
+            for _ in 0..count - 8 * (harts::CORE_COUNT - 1) * (count / harts::CORE_COUNT / 8) {
+                assert!(BUMP_ALLOC.alloc_pages(1).is_ok());
+            }
+        }
+        else {
+            machine_mode_sync();
+            for _ in 0..count / harts::CORE_COUNT / 8 {
+                assert!(BUMP_ALLOC.alloc_pages(8).is_ok());
             }
         }
 

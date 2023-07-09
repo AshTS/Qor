@@ -66,7 +66,10 @@ fn priv_sync_test_runner(tests: &[&dyn TestFunction]) {
 }
 
 pub fn sync_test_runner() {
-    priv_sync_test_runner(&[&crate::mem::bump::sync_test::collective_test]);
+    priv_sync_test_runner(&[
+        &crate::mem::bump::sync_test::collective_test,
+        &crate::mem::bump::sync_test::collective_test_wide_pages,
+        &crate::mem::bitmap::sync_test::collective_test]);
 }
 
 /// Finish Testing
