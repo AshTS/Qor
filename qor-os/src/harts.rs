@@ -27,23 +27,22 @@ pub fn machine_mode_sync() {
     let is_primary_hart = riscv::register::mhartid::read() == 0;
 
     if is_primary_hart {
-        SYNC_COUNT.store(0, core::sync::atomic::Ordering::Release);
-
-        SYNC_FLAG.store(false, core::sync::atomic::Ordering::Release);
+        SYNC_COUNT.store(0, core::sync::atomic::Ordering::SeqCst);
+        SYNC_FLAG.store(false, core::sync::atomic::Ordering::SeqCst);
 
         // while SYNC_COUNT.load(core::sync::atomic::Ordering::Acquire) + 1 < CORE_COUNT { core::hint::spin_loop() }
 
         loop {
-            let v = SYNC_COUNT.load(core::sync::atomic::Ordering::Acquire);
+            let v = SYNC_COUNT.load(core::sync::atomic::Ordering::SeqCst);
             // kdebugln!(unsafe "{}", v);
             if v + 1 >= CORE_COUNT { break; }
         }
 
-        SYNC_FLAG.store(true, core::sync::atomic::Ordering::Release);
+        SYNC_FLAG.store(true, core::sync::atomic::Ordering::SeqCst);
     }
     else {
-        while SYNC_FLAG.load(core::sync::atomic::Ordering::Acquire) { core::hint::spin_loop() }
-        SYNC_COUNT.fetch_add(1, core::sync::atomic::Ordering::AcqRel);
-        while !SYNC_FLAG.load(core::sync::atomic::Ordering::Acquire) { core::hint::spin_loop() }
+        while SYNC_FLAG.load(core::sync::atomic::Ordering::SeqCst) {  core::hint::spin_loop() }
+        SYNC_COUNT.fetch_add(1, core::sync::atomic::Ordering::SeqCst);
+        while !SYNC_FLAG.load(core::sync::atomic::Ordering::SeqCst) { core::hint::spin_loop() }
     }
 }
