@@ -58,10 +58,6 @@ pub extern "C" fn kinit() {
     drivers::UART_DRIVER.init(&init_thread_marker);
     kdebugln!(&init_thread_marker, "Initialized UART Driver");
 
-    // Run any tests if testing is requested
-    #[cfg(test)]
-    test_main();
-
     // Initialize the Kernel Static Page Bump Allocator
     kdebugln!(&init_thread_marker, Initialization, "Initialize Page Bump Allocator");
     mem::initialize_kernel_bump_allocator();
@@ -73,6 +69,10 @@ pub extern "C" fn kinit() {
     // At the end of the kinit function, we can allow the other harts to begin running, here we destroy the `init_thread_marker`
     kdebugln!(&init_thread_marker, Initialization, "Enabling Secondary Harts");
     harts::enable_other_harts(init_thread_marker);
+
+    // Run any tests if testing is requested
+    #[cfg(test)]
+    test_main();
 
     // Synchronize the other harts
     harts::machine_mode_sync();

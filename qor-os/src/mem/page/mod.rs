@@ -4,6 +4,9 @@ pub use bitmap::*;
 pub mod bump;
 pub use bump::*;
 
+pub mod pagebox;
+pub use pagebox::*;
+
 /// Size of a page in bytes
 pub const PAGE_SIZE: usize = 4096;
 

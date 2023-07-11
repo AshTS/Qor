@@ -69,7 +69,8 @@ pub fn sync_test_runner() {
     priv_sync_test_runner(&[
         &crate::mem::bump::sync_test::collective_test,
         &crate::mem::bump::sync_test::collective_test_wide_pages,
-        &crate::mem::bitmap::sync_test::collective_test]);
+        &crate::mem::bitmap::sync_test::collective_test,
+        &crate::mem::pagebox::sync_test::many_cores_page_seq_allocations]);
 }
 
 /// Finish Testing

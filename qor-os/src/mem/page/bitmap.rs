@@ -2,7 +2,7 @@ use core::{ops::Range, sync::atomic::AtomicU64};
 
 use crate::mem::MemoryUnit;
 
-use super::{Page, PAGE_SIZE};
+use super::{Page, PAGE_SIZE, KernelPageSequence};
 
 pub struct KernelPageBitmapAllocator {
     bitmap: atomic::Atomic<&'static [core::sync::atomic::AtomicU64]>,
@@ -199,6 +199,18 @@ impl KernelPageBitmapAllocator {
         }
 
         Err(KernelPageBitmapAllocatorError::OutOfMemory { requested: count })
+    }
+
+    /// Allocate a `KernelPageSequence` of the given size
+    ///
+    /// # Errors
+    /// If no suitable location is able to be found, an `OutOfMemoryError` is
+    /// returned.
+    pub fn allocate_page_sequence(&self, count: usize) -> Result<KernelPageSequence, KernelPageBitmapAllocatorError> {
+        let pointer = self.allocate_pages(count)?;
+        let range = pointer..(unsafe { pointer.add(count) });
+
+        unsafe { Ok(KernelPageSequence::from_raw(range)) }
     }
 
     /// Free a consecutive region of pages.
