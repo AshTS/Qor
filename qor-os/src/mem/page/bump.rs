@@ -218,9 +218,11 @@ pub fn initialize_kernel_bump_allocator() {
 
     // Construct a pointer range over the heap
     let start = unsafe { HEAP_START };
-    let end = unsafe { HEAP_START };
+    let end = unsafe { HEAP_END };
     let range = core::ops::Range { start, end};
 
     // Initialize the allocator
     unsafe { super::BUMP_ALLOC.update(range); }
+
+    kdebugln!(unsafe "{} Pages Ready", super::BUMP_ALLOC.total());
 }

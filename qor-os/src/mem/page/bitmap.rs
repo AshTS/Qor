@@ -1,5 +1,7 @@
 use core::{ops::Range, sync::atomic::AtomicU64};
 
+use crate::mem::MemoryUnit;
+
 use super::{Page, PAGE_SIZE};
 
 pub struct KernelPageBitmapAllocator {
@@ -335,4 +337,18 @@ pub mod sync_test {
 
         machine_mode_sync();
     }
+}
+
+/// Initialize a `KernelPageBitmapAllocator` with the requested amount of
+/// memory from the static page allocator. The size will be rounded up to the
+/// nearest number of pages.
+pub fn initialize_kernel_bitmap_allocator<const SCALE: usize>(size: MemoryUnit<SCALE>) {
+    // Get the number of pages needed
+    let page_count = size.convert::<PAGE_SIZE>();
+    
+    // Allocate from the static bump allocator
+    let buffer = super::BUMP_ALLOC.alloc_pages(page_count.raw()).expect("Unable to allocate space for requested bitmap allocator");
+
+    // Initialize the allocator
+    super::BITMAP_ALLOC.initialize_with_buffer(buffer);
 }

@@ -24,3 +24,6 @@ static FALLBACK_REGION: [Page; 0] = [];
 
 /// Page-scale static bump allocator
 pub static BUMP_ALLOC: KernelPageStaticBumpAllocator = unsafe { KernelPageStaticBumpAllocator::new(FALLBACK_REGION.as_ptr_range()) };
+
+/// Page-scale bitmap allocator
+pub static BITMAP_ALLOC: KernelPageBitmapAllocator = KernelPageBitmapAllocator::new();

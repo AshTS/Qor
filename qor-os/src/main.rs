@@ -66,6 +66,10 @@ pub extern "C" fn kinit() {
     kdebugln!(&init_thread_marker, Initialization, "Initialize Page Bump Allocator");
     mem::initialize_kernel_bump_allocator();
 
+    // Initialize the Kernel Static Page Allocator
+    kdebugln!(&init_thread_marker, Initialization, "Initialize Page Allocator");
+    mem::initialize_kernel_bitmap_allocator(mem::MiByteCount::new(1));
+
     // At the end of the kinit function, we can allow the other harts to begin running, here we destroy the `init_thread_marker`
     kdebugln!(&init_thread_marker, Initialization, "Enabling Secondary Harts");
     harts::enable_other_harts(init_thread_marker);
