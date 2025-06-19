@@ -1,5 +1,7 @@
 # Qor
 
+Unfortunately, due to changes in how qemu is setup, the specific instructions given here no longer work.
+
 Basic kernel written in Rust for RISC-V, initially following the tutorial by Stephen Marz [RISC-V OS using Rust](https://osblog.stephenmarz.com/index.html).
 
 Stored in seperate repositories are the [libc implementation](https://github.com/AshTS/QorLibC) and the [userland programs](https://github.com/AshTS/QorUserland)
